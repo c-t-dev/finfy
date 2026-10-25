@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArchiveIcon } from "lucide-react";
+import { ArchiveIcon, ChevronRightIcon, TagsIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@packages/ui/components/card";
 import {
@@ -20,6 +20,7 @@ import { can } from "@packages/shared/roles";
 import type { Wallet } from "@packages/shared/wallets";
 import { WALLET_NAME_MAX } from "@packages/shared/wallets";
 import { useTranslations } from "../i18n";
+import { APP_ROUTES, useAppNavigation } from "../navigation";
 import { CurrencySelect, useWalletRequest, WalletErrorMessage } from "../wallet-ui";
 import { useWallets } from "../wallets";
 
@@ -33,12 +34,38 @@ export function SettingsScreen() {
         // Keyed by wallet, so switching wallets resets the forms.
         <React.Fragment key={current.id}>
           <WalletSettings wallet={current} />
+          <CategoriesLink />
           {can(current.role, "archiveWallet") && <ArchiveWallet wallet={current} />}
         </React.Fragment>
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("settings.wallet.none")}</p>
       )}
     </div>
+  );
+}
+
+const CATEGORIES_PATH = `${APP_ROUTES.find((route) => route.key === "settings")!.path}/categories`;
+
+function CategoriesLink() {
+  const t = useTranslations("app.categories");
+  const { Link } = useAppNavigation();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settingsTitle")}</CardTitle>
+        <CardDescription>{t("settingsBody")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Link
+          href={CATEGORIES_PATH}
+          className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-card px-3 text-[13px] font-medium shadow-[0_1px_1px_rgb(0_0_0/0.06)] outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/40 dark:bg-white/10"
+        >
+          <TagsIcon className="size-4" aria-hidden />
+          {t("manage")}
+          <ChevronRightIcon className="size-4 opacity-60" aria-hidden />
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
 

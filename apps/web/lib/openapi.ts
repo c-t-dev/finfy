@@ -17,6 +17,14 @@ import {
   updateAccountInput,
 } from "@packages/shared/accounts";
 import {
+  categoryListSchema,
+  categorySchema,
+  categoryStateInput,
+  categoryVisibilityInput,
+  createCategoryInput,
+  updateCategoryInput,
+} from "@packages/shared/categories";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -86,6 +94,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       { name: "account", description: "The signed-in user's settings" },
       { name: "wallets", description: "Wallets and roles (wiki/decisoes/0002). Writes are idempotent by `mutationId` and audited" },
       { name: "accounts", description: "Accounts of a wallet; the balance is computed, never stored" },
+      { name: "categories", description: "System categories (read-only, hideable per wallet) and the wallet's own; two levels" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -112,6 +121,8 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         WalletList: json(walletListSchema),
         Account: json(accountSchema),
         AccountList: json(accountListSchema),
+        Category: json(categorySchema),
+        CategoryList: json(categoryListSchema),
         Health: {
           type: "object",
           required: ["status", "database"],
@@ -338,9 +349,68 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           },
         },
       },
+      "/api/wallets/{id}/categories": {
+        get: {
+          tags: ["categories"],
+          summary: "System categories plus the wallet's",
+          description:
+            "Any member. System rows have `translationKey` (label `categories.<key>`) and `hidden` per wallet. `?archived=1` lists the wallet's archived categories.",
+          security: [{ session: [] }],
+          parameters: [
+            walletIdParam,
+            { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } },
+          ],
+          responses: { 200: response("The categories.", ref("CategoryList")), ...walletErrors("notFound") },
+        },
+        post: {
+          tags: ["categories"],
+          summary: "Create a category or subcategory",
+          description: `OWNER, ADMIN, EDITOR. \`parentId\` must be a top-level category (system or the wallet's) of the same kind: two levels at most. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam],
+          requestBody: body(createCategoryInput),
+          responses: {
+            201: response("Created (or already created by this mutationId).", ref("Category")),
+            ...walletErrors("invalidInput", "forbidden", "notFound"),
+          },
+        },
+      },
+      "/api/wallets/{id}/categories/{categoryId}": {
+        patch: {
+          tags: ["categories"],
+          summary: "Edit a wallet category",
+          description: `Name, icon, color; the last write wins. System categories answer \`403 forbidden\`. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam, categoryIdParam],
+          requestBody: body(updateCategoryInput),
+          responses: { 200: response("The category.", ref("Category")), ...walletErrors("invalidInput", "forbidden", "notFound") },
+        },
+      },
+      ...categoryAction("archive", "Archive a wallet category and its subcategories", categoryStateInput),
+      ...categoryAction("restore", "Restore a wallet category (a subcategory needs its parent active)", categoryStateInput),
+      ...categoryAction("hide", "Hide a system category in this wallet", categoryVisibilityInput),
+      ...categoryAction("show", "Show a hidden system category again", categoryVisibilityInput),
     },
   };
 }
+
+function categoryAction(action: string, summary: string, input: z.ZodType) {
+  return {
+    [`/api/wallets/{id}/categories/{categoryId}/${action}`]: {
+      post: {
+        tags: ["categories"],
+        summary,
+        description: `OWNER, ADMIN, EDITOR. ${originNote}`,
+        security: [{ session: [] }],
+        parameters: [walletIdParam, categoryIdParam],
+        requestBody: body(input),
+        responses: { 200: response("The category.", ref("Category")), ...walletErrors("invalidInput", "forbidden", "notFound") },
+      },
+    },
+  };
+}
+
+const categoryIdParam = { name: "categoryId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
 
 const walletIdParam = { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } };
 const accountIdParam = { name: "accountId", in: "path", required: true, schema: { type: "string", format: "uuid" } };

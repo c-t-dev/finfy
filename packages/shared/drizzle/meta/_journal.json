@@ -36,6 +36,13 @@
       "when": 1792961926405,
       "tag": "0004_publish_financial_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792963843143,
+      "tag": "0005_seed_system_categories",
+      "breakpoints": true
     }
   ]
 }

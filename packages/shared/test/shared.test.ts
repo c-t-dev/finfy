@@ -52,3 +52,25 @@ test("every transaction type has a balance sign, and card purchases skip the acc
   // ADJUSTMENT is stored signed, so it adds as is.
   assert.equal(BALANCE_SIGN.ADJUSTMENT, 1);
 });
+
+test("system categories: unique keys, parents first, translated, and seeded with their IDs", async () => {
+  const { readFileSync, readdirSync } = await import("node:fs");
+  const { SYSTEM_CATEGORIES } = await import("../src/system-categories.ts");
+  const { deterministicId } = await import("../src/ids.ts");
+  const keys = SYSTEM_CATEGORIES.map((c) => c.key);
+  assert.equal(new Set(keys).size, keys.length);
+  SYSTEM_CATEGORIES.forEach((c, index) => {
+    if (c.parent) assert.ok(keys.indexOf(c.parent) < index && keys.indexOf(c.parent) >= 0, c.key);
+    else assert.ok(c.icon && c.color, c.key);
+  });
+  for (const locale of ["en", "pt-BR"]) {
+    const messages = JSON.parse(readFileSync(new URL(`../src/i18n/messages/${locale}.json`, import.meta.url), "utf8"));
+    for (const key of keys) assert.ok(messages.categories[key], `${locale}: categories.${key}`);
+  }
+  const migrations = new URL("../drizzle/", import.meta.url);
+  const sql = readdirSync(migrations)
+    .filter((file) => file.endsWith(".sql"))
+    .map((file) => readFileSync(new URL(file, migrations), "utf8"))
+    .join("\n");
+  for (const key of keys) assert.ok(sql.includes(deterministicId("system_category", key)), `migration: ${key}`);
+});

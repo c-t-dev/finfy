@@ -17,7 +17,8 @@ Milestones 1 (foundation), 2 (e-mail and password authentication), 3 (wallets) a
 | Money, IDs, roles and permission matrix, locales | `POST /api/sync/push`, conflict records (`sync_conflicts`), audit chain check job |
 | Wallets: create, list, switch (remembered per browser), rename, change currency before the first entry, archive with the password (see [Wallets](#wallets)) | Activity feed and item history screens |
 | One write path: idempotent mutations and a hash-chained audit log (see [Write path](#write-path)) | |
-| Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | Credit cards, transactions, categories |
+| Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | Credit cards, transactions |
+| Categories: 72 system categories (proposal), hide per wallet, own categories and subcategories (see [Categories](#categories)) | |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
 | Signed-in app shell (`/app`): sidebar, bottom bar on phones, language and theme switchers, window width lock/unlock (cookie `finfy-window-wide`, desktop only) | E-mail sending (provider not chosen), cron jobs |
 | `GET /api/health`; API documented with OpenAPI + Swagger UI (see [API documentation](#api-documentation)) | Tauri and Capacitor shells, PowerSync |
@@ -121,6 +122,20 @@ Rules:
 - **Currency lock:** an account with a non-zero initial balance sets `wallets.currency_locked_at` (audited as `CURRENCY_LOCKED`). See [0001](../decisoes/0001-multimoeda.md).
 - **Colors** are tokens (`blue`, `green`...), drawn with Apple system colors; no institution list yet.
 - **Amounts typed by the user** are parsed with `parseMoney` and the language's decimal separator; floats never reach the API (`initialBalanceMinor` must be an integer).
+
+## Categories
+
+Server: `apps/web/lib/server/categories.ts`. Client: `packages/app/src/categories.tsx` (icons, labels, `useCategories`, `CategoryPicker`) and `screens/categories.tsx` (Settings → Categories, `/app/settings/categories`).
+
+- **System list:** `packages/shared/src/system-categories.ts`, seeded by migration `0005_seed_system_categories.sql`. IDs are `deterministicId("system_category", key)`; labels are `categories.<key>` in the message files. A test checks keys, order, translations and the migration. Adding categories needs a new migration; never edit or reuse a shipped key. **The list is a proposal (2026-10-25) waiting for review.**
+- **Hide:** system categories are hidden per wallet through `hidden_categories` (ID `deterministicId("hidden_category", walletId, categoryId)`); showing archives that row, hiding again restores it.
+- **Own categories:** name, icon (fixed set of lucide names in `CATEGORY_ICONS`), color token. A subcategory hangs from a top-level category of the same kind, system or own; two levels at most. Subcategories take the parent's icon and color.
+- **Archive:** archiving a category archives its subcategories; a subcategory is restored only while its parent is active. Transactions keep pointing at archived categories.
+- `usableCategory()` is what other commands call to accept a category in a write (system, or the wallet's, not archived).
+
+## API transport on the client
+
+`packages/app/src/api.tsx`: the host passes one `request(method, path, body)` (`ApiProvider`); screens call the HTTP API paths directly and load lists with `useResource(path)`. New resources use this; `WalletClient` and `AccountClient` predate it.
 
 ## Authentication
 
