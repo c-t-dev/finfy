@@ -12,6 +12,7 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0004](0004-seguranca-da-conta.md) | Segurança da conta (senha, MFA, sessões) | Proposta |
 | [0005](0005-offline-first-e-sincronizacao.md) | Offline-first e sincronização: apps nativos offline, web online, PowerSync + Postgres com escrita pela API | Proposta (plataformas e tecnologia de sincronização já decididas) |
 | [0006](0006-auditoria.md) | Auditoria por wallet (imutável, origem, diferença por campo) | Proposta (visibilidade já decidida: todos veem tudo) |
+| [0007](0007-flutter-nos-clientes.md) | Flutter nos apps nativos (Windows, macOS, Android, iOS) e na web | Aceita |
 
 ## Status
 

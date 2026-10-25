@@ -10,7 +10,9 @@ Instruções para qualquer agente de IA que trabalhe neste repositório: Claude 
 - as decisões do próprio finfy em [`wiki/decisoes/`](wiki/decisoes/README.md): várias moedas (EUR e BRL), várias wallets por usuário com compartilhamento, papéis e transferência de posse, convites por e-mail, segurança da conta, offline-first com sincronização e auditoria;
 - a análise do **Wallefy** (projeto `my-fin`), usado como base para wallets, convites e segurança, em [`wiki/referencias/wallefy.md`](wiki/referencias/wallefy.md).
 
-Decisões com status "Proposta" têm perguntas em aberto; não as trate como fechadas. O que ainda não foi decidido (stack, demais funcionalidades) não deve ser inventado: pergunte.
+Já decidido sobre a stack: clientes em **Flutter** (apps Windows, macOS, Android e iOS offline; web só online) e sincronização com **PowerSync + Postgres**, com toda escrita passando pela API do finfy. O backend (linguagem e framework da API) ainda não foi escolhido.
+
+Decisões com status "Proposta" têm perguntas em aberto; não as trate como fechadas. O que ainda não foi decidido não deve ser inventado: pergunte.
 
 ## Antes de começar qualquer tarefa
 

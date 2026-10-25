@@ -63,7 +63,7 @@ Suporte a plataformas por SDK, conferido em 2026-10-25 em [docs.powersync.com/re
 | Swift | — | Sim | Sim | Não | — |
 | .NET | Sim (MAUI) | Sim (MAUI) | Só CLI | Sim (MAUI) | — |
 
-O **Flutter é o único SDK que cobre Windows, macOS, Android e iOS com uma base de código só**, e também roda na web. Isso pesa na escolha da tecnologia dos apps (pergunta em aberto abaixo).
+O **Flutter é o único SDK que cobre Windows, macOS, Android e iOS com uma base de código só**, e também roda na web. Por isso os clientes serão em Flutter ([0007](0007-flutter-nos-clientes.md)).
 
 ### O que funciona sem internet
 
@@ -170,7 +170,7 @@ O `push` e o `pull` enviam a versão do esquema local. O servidor recusa versõe
 
 - [x] A versão web também funciona offline? **Não**: só os apps Windows, macOS, Android e iOS (decidido em 2026-10-25).
 - [x] Tecnologia de sincronização: **PowerSync + Postgres, com escrita pela API do finfy** (decidido em 2026-10-25).
-- [ ] Tecnologia dos apps nativos: Flutter (único SDK do PowerSync que cobre as quatro plataformas), ou outra combinação? E a web reaproveita a mesma base (Flutter Web) ou é separada (ex.: Next.js como no Wallefy)?
+- [x] Tecnologia dos apps: **Flutter para os apps nativos e para a web** (decidido em 2026-10-25, ver [0007](0007-flutter-nos-clientes.md)).
 - [ ] PowerSync hospedado ou self-hosted? Revisar licença e preço.
 - [ ] A política de conflitos por campo está boa, ou prefere que todo conflito vá para revisão?
 - [ ] Criptografar o banco local é obrigatório desde a v1?
