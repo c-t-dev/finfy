@@ -1,0 +1,19 @@
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Segredos e dados locais
+.env
+.env.*
+!.env.example
+*.har
+capturas/
+
+# Configuração local de agentes
+.claude/settings.local.json
