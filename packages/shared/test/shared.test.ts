@@ -103,3 +103,16 @@ test("card invoices: purchases after the closing day roll to the next invoice", 
   assert.equal(invoiceState("OPEN", "2026-10-25", "2026-11-05", "2026-11-06"), "OVERDUE");
   assert.equal(invoiceState("PAID", "2026-10-25", "2026-11-05", "2026-11-06"), "PAID");
 });
+
+test("members: who may invite and remove whom", async () => {
+  const { canInvite, canRemoveMember } = await import("../src/roles.ts");
+  assert.equal(canInvite("OWNER", "ADMIN"), true);
+  assert.equal(canInvite("ADMIN", "ADMIN"), false);
+  assert.equal(canInvite("ADMIN", "EDITOR"), true);
+  assert.equal(canInvite("EDITOR", "VIEWER"), false);
+  assert.equal(canRemoveMember("OWNER", "ADMIN", false), true);
+  assert.equal(canRemoveMember("ADMIN", "ADMIN", false), false);
+  assert.equal(canRemoveMember("ADMIN", "VIEWER", false), true);
+  assert.equal(canRemoveMember("OWNER", "OWNER", true), false);
+  assert.equal(canRemoveMember("EDITOR", "VIEWER", false), false);
+});

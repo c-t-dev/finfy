@@ -503,6 +503,65 @@
           "restore": "Restaurar"
         }
       }
+    },
+    "members": {
+      "title": "Membros",
+      "body": "Quem tem acesso a esta wallet e o que cada um pode fazer.",
+      "you": "Você",
+      "invite": "Convidar",
+      "noEmailNote": "O finfy ainda não envia e-mails: você mesmo manda o link.",
+      "roleHints": {
+        "OWNER": "Dono da wallet",
+        "ADMIN": "Gerencia membros e a wallet",
+        "EDITOR": "Lança e edita",
+        "VIEWER": "Só vê"
+      },
+      "actions": {
+        "menu": "Ações de {name}",
+        "role": "Tornar {role}",
+        "remove": "Remover"
+      },
+      "removeTitle": "Remover {name}?",
+      "removeBody": "A pessoa perde o acesso à wallet na hora. O que ela lançou continua.",
+      "removeConfirm": "Remover",
+      "leave": "Sair da wallet",
+      "leaveTitle": "Sair de {name}?",
+      "leaveBody": "Você perde o acesso a esta wallet. Para voltar, precisa de um novo convite.",
+      "leaveConfirm": "Sair",
+      "cancel": "Cancelar",
+      "pending": "Convites pendentes",
+      "expires": "Link vale até {date}",
+      "expired": "Link vencido",
+      "renew": "Novo link",
+      "revoke": "Cancelar convite",
+      "form": {
+        "title": "Convidar para {wallet}",
+        "email": "E-mail da conta finfy da pessoa",
+        "role": "Papel",
+        "create": "Criar link de convite",
+        "cancel": "Cancelar"
+      },
+      "link": {
+        "title": "Envie este link para {email}",
+        "body": "Só a conta finfy com este e-mail consegue aceitar. O link vale 7 dias e só aparece agora.",
+        "copy": "Copiar link",
+        "copied": "Copiado",
+        "share": "Compartilhar",
+        "done": "Pronto"
+      }
+    },
+    "invite": {
+      "title": "Convite para wallet",
+      "body": "{inviter} convidou você para {wallet} como {role}.",
+      "accept": "Aceitar",
+      "decline": "Recusar",
+      "wrongAccount": "Este convite é para {email}. Você entrou com outra conta.",
+      "expired": "Este link de convite venceu. Peça um novo.",
+      "used": "Este convite já foi usado ou cancelado.",
+      "alreadyMember": "Você já é membro desta wallet.",
+      "open": "Abrir a wallet",
+      "declined": "Convite recusado.",
+      "back": "Ir para o app"
     }
   },
   "errors": {
@@ -518,7 +577,11 @@
       "rateLimited": "Muitas tentativas. Tente de novo em {minutes, plural, one {# minuto} other {# minutos}}.",
       "unavailable": "Isto não está disponível agora. Tente mais tarde.",
       "forbidden": "Você não tem permissão para fazer isso nesta wallet.",
-      "invoicePaid": "Esta fatura já foi paga. Reabra-a primeiro."
+      "invoicePaid": "Esta fatura já foi paga. Reabra-a primeiro.",
+      "alreadyMember": "Esta pessoa já é membro da wallet.",
+      "inviteInvalid": "Este link de convite expirou ou já foi usado. Peça um novo.",
+      "inviteWrongAccount": "Este convite é para outro e-mail. Entre com a conta convidada.",
+      "ownerCannotLeave": "O dono não pode sair da wallet."
     },
     "auth": {
       "invalidInput": "Confira os campos e tente de novo.",

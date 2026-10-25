@@ -5,14 +5,16 @@ import { APP_BASE } from "@packages/app/navigation";
 import type { Locale } from "@packages/shared/i18n";
 import { AuthFlow } from "@/components/auth-flow";
 import { getCurrentUser } from "@/lib/server/auth/session";
+import { safeNextPath } from "@/lib/next-path";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/sign-in">): Promise<Metadata> {
   const t = await getTranslations({ locale: (await params).locale as Locale, namespace: "auth.signIn" });
   return { title: t("metaTitle"), robots: { index: false, follow: true } };
 }
 
-export default async function Page({ params }: PageProps<"/[locale]/sign-in">) {
+export default async function Page({ params, searchParams }: PageProps<"/[locale]/sign-in">) {
   setRequestLocale((await params).locale as Locale);
-  if (await getCurrentUser()) redirect(APP_BASE);
-  return <AuthFlow mode="signIn" />;
+  const next = safeNextPath((await searchParams).next as string | undefined);
+  if (await getCurrentUser()) redirect(next ?? APP_BASE);
+  return <AuthFlow mode="signIn" next={next} />;
 }

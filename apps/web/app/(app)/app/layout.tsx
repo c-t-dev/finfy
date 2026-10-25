@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LOCALE_PREFIXES } from "@packages/shared/i18n";
@@ -8,6 +8,7 @@ import { RootDocument } from "@/components/root-document";
 import { getCurrentUser } from "@/lib/server/auth/session";
 import { listWallets } from "@/lib/server/wallets";
 import { CURRENT_WALLET_COOKIE, WINDOW_WIDE_COOKIE } from "@/lib/cookies";
+import { PATH_HEADER, safeNextPath } from "@/lib/next-path";
 
 export { viewport } from "@/components/root-document";
 
@@ -21,7 +22,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SignedInLayout({ children }: LayoutProps<"/app">) {
   const locale = await getLocale();
   const user = await getCurrentUser();
-  if (!user) redirect(`${LOCALE_PREFIXES[locale]}/sign-in`);
+  if (!user) {
+    const next = safeNextPath((await headers()).get(PATH_HEADER));
+    redirect(`${LOCALE_PREFIXES[locale]}/sign-in${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
 
   const jar = await cookies();
   const wide = jar.get(WINDOW_WIDE_COOKIE)?.value === "1";

@@ -199,6 +199,16 @@ Rules:
 - **Goals:** saved = initial amount + deposits (positive adds, negative takes out). `achieved_at` is set while saved ≥ target and cleared when it drops. Deposits are manual, as in Minhas Economias; they do not move money between accounts. The screen shows what to save per month to reach the deadline (`monthlyNeeded`), without returns: `expected_annual_return_bps` is not used yet.
 - Checked on 2026-10-25: limits on subcategories and income categories refused, copy from the previous month, remove twice, goal achieved on, off and on again with deposits and a deleted withdrawal.
 
+## Sharing (members and invites)
+
+Server: `apps/web/lib/server/members.ts`. Client: `packages/app/src/members-ui.tsx` (Settings → Members) and `screens/invite.tsx` (`/app/invites/:token`).
+
+- Without e-mail, an invite is a **private link** (32 random bytes, only the SHA-256 stored, valid 7 days). Accepting needs the link **and** being signed in with the invited e-mail. Re-inviting the same e-mail or "New link" replaces the token; the old link stops working.
+- Who may invite, change roles and remove follows the 0002 matrix (`canInvite`, `canChangeRole`, `canRemoveMember` in `@packages/shared/roles`, tested). The owner cannot leave.
+- `/app` pages without a session go to sign-in with `?next=` (only `/app/...` paths accepted, `lib/next-path.ts`); the proxy passes the path to the layout in a header.
+- Audit actions: `INVITE_SENT`, `INVITE_RESENT`, `INVITE_REVOKED`, `INVITE_ACCEPTED`, `INVITE_DECLINED`, `MEMBER_JOINED`, `MEMBER_ROLE_CHANGED`, `MEMBER_REMOVED`, `MEMBER_LEFT`.
+- **Not yet in Swagger** (`lib/openapi.ts`): the member and invite routes.
+
 ## API transport on the client
 
 `packages/app/src/api.tsx`: the host passes one `request(method, path, body)` (`ApiProvider`); screens call the HTTP API paths directly and load lists with `useResource(path)`. New resources use this; `WalletClient` and `AccountClient` predate it.

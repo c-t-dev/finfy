@@ -13,6 +13,7 @@
     "./transactions": "./src/transactions.ts",
     "./cards": "./src/cards.ts",
     "./planning": "./src/planning.ts",
+    "./members": "./src/members.ts",
     "./system-categories": "./src/system-categories.ts",
     "./ids": "./src/ids.ts",
     "./i18n": "./src/i18n/locales.ts",

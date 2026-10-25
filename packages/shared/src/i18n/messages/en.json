@@ -503,6 +503,65 @@
           "restore": "Restore"
         }
       }
+    },
+    "members": {
+      "title": "Members",
+      "body": "People with access to this wallet and what each one can do.",
+      "you": "You",
+      "invite": "Invite",
+      "noEmailNote": "finfy does not send e-mails yet: you send the link yourself.",
+      "roleHints": {
+        "OWNER": "Owns the wallet",
+        "ADMIN": "Manages members and the wallet",
+        "EDITOR": "Adds and edits entries",
+        "VIEWER": "Only sees"
+      },
+      "actions": {
+        "menu": "Actions for {name}",
+        "role": "Make {role}",
+        "remove": "Remove"
+      },
+      "removeTitle": "Remove {name}?",
+      "removeBody": "They lose access to the wallet right away. What they added stays.",
+      "removeConfirm": "Remove",
+      "leave": "Leave wallet",
+      "leaveTitle": "Leave {name}?",
+      "leaveBody": "You lose access to this wallet. To come back you need a new invite.",
+      "leaveConfirm": "Leave",
+      "cancel": "Cancel",
+      "pending": "Pending invites",
+      "expires": "Link valid until {date}",
+      "expired": "Link expired",
+      "renew": "New link",
+      "revoke": "Cancel invite",
+      "form": {
+        "title": "Invite to {wallet}",
+        "email": "E-mail of their finfy account",
+        "role": "Role",
+        "create": "Create invite link",
+        "cancel": "Cancel"
+      },
+      "link": {
+        "title": "Send this link to {email}",
+        "body": "Only the finfy account with this e-mail can accept it. The link is valid for 7 days and is shown only now.",
+        "copy": "Copy link",
+        "copied": "Copied",
+        "share": "Share",
+        "done": "Done"
+      }
+    },
+    "invite": {
+      "title": "Wallet invite",
+      "body": "{inviter} invited you to {wallet} as {role}.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "wrongAccount": "This invite is for {email}. You are signed in with another account.",
+      "expired": "This invite link has expired. Ask for a new one.",
+      "used": "This invite was already used or canceled.",
+      "alreadyMember": "You are already a member of this wallet.",
+      "open": "Open the wallet",
+      "declined": "Invite declined.",
+      "back": "Go to the app"
     }
   },
   "errors": {
@@ -518,7 +577,11 @@
       "rateLimited": "Too many attempts. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
       "unavailable": "This is not available right now. Try again later.",
       "forbidden": "You don't have permission to do this in this wallet.",
-      "invoicePaid": "This invoice is already paid. Reopen it first."
+      "invoicePaid": "This invoice is already paid. Reopen it first.",
+      "alreadyMember": "This person is already a member of the wallet.",
+      "inviteInvalid": "This invite link has expired or was already used. Ask for a new one.",
+      "inviteWrongAccount": "This invite is for another e-mail. Sign in with the invited account.",
+      "ownerCannotLeave": "The owner cannot leave the wallet."
     },
     "auth": {
       "invalidInput": "Check the fields and try again.",

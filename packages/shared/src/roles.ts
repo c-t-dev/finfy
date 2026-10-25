@@ -53,3 +53,15 @@ export function canChangeRole(
   const needed: WalletAction = current === "ADMIN" || next === "ADMIN" ? "manageAdmins" : "manageMembers";
   return can(actor, needed) && RANK[current] < RANK[actor] && RANK[next] < RANK[actor];
 }
+
+/** Whether `actor` may remove a member with role `member` (never themselves, never the OWNER). */
+export function canRemoveMember(actor: WalletRole, member: WalletRole, isSelf: boolean): boolean {
+  if (isSelf || member === "OWNER") return false;
+  return can(actor, member === "ADMIN" ? "manageAdmins" : "manageMembers") && RANK[member] < RANK[actor];
+}
+
+/** Whether `actor` may invite someone as `role`. */
+export function canInvite(actor: WalletRole, role: WalletRole): boolean {
+  if (role === "OWNER") return false;
+  return can(actor, role === "ADMIN" ? "manageAdmins" : "manageMembers");
+}

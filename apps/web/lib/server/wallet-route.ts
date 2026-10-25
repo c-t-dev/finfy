@@ -17,6 +17,10 @@ const STATUS: Record<WalletError, number> = {
   currencyLocked: 409,
   versionConflict: 409,
   invoicePaid: 409,
+  alreadyMember: 409,
+  inviteInvalid: 410,
+  inviteWrongAccount: 403,
+  ownerCannotLeave: 409,
   rateLimited: 429,
   unavailable: 503,
 };

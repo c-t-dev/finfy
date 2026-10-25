@@ -16,14 +16,16 @@ const linkClass = "font-medium text-primary hover:underline";
  * (only while e-mail delivery is on, see lib/server/mail.ts). The step lives
  * in state, so the e-mail never goes into the URL.
  */
-export function AuthFlow({ mode }: { mode: "signIn" | "signUp" }) {
+export function AuthFlow({ mode, next }: { mode: "signIn" | "signUp"; /** Already checked by safeNextPath. */ next: string | null }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [verifyEmail, setVerifyEmail] = React.useState<string | null>(null);
   const goToApp = () => {
-    router.replace(APP_BASE);
+    router.replace(next ?? APP_BASE);
     router.refresh();
   };
+  // Switching between sign-in and sign-up keeps where to go afterwards.
+  const keepNext = (path: "/sign-in" | "/sign-up") => (next ? { pathname: path, query: { next } } : path);
 
   if (verifyEmail) {
     return (
@@ -46,7 +48,7 @@ export function AuthFlow({ mode }: { mode: "signIn" | "signUp" }) {
         onDone={goToApp}
         onVerify={setVerifyEmail}
         signUpLink={
-          <Link href="/sign-up" className={linkClass}>
+          <Link href={keepNext("/sign-up")} className={linkClass}>
             {t("signIn.toSignUp")}
           </Link>
         }
@@ -59,7 +61,7 @@ export function AuthFlow({ mode }: { mode: "signIn" | "signUp" }) {
         onDone={goToApp}
         onVerify={setVerifyEmail}
         signInLink={
-          <Link href="/sign-in" className={linkClass}>
+          <Link href={keepNext("/sign-in")} className={linkClass}>
             {t("signUp.toSignIn")}
           </Link>
         }

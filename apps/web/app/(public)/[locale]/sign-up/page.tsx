@@ -5,14 +5,16 @@ import { APP_BASE } from "@packages/app/navigation";
 import type { Locale } from "@packages/shared/i18n";
 import { AuthFlow } from "@/components/auth-flow";
 import { getCurrentUser } from "@/lib/server/auth/session";
+import { safeNextPath } from "@/lib/next-path";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/sign-up">): Promise<Metadata> {
   const t = await getTranslations({ locale: (await params).locale as Locale, namespace: "auth.signUp" });
   return { title: t("metaTitle"), robots: { index: false, follow: true } };
 }
 
-export default async function Page({ params }: PageProps<"/[locale]/sign-up">) {
+export default async function Page({ params, searchParams }: PageProps<"/[locale]/sign-up">) {
   setRequestLocale((await params).locale as Locale);
-  if (await getCurrentUser()) redirect(APP_BASE);
-  return <AuthFlow mode="signUp" />;
+  const next = safeNextPath((await searchParams).next as string | undefined);
+  if (await getCurrentUser()) redirect(next ?? APP_BASE);
+  return <AuthFlow mode="signUp" next={next} />;
 }
