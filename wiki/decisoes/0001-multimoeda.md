@@ -37,4 +37,4 @@ Colunas de valor: `amount_minor` (inteiro, 64 bits). Quem lê converte com `mino
 
 - [ ] Só EUR e BRL na v1, ou já incluir USD?
 - [ ] Uma wallet deve aceitar contas em outra moeda (ex.: conta em dólar numa wallet em euro)?
-- [ ] A visão consolidada precisa converter já na v1? Se sim, de qual fonte vêm as cotações (BCE, Banco Central do Brasil, serviço pago)?
+- [x] A visão consolidada converte já na v1? **Não** (2026-10-25): sem `fx_rates` e sem total convertido na v1. A fonte das cotações será decidida quando a conversão entrar.

@@ -1,12 +1,9 @@
 import { eq, sql } from "drizzle-orm";
-import { z } from "zod";
-import { LOCALES } from "@packages/shared/i18n";
+import { languageInput as input } from "@packages/shared/auth";
 import { users } from "@packages/shared/db/schema";
 import { getCurrentUser } from "@/lib/server/auth/session";
 import { getDb } from "@/lib/server/db";
 import { apiError, isSameOrigin } from "@/lib/server/request";
-
-const input = z.object({ language: z.enum(LOCALES) });
 
 /** Saves the signed-in user's language (`users.language`, wiki/decisoes/0011). */
 export async function POST(request: Request) {

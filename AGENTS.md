@@ -26,14 +26,15 @@ Decisões com status "Proposta" têm perguntas em aberto; não as trate como fec
 O código começou (marco 1: base). Estrutura, comandos e regras de código estão em [`wiki/finfy/codebase.md`](wiki/finfy/codebase.md), em inglês. Leia antes de mexer no código. O essencial:
 
 - Monorepo pnpm: `apps/web` (Next.js), `packages/app` (telas, **sem importar Next.js**), `packages/ui` (cópia do image-resizer), `packages/shared` (dinheiro, IDs, papéis, idiomas, esquema Drizzle), `packages/env`.
-- Antes de commitar, rode `pnpm typecheck`, `pnpm test` e `pnpm check:messages`. No PowerShell, use `pnpm.cmd`.
+- Antes de commitar, rode `pnpm typecheck`, `pnpm test`, `pnpm check:messages` e `pnpm check:openapi`. No PowerShell, use `pnpm.cmd`.
+- Toda rota nova da API é descrita em `apps/web/lib/openapi.ts` (Swagger em `/api/docs`, só em desenvolvimento); depois rode `pnpm openapi`.
 - Texto novo vai nos dois arquivos de mensagens (`packages/shared/src/i18n/messages/en.json` e `pt-BR.json`).
 - Mudança no esquema: `pnpm db:generate`, commitar a migração e seguir as regras de sincronização.
 - Código, comentários e identificadores em inglês; a interface em pt-BR e en.
 
 ## Onde fica cada modelo de dados
 
-- **finfy:** [`wiki/finfy/data-model.md`](wiki/finfy/data-model.md), em inglês. É o modelo a seguir no código. A parte financeira ainda é rascunho.
+- **finfy:** [`wiki/finfy/data-model.md`](wiki/finfy/data-model.md), em inglês. É o modelo a seguir no código. Todo ele foi aprovado em 2026-10-25 e já tem tabelas no banco.
 - **Minhas Economias (referência):** [`wiki/api/modelo-de-dados.md`](wiki/api/modelo-de-dados.md). Não use como modelo do finfy.
 - Ao mudar uma decisão que afete tabelas, atualize o `data-model.md` no mesmo trabalho.
 

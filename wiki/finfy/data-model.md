@@ -9,9 +9,9 @@ This is the data model of **finfy** itself. It consolidates the decisions in [`.
 | Identity and security | Proposed | [0004](../decisoes/0004-seguranca-da-conta.md) |
 | Wallets, sharing, invites | Proposed | [0001](../decisoes/0001-multimoeda.md), [0002](../decisoes/0002-wallets-e-compartilhamento.md), [0003](../decisoes/0003-convites-por-email.md) |
 | Sync and audit | Proposed (sync technology decided) | [0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0006](../decisoes/0006-auditoria.md) |
-| Financial core, planning, patrimony | **Draft, no decision yet** | Adapted from Wallefy (`my-fin/docs/data-model.md`), see [`../referencias/wallefy.md`](../referencias/wallefy.md) |
+| Financial core, planning, patrimony | Approved on 2026-10-25 | Adapted from Wallefy (`my-fin/docs/data-model.md`), see [`../referencias/wallefy.md`](../referencias/wallefy.md) |
 
-**In code:** identity, wallets and sharing, sync and audit are implemented in `packages/shared/src/db/schema` with migrations in `packages/shared/drizzle` ([codebase.md](codebase.md)). The financial core, planning and patrimony are not, until the draft is approved. `currencies` is not synced (no `id` column): clients ship the same list in `@packages/shared/money`.
+**In code:** every table below is in `packages/shared/src/db/schema` (`identity`, `wallets`, `finance`, `planning`, `sync`), with migrations in `packages/shared/drizzle` ([codebase.md](codebase.md)). The value lists (account types, transaction types...) are in `@packages/shared/finance`. Tables exist; the API and screens that use the financial ones do not yet. `currencies` is not synced (no `id` column): clients ship the same list in `@packages/shared/money`.
 
 ## Conventions
 
@@ -21,7 +21,7 @@ This is the data model of **finfy** itself. It consolidates the decisions in [`.
 - **Enums:** `text` with a `CHECK` constraint, not native Postgres enums, so values can be added without migrations that lock tables.
 - **Timestamps:** `timestamptz` in UTC. Calendar dates (transaction date, due date) are `date`.
 - **Soft delete:** synced tables are never hard-deleted by the app; they get `archived_at`. Hard deletes only happen server-side for account or wallet erasure (LGPD/GDPR).
-- **Tenancy:** every financial row has `wallet_id`. Every ID referenced in a write must belong to the same wallet (system categories excepted). Permissions are checked against `wallet_members` on every request.
+- **Tenancy:** every financial row has `wallet_id`. Every ID referenced in a write must belong to the same wallet. The database enforces this: references between rows of a wallet are composite foreign keys on (`wallet_id`, `<x>_id`) → (`wallet_id`, `id`), so a row pointing into another wallet is refused. Exceptions, checked by the server commands: categories (system categories have no wallet) and `credit_card_invoices.payment_transaction_id`. Permissions are checked against `wallet_members` on every request.
 
 ### Common columns of synced tables
 
@@ -45,7 +45,13 @@ The web ships first and does not sync, but the schema must already work with Pow
 **Table shape**
 
 1. Every synced table has a single-column primary key named `id` (uuid). No composite primary keys: link tables get their own `id` plus a unique constraint on the pair.
-2. Link rows that two offline devices could create independently use a **deterministic UUIDv5** (e.g. `transaction_tags.id` from `transaction_id` + `tag_id`), the same trick as recurrence occurrences.
+2. Rows that two offline devices could create independently use a **deterministic UUIDv5** (`deterministicId`), the same trick as recurrence occurrences:
+   - `transaction_tags`: from `transaction_id` + `tag_id`;
+   - `hidden_categories`: from `wallet_id` + `category_id`;
+   - `credit_card_invoices`: from `credit_card_id` + year + month;
+   - `budget_items`: from `budget_id` + `category_id` + year + month.
+
+   Removing such a row archives it; adding it again restores the same row.
 3. Every synced row carries `wallet_id` directly, so sync streams can filter by wallet without deep joins. Exceptions: `wallets` (filtered by its own `id`) and system rows with `wallet_id` NULL (system categories), which go to every user.
 4. Use only types with a clean SQLite mapping on the client. PowerSync maps them as follows:
 
@@ -192,7 +198,7 @@ erDiagram
   }
 ```
 
-### Financial core (draft)
+### Financial core
 
 ```mermaid
 erDiagram
@@ -260,7 +266,7 @@ erDiagram
   }
 ```
 
-### Planning, patrimony, sync and audit (draft for planning and patrimony)
+### Planning, patrimony, sync and audit
 
 ```mermaid
 erDiagram
@@ -348,20 +354,21 @@ erDiagram
 | `email_outbox` | `id`, `to_email`, `template`, `locale`, `payload` (jsonb), `status`, `attempts`, `sent_at`, `error`, `created_at` | Invites, transfers, security alerts |
 | `notifications` | `id`, `user_id`, `wallet_id` (nullable), `type`, `payload` (jsonb), `read_at`, `created_at` | In-app notifications (invoice due, budget exceeded, invite, transfer...). No stored `title`/`body`: `type` is a translation key rendered in the reader's language with `payload` ([0011](../decisoes/0011-traducoes.md)) |
 
-### Financial core (draft) — all **synced**
+### Financial core — all **synced**
 
 | Table | Columns | Notes |
 | --- | --- | --- |
 | `accounts` | `name`, `type` (`CHECKING`, `SAVINGS`, `CASH`, `INVESTMENT`, `BENEFITS`, `OTHER`), `initial_balance_minor`, `institution_code` (nullable), `color`, `icon`, `is_default` | Balance is derived, not stored |
 | `credit_cards` | `name`, `payment_account_id` → `accounts`, `brand` (`VISA`, `MASTERCARD`, `ELO`, `AMEX`, `HIPERCARD`, `OTHER`), `limit_minor`, `closing_day`, `due_day`, `color` | |
 | `credit_card_invoices` | `credit_card_id`, `reference_year`, `reference_month`, `opening_date`, `closing_date`, `due_date`, `status` (`OPEN`, `PAID`; `CLOSED`/`OVERDUE` derived), `paid_at`, `payment_transaction_id` | Unique (`credit_card_id`, `reference_year`, `reference_month`) |
-| `categories` | `wallet_id` (NULL = system), `parent_id` (max 2 levels), `name`, `translation_key`, `kind` (`INCOME`, `EXPENSE`, `BOTH`), `is_system`, `icon`, `color`, `is_hidden` | System categories are read-only; users can hide them |
+| `categories` | `wallet_id` (NULL = system), `parent_id` (max 2 levels), `name`, `translation_key`, `kind` (`INCOME`, `EXPENSE`, `BOTH`), `is_system`, `icon`, `color` | System rows: no wallet, `translation_key`, no name; read-only. Wallet rows: a name. Enforced by a `CHECK`. The system list is not seeded yet |
+| `hidden_categories` | `category_id` | System categories a wallet hides. Hiding is per wallet, so it cannot be a flag on the shared system row. Unique (`wallet_id`, `category_id`) |
 | `transactions` | `account_id`, `credit_card_id`, `invoice_id`, `category_id`, `household_member_id`, `recurrence_id`, `occurrence_date`, `installment_group_id`, `installment_number`, `installment_total`, `type`, `status`, `description`, `amount_minor`, `transaction_date`, `due_date`, `paid_at`, `notes`, `needs_review` | See types and rules below |
 | `transaction_links` | `source_transaction_id`, `target_transaction_id`, `type` (`TRANSFER`, `INVOICE_PAYMENT`, `REFUND`) | Both legs of a transfer; a refund to its purchase |
 | `tags` | `name`, `color` | Unique (`wallet_id`, lower(`name`)) |
 | `transaction_tags` | `transaction_id`, `tag_id` | `id` is UUIDv5 of (`transaction_id`, `tag_id`); unique (`transaction_id`, `tag_id`); tags are referenced by ID, never by name |
 | `transaction_attachments` | `transaction_id`, `storage_key`, `file_name`, `mime_type`, `size_bytes`, `sha256` | File in object storage; upload requires internet |
-| `recurrences` | `type` (`INCOME`, `EXPENSE`), `description`, `amount_minor`, `account_id` or `credit_card_id`, `category_id`, `frequency` (`DAILY`, `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `BIMONTHLY`, `QUARTERLY`, `SEMIANNUAL`, `YEARLY`), `weekdays`, `months`, `day_of_month`, `start_date`, `end_date`, `match_day_tolerance`, `match_amount_tolerance_bps` | Tolerances recomputed whenever `amount_minor` changes (fixes the Minhas Economias bug) |
+| `recurrences` | `type` (`INCOME`, `EXPENSE`), `description`, `amount_minor`, `account_id` or `credit_card_id`, `category_id`, `frequency` (`DAILY`, `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `BIMONTHLY`, `QUARTERLY`, `SEMIANNUAL`, `YEARLY`), `weekdays` (jsonb, ISO 1–7), `months` (jsonb, 1–12), `day_of_month`, `start_date`, `end_date`, `match_day_tolerance` (default 3 days), `match_amount_tolerance_bps` (default 1000 = 10%) | The amount tolerance is relative, so it follows `amount_minor` when the amount changes (fixes the Minhas Economias bug) |
 | `household_members` | `name`, `relationship` (`SELF`, `PARTNER`, `CHILD`, `PARENT`, `SIBLING`, `PET`, `OTHER`), `birth_date`, `color` | "Who spent it" labels; not app users |
 | `categorization_rules` | `name`, `priority`, `is_active`, `apply_to_history`, `conditions` (jsonb), `actions` (jsonb) | Conditions: description contains/equals/starts with, amount range, account, type. Actions: category, household member, tag. Never applied to transfers or system categories |
 
@@ -369,7 +376,7 @@ erDiagram
 
 **Transaction `status`:** `PENDING` (scheduled, recurrence occurrence, card purchase on an unpaid invoice), `PAID`, `CANCELED`.
 
-Rules (draft):
+Rules:
 
 - `amount_minor` is always positive; `type` sets the direction. Exception: `ADJUSTMENT` is signed.
 - Account balance = `initial_balance_minor` + Σ(`INCOME`, `TRANSFER_IN`, `REFUND` to account, `ADJUSTMENT`) − Σ(`EXPENSE`, `TRANSFER_OUT`, `CREDIT_CARD_PAYMENT`), over `PAID`, non-archived rows.
@@ -379,14 +386,23 @@ Rules (draft):
 - A recurrence occurrence has `recurrence_id` + `occurrence_date`, and its `id` is UUIDv5 of both. Creating a recurrence from an existing transaction links that transaction instead of creating a duplicate.
 - Tags chosen in the create form are saved in the same write (fixes the Minhas Economias bug where tags were dropped).
 
-### Planning and patrimony (draft) — all **synced**
+Enforced by the database (`CHECK` and keys in `finance.ts`):
+
+- exactly one of `account_id` and `credit_card_id`;
+- `CREDIT_CARD_PURCHASE` always on a card, and only it (or a `REFUND`) may use a card;
+- `invoice_id` only with a card;
+- `recurrence_id` and `occurrence_date` both set or both empty; one transaction per occurrence;
+- installment fields all set or all empty, with `1 ≤ installment_number ≤ installment_total`;
+- amount rule above; one default account per wallet; tag names unique per wallet ignoring case.
+
+### Planning and patrimony — all **synced**
 
 | Table | Columns | Notes |
 | --- | --- | --- |
 | `budgets` | `name` | Named budgets, as in Wallefy |
 | `budget_items` | `budget_id`, `category_id`, `year`, `month`, `amount_minor`, `alert_percentage` | Unique (`budget_id`, `category_id`, `year`, `month`); alert drives a notification |
 | `goals` | `name`, `template` (`EMERGENCY_FUND`, `RETIREMENT`, `TRAVEL`, `HOUSE`, `CAR`, `EDUCATION`, `DEBT_PAYOFF`, `OTHER`), `target_minor`, `initial_minor`, `deadline`, `expected_annual_return_bps` (nullable), `achieved_at` | Saved amount is derived from deposits; if a return rate is set, it is actually used (fixes the ignored 7.45% rate in Minhas Economias) |
-| `goal_deposits` | `goal_id`, `amount_minor`, `deposit_date`, `notes`, `transaction_id` (nullable) | Optionally linked to the transaction that funded it |
+| `goal_deposits` | `goal_id`, `amount_minor`, `deposit_date`, `notes`, `transaction_id` (nullable) | Positive adds, negative withdraws (never 0). Optionally linked to the transaction that funded it |
 | `assets` | `kind` (`ASSET`, `LIABILITY`), `type` (`REAL_ESTATE`, `VEHICLE`, `ELECTRONICS`, `BUSINESS`, `COLLECTIBLE`, `RIGHTS`, `INVESTMENT`, `LOAN`, `FINANCING`, `OTHER`), `name`, `current_value_minor`, `purchase_value_minor`, `purchase_date`, `ownership_bps`, `notes` | Net worth = account balances + assets − liabilities − unpaid card purchases |
 | `asset_liabilities` | `asset_id`, `liability_id` | Links an asset to the loan that financed it |
 
@@ -435,7 +451,8 @@ notifications       (user_id, read_at)
 
 ## Open questions
 
-- [ ] Is the financial core (transactions, cards, invoices, categories) approved as drafted, or should it get its own decision first?
-- [ ] Should we keep Wallefy's denormalized names in `transactions` for reporting, or rely on joins as proposed?
-- [ ] Refunds: separate `REFUND` type (proposed) or an `INCOME` linked by `transaction_links`?
-- [ ] Do we need `fx_rates` in v1? (Answer pending in [0001](../decisoes/0001-multimoeda.md).)
+- [x] Financial core, planning and patrimony approved as drafted (2026-10-25). Changes made while writing the schema: `hidden_categories` instead of `categories.is_hidden`, composite foreign keys for tenancy, deterministic IDs for invoices and budget items.
+- [x] No denormalized names in `transactions`: joins, as proposed.
+- [x] Refunds are a separate `REFUND` type, linked to the purchase by `transaction_links` (2026-10-25).
+- [x] No `fx_rates` in v1 (2026-10-25, see [0001](../decisoes/0001-multimoeda.md)).
+- [ ] The list of system categories (names, icons, hierarchy) and their translations.

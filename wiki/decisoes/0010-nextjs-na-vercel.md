@@ -1,6 +1,6 @@
 # 0010 — Web primeiro, em Next.js na Vercel, com a API dentro
 
-> Status: Aceita · Decidido em 2026-10-25 (detalhes de banco, ORM e contrato da API em aberto)
+> Status: Aceita · Decidido em 2026-10-25 (provedor do banco em aberto)
 
 ## Contexto
 
@@ -96,7 +96,7 @@ O envio de e-mails (convites, segurança), a geração de recorrências e as lim
 
 - [ ] Provedor do Postgres. Ex.: Neon, pela Vercel Marketplace. Precisa ter replicação lógica para o PowerSync. No Neon, ligar a replicação lógica não tem volta, reinicia o banco e impede que ele "durma" enquanto o PowerSync estiver conectado, o que conta horas de uso no plano.
 - [x] Acesso ao banco: **Drizzle ORM** (decidido em 2026-10-25, ver a seção "Banco de dados e sincronização").
-- [ ] Contrato entre cliente e API: REST com esquemas zod compartilhados, tRPC ou OpenAPI gerado.
+- [x] Contrato entre cliente e API: **REST com esquemas zod compartilhados**, e um documento OpenAPI gerado desses mesmos esquemas, com Swagger UI em desenvolvimento (2026-10-25, ver [codebase.md → API documentation](../finfy/codebase.md#api-documentation)).
 - [ ] Gerenciamento de dados no cliente (ex.: TanStack Query).
 - [ ] Quais páginas públicas existem na primeira versão.
 - [ ] Provedor de e-mail ([0003](0003-convites-por-email.md)).

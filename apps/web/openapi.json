@@ -1,0 +1,884 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "finfy API",
+    "version": "0.1.0",
+    "description": "API of the finfy web app (route handlers in apps/web/app/api). Errors are stable codes in `error`; the client translates them (wiki/decisoes/0011). Authentication is a session cookie set by sign-in or e-mail verification."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Sign-up, sign-in and sessions (wiki/decisoes/0004)"
+    },
+    {
+      "name": "account",
+      "description": "The signed-in user's settings"
+    },
+    {
+      "name": "system",
+      "description": "Health"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "finfy_session",
+        "description": "HttpOnly session cookie. Named `__Host-finfy_session` in production."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "invalidInput",
+              "invalidCredentials",
+              "rateLimited",
+              "invalidCode",
+              "passwordTooShort",
+              "passwordTooLong",
+              "passwordSameAsEmail",
+              "passwordBreached",
+              "unauthenticated",
+              "forbiddenOrigin",
+              "unavailable"
+            ]
+          },
+          "retryAfterSeconds": {
+            "type": "integer",
+            "description": "Only with `rateLimited`."
+          }
+        }
+      },
+      "AuthNext": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "next": {
+                "type": "string",
+                "const": "verifyEmail"
+              },
+              "email": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "next",
+              "email"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "next": {
+                "type": "string",
+                "const": "app"
+              }
+            },
+            "required": [
+              "next"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "CurrentUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pt-BR"
+            ]
+          },
+          "emailVerified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "language",
+          "emailVerified"
+        ],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "required": [
+          "status",
+          "database"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ]
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "not_configured",
+              "unreachable"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Liveness and database reachability",
+        "responses": {
+          "200": {
+            "description": "Up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sign-up": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Create an account",
+        "description": "Always answers `verifyEmail`, whether or not the e-mail already has an account; a code (or a notice) is e-mailed. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254
+                  },
+                  "password": {
+                    "type": "string",
+                    "maxLength": 512
+                  },
+                  "locale": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "pt-BR"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "password",
+                  "locale"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the client does next.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthNext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or password rule broken.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidInput",
+                        "passwordTooShort",
+                        "passwordTooLong",
+                        "passwordSameAsEmail",
+                        "passwordBreached"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` header and `retryAfterSeconds` say when to try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rateLimited"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or pepper not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unavailable"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sign-in": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign in with e-mail and password",
+        "description": "A verified account gets a session cookie and `app`; an unverified one gets a new code and `verifyEmail`. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the client does next.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthNext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or password rule broken.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidInput"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Wrong e-mail or password (never says which).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidCredentials"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` header and `retryAfterSeconds` say when to try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rateLimited"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or pepper not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unavailable"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Confirm the e-mailed code and start a session",
+        "description": "6 digits, valid 10 minutes, 5 tries. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                },
+                "required": [
+                  "email",
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the client does next.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthNext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or password rule broken.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidInput"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Wrong or expired code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidCode"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` header and `retryAfterSeconds` say when to try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rateLimited"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or pepper not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unavailable"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/resend-code": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Send a new e-mail code",
+        "description": "Same answer whether or not the e-mail exists. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the client does next.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthNext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or password rule broken.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidInput"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts. `Retry-After` header and `retryAfterSeconds` say when to try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rateLimited"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or pepper not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unavailable"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sign-out": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "End the current session",
+        "description": "The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Signed out (also when there was no session)."
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "The signed-in user",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthenticated"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/language": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Save the user's language",
+        "description": "The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "pt-BR"
+                    ]
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved."
+          },
+          "400": {
+            "description": "Invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidInput"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthenticated"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

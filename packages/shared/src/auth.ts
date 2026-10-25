@@ -68,12 +68,19 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailInput>;
 export const resendCodeInput = z.object({ email: emailSchema });
 
 /** What a successful sign-up, sign-in or resend tells the client to do next. */
-export type AuthNext = { next: "verifyEmail"; email: string } | { next: "app" };
+export const authNextSchema = z.discriminatedUnion("next", [
+  z.object({ next: z.literal("verifyEmail"), email: z.string() }),
+  z.object({ next: z.literal("app") }),
+]);
+export type AuthNext = z.infer<typeof authNextSchema>;
 
-export interface CurrentUser {
-  id: string;
-  name: string;
-  email: string;
-  language: (typeof LOCALES)[number];
-  emailVerified: boolean;
-}
+export const currentUserSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  email: z.string(),
+  language: z.enum(LOCALES),
+  emailVerified: z.boolean(),
+});
+export type CurrentUser = z.infer<typeof currentUserSchema>;
+
+export const languageInput = z.object({ language: z.enum(LOCALES) });

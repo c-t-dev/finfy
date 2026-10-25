@@ -6,6 +6,7 @@
   "exports": {
     "./money": "./src/money.ts",
     "./roles": "./src/roles.ts",
+    "./finance": "./src/finance.ts",
     "./ids": "./src/ids.ts",
     "./i18n": "./src/i18n/locales.ts",
     "./i18n/messages/*": "./src/i18n/messages/*.json",

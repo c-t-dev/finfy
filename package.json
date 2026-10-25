@@ -11,6 +11,8 @@
     "db:up": "docker compose up -d db",
     "db:generate": "pnpm --filter @packages/shared db:generate",
     "db:migrate": "pnpm --filter @packages/shared db:migrate",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "openapi": "pnpm --filter web openapi",
+    "check:openapi": "pnpm --filter web check:openapi"
   }
 }
