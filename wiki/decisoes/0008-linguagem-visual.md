@@ -24,7 +24,7 @@ Referências no image-resizer:
 - **Tailwind v4** com `@theme inline` e `tw-animate-css`.
 - **shadcn/ui** no estilo *new-york*, com os primitivos do pacote `radix-ui`, reestilizado para macOS.
 - Pacote interno **`packages/ui`** (`@packages/ui`), como no image-resizer. Ele contém os componentes, os tokens e o `globals.css`. Ele é a fonte única de estilo para a web, o Tauri e o Capacitor.
-- Ponto de partida: **copiar** `packages/ui` do image-resizer (componentes, `globals.css`, `cn`, `use-mounted`) e ajustar a partir daí.
+- Ponto de partida: **copiar** `packages/ui` do image-resizer (componentes, `globals.css`, `cn`, `use-mounted`) e ajustar a partir daí. É uma cópia independente, sem pacote compartilhado (ver pergunta 4).
 
 ### 2. Componentes
 
@@ -96,4 +96,4 @@ Mesma receita do image-resizer:
 1. **Moldura da janela no Tauri.** No macOS, usar a barra de título nativa transparente com os semáforos reais? No Windows, imitar os semáforos do macOS ou usar os botões nativos do Windows com o mesmo material?
 2. **Celular:** manter o visual macOS no Android ou adaptar para algo mais neutro?
 3. **Desfoque no WebView:** `backdrop-filter` pode pesar em aparelhos Android mais fracos. Medir e, se precisar, usar superfícies sólidas (como na regra de transparência reduzida).
-4. **Pacote compartilhado entre projetos:** copiar `packages/ui` para o finfy (cada projeto evolui sozinho) ou publicar um pacote comum ao image-resizer e ao finfy?
+4. ~~Pacote compartilhado entre projetos~~ **Decidido em 2026-10-25: por enquanto, copiar.** O `packages/ui` é copiado do image-resizer para o finfy, e cada projeto evolui sozinho. Não existe pacote comum. Melhorias úteis aos dois são levadas à mão. Pode virar um pacote compartilhado no futuro.
