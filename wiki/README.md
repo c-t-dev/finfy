@@ -55,6 +55,7 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [decisoes/0005-offline-first-e-sincronizacao.md](decisoes/0005-offline-first-e-sincronizacao.md) | O que funciona sem internet, fila de alterações, conflitos, acesso revogado |
 | [decisoes/0006-auditoria.md](decisoes/0006-auditoria.md) | Histórico de alterações e de acesso por wallet |
 | [decisoes/0007-flutter-nos-clientes.md](decisoes/0007-flutter-nos-clientes.md) | Flutter em todos os clientes; web sem dados locais |
+| [decisoes/0008-linguagem-visual.md](decisoes/0008-linguagem-visual.md) | Interface no estilo macOS (tokens, materiais, movimento, acessibilidade), vinda do image-resizer |
 
 ### Modelo do finfy (em inglês)
 
