@@ -1,0 +1,17 @@
+# Local Postgres for development. wal_level=logical matches what PowerSync needs
+# in production (wiki/finfy/data-model.md, "Sync-ready schema rules").
+services:
+  db:
+    image: postgres:17
+    command: ["postgres", "-c", "wal_level=logical"]
+    environment:
+      POSTGRES_USER: finfy
+      POSTGRES_PASSWORD: finfy
+      POSTGRES_DB: finfy
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

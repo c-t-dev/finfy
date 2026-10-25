@@ -1,0 +1,16 @@
+{
+  "name": "finfy",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "typecheck": "pnpm -r typecheck",
+    "check:messages": "pnpm --filter @packages/shared check:messages",
+    "db:up": "docker compose up -d db",
+    "db:generate": "pnpm --filter @packages/shared db:generate",
+    "db:migrate": "pnpm --filter @packages/shared db:migrate",
+    "test": "pnpm -r test"
+  }
+}

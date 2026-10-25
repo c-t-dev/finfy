@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  "@tailwindcss/oxide": true
+  esbuild: true
+  # Pulled in by next-intl's tooling; their install scripts are not needed.
+  "@parcel/watcher": false
+  "@swc/core": false

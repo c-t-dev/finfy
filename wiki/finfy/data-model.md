@@ -11,6 +11,8 @@ This is the data model of **finfy** itself. It consolidates the decisions in [`.
 | Sync and audit | Proposed (sync technology decided) | [0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0006](../decisoes/0006-auditoria.md) |
 | Financial core, planning, patrimony | **Draft, no decision yet** | Adapted from Wallefy (`my-fin/docs/data-model.md`), see [`../referencias/wallefy.md`](../referencias/wallefy.md) |
 
+**In code:** identity, wallets and sharing, sync and audit are implemented in `packages/shared/src/db/schema` with migrations in `packages/shared/drizzle` ([codebase.md](codebase.md)). The financial core, planning and patrimony are not, until the draft is approved. `currencies` is not synced (no `id` column): clients ship the same list in `@packages/shared/money`.
+
 ## Conventions
 
 - **Database:** PostgreSQL on the server (source of truth), schema and migrations with **Drizzle** ([0010](../decisoes/0010-nextjs-na-vercel.md)). Native apps keep a SQLite replica through PowerSync; the web keeps nothing locally ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0009](../decisoes/0009-react-tauri-capacitor.md)).
@@ -343,7 +345,7 @@ erDiagram
 | `wallet_invites` | `id`, `wallet_id`, `invited_email`, `role`, `invited_by`, `token_hash`, `expires_at`, `accepted_at`, `accepted_by`, `declined_at`, `revoked_at`, `revoked_by`, `last_sent_at`, `send_count`, `created_at` | One pending invite per (`wallet_id`, `invited_email`) |
 | `wallet_ownership_transfers` | `id`, `wallet_id`, `from_user_id`, `to_user_id`, `previous_owner_action` (`STAY_ADMIN`, `LEAVE`), `token_hash`, `expires_at`, `accepted_at`, `declined_at`, `canceled_at`, `created_at` | One pending transfer per wallet |
 | `email_outbox` | `id`, `to_email`, `template`, `locale`, `payload` (jsonb), `status`, `attempts`, `sent_at`, `error`, `created_at` | Invites, transfers, security alerts |
-| `notifications` | `id`, `user_id`, `wallet_id` (nullable), `type`, `title`, `body`, `payload` (jsonb), `read_at`, `created_at` | In-app notifications (invoice due, budget exceeded, invite, transfer...) |
+| `notifications` | `id`, `user_id`, `wallet_id` (nullable), `type`, `payload` (jsonb), `read_at`, `created_at` | In-app notifications (invoice due, budget exceeded, invite, transfer...). No stored `title`/`body`: `type` is a translation key rendered in the reader's language with `payload` ([0011](../decisoes/0011-traducoes.md)) |
 
 ### Financial core (draft) — all **synced**
 

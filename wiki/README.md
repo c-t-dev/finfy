@@ -64,6 +64,7 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 
 | Página | Conteúdo |
 | --- | --- |
+| [finfy/codebase.md](finfy/codebase.md) | Estrutura do código, comandos, regras de código e o que já foi implementado |
 | [finfy/data-model.md](finfy/data-model.md) | Modelo de dados do finfy: diagramas e tabelas de identidade, wallets, núcleo financeiro (rascunho), planejamento, sincronização e auditoria |
 
 ### Referências

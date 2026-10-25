@@ -17,3 +17,11 @@ capturas/
 
 # Configuração local de agentes
 .claude/settings.local.json
+
+# Node e build
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/

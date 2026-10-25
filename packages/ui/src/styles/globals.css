@@ -1,0 +1,282 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@source "../../../../apps/**/*.{ts,tsx}";
+@source "../../../app/src/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Copied from image-resizer (wiki/decisoes/0008). macOS-inspired tokens: system blue accent, translucent "vibrancy" surfaces. */
+:root {
+  --radius: 0.625rem;
+
+  --background: #f2f2f5;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
+  --popover: #ffffff;
+  --popover-foreground: #1d1d1f;
+  --primary: #007aff;
+  --primary-foreground: #ffffff;
+  --secondary: #e9e9ed;
+  --secondary-foreground: #1d1d1f;
+  --muted: #f0f0f3;
+  --muted-foreground: #6e6e73;
+  --accent: #ececf0;
+  --accent-foreground: #1d1d1f;
+  --destructive: #ff3b30;
+  --success: #34c759;
+  --border: rgb(0 0 0 / 0.1);
+  --input: rgb(0 0 0 / 0.14);
+  --ring: #007aff;
+
+  --window: rgb(255 255 255 / 0.78);
+  --titlebar: rgb(246 246 248 / 0.72);
+  --sidebar: rgb(240 240 243 / 0.6);
+
+  --wallpaper:
+    radial-gradient(60rem 40rem at 10% 0%, rgb(120 170 255 / 0.55), transparent 60%),
+    radial-gradient(50rem 40rem at 95% 15%, rgb(255 160 200 / 0.45), transparent 60%),
+    radial-gradient(60rem 45rem at 50% 110%, rgb(255 200 120 / 0.45), transparent 60%),
+    linear-gradient(180deg, #eef1f8, #f6efee);
+}
+
+.dark {
+  --background: #141416;
+  --foreground: #f5f5f7;
+  --card: #2a2a2d;
+  --card-foreground: #f5f5f7;
+  --popover: #2c2c2f;
+  --popover-foreground: #f5f5f7;
+  --primary: #0a84ff;
+  --primary-foreground: #ffffff;
+  --secondary: #3a3a3d;
+  --secondary-foreground: #f5f5f7;
+  --muted: #2a2a2d;
+  --muted-foreground: #98989f;
+  --accent: #3a3a3d;
+  --accent-foreground: #f5f5f7;
+  --destructive: #ff453a;
+  --success: #30d158;
+  --border: rgb(255 255 255 / 0.1);
+  --input: rgb(255 255 255 / 0.14);
+  --ring: #0a84ff;
+
+  --window: rgb(32 32 35 / 0.8);
+  --titlebar: rgb(44 44 47 / 0.7);
+  --sidebar: rgb(38 38 41 / 0.55);
+
+  --wallpaper:
+    radial-gradient(60rem 40rem at 10% 0%, rgb(40 70 160 / 0.6), transparent 60%),
+    radial-gradient(50rem 40rem at 95% 15%, rgb(120 40 110 / 0.5), transparent 60%),
+    radial-gradient(60rem 45rem at 50% 110%, rgb(150 70 30 / 0.45), transparent 60%),
+    linear-gradient(180deg, #0d1020, #160f14);
+}
+
+@theme inline {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", var(--font-inter),
+    "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-window: var(--window);
+  --color-titlebar: var(--titlebar);
+  --color-sidebar: var(--sidebar);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --animate-spinner-fade: spinner-fade 1s linear infinite;
+  --animate-indeterminate: indeterminate 1.3s ease-in-out infinite;
+  /* Glass surfaces arrive as a material (blur + scale), not as a plain fade. */
+  --animate-materialize-in: materialize-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  --animate-materialize-out: materialize-out 140ms cubic-bezier(0.4, 0, 1, 1) both;
+
+  @keyframes materialize-in {
+    from {
+      opacity: 0;
+      scale: 0.96;
+      filter: blur(6px);
+    }
+  }
+
+  @keyframes materialize-out {
+    to {
+      opacity: 0;
+      scale: 0.97;
+      filter: blur(4px);
+    }
+  }
+
+  @keyframes spinner-fade {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0.15;
+    }
+  }
+
+  @keyframes indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+}
+
+/* Transparency grid shown behind images, like Preview.app. */
+@utility bg-checker {
+  background-color: var(--card);
+  background-image:
+    linear-gradient(45deg, rgb(127 127 127 / 0.12) 25%, transparent 25%),
+    linear-gradient(-45deg, rgb(127 127 127 / 0.12) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgb(127 127 127 / 0.12) 75%),
+    linear-gradient(-45deg, transparent 75%, rgb(127 127 127 / 0.12) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image: var(--wallpaper);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    font-optical-sizing: auto;
+    line-height: 1.5;
+  }
+  /* Tracking is size-specific: tighten display text, loosen small UI text. */
+  h1 {
+    line-height: 1.1;
+    letter-spacing: -0.022em;
+  }
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+  }
+  :where(.text-\[11px\], .text-\[12px\], .text-xs) {
+    letter-spacing: 0.01em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+}
+
+/* Reduced motion keeps feedback but drops movement: fades instead of scale/slide/blur. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    --tw-enter-scale: 1 !important;
+    --tw-exit-scale: 1 !important;
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+    --tw-exit-translate-x: 0 !important;
+    --tw-exit-translate-y: 0 !important;
+    --tw-enter-blur: 0 !important;
+    --tw-exit-blur: 0 !important;
+    scroll-behavior: auto !important;
+  }
+  @keyframes materialize-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes materialize-out {
+    to {
+      opacity: 0;
+    }
+  }
+  [data-slot="button"]:active,
+  [data-slot="segmented-control"] > *:active,
+  [data-slot="tabs-trigger"]:active {
+    scale: 1 !important;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.12s !important;
+  }
+}
+
+/* Reduced transparency: frostier, near-solid materials. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --window: #f6f6f8;
+    --titlebar: #ececf0;
+    --sidebar: #efeff2;
+  }
+  .dark {
+    --window: #222225;
+    --titlebar: #2c2c2f;
+    --sidebar: #29292c;
+  }
+  [data-slot="mac-window"],
+  [data-slot="mac-titlebar"],
+  [data-slot="dialog-content"],
+  [data-slot="select-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="tooltip-content"] {
+    backdrop-filter: none !important;
+  }
+}
+
+/* Increased contrast: solid surfaces and defined borders. */
+@media (prefers-contrast: more) {
+  :root {
+    --border: rgb(0 0 0 / 0.35);
+    --input: rgb(0 0 0 / 0.5);
+    --muted-foreground: #4a4a4f;
+    --window: #ffffff;
+    --titlebar: #f2f2f5;
+    --sidebar: #f2f2f5;
+  }
+  .dark {
+    --border: rgb(255 255 255 / 0.35);
+    --input: rgb(255 255 255 / 0.5);
+    --muted-foreground: #c4c4ca;
+    --window: #1c1c1e;
+    --titlebar: #2a2a2d;
+    --sidebar: #242427;
+  }
+}
+
+/* Theme switches cross-fade instead of flashing (see ThemeToggle). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.28s;
+  animation-timing-function: ease-in-out;
+}

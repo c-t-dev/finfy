@@ -1,0 +1,92 @@
+{
+  "common": {
+    "appName": "finfy",
+    "loading": "Loading",
+    "close": "Close",
+    "language": "Language",
+    "languages": {
+      "en": "English",
+      "pt-BR": "Português (Brasil)"
+    },
+    "appearance": "Appearance",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Automatic (system)"
+    },
+    "window": {
+      "close": "Close",
+      "minimize": "Minimize",
+      "zoom": "Zoom"
+    }
+  },
+  "public": {
+    "nav": {
+      "features": "Features",
+      "openApp": "Open finfy"
+    },
+    "home": {
+      "metaTitle": "finfy — personal finances, shared",
+      "metaDescription": "Track spending in euros and reais, share wallets with the people you trust, and keep working offline.",
+      "eyebrow": "Personal finances",
+      "title": "Your money, in every currency you live in",
+      "subtitle": "Track spending in euros and reais, share wallets with the people you trust, and keep working offline on your phone and computer.",
+      "cta": "Get started",
+      "features": {
+        "title": "Built for real life",
+        "currencies": {
+          "title": "Euros and reais",
+          "body": "Each wallet has its own currency. Totals never mix them."
+        },
+        "sharing": {
+          "title": "Shared wallets",
+          "body": "Invite people by e-mail as admin, editor or viewer, and hand a wallet over when you need to."
+        },
+        "offline": {
+          "title": "Works offline",
+          "body": "The Windows, macOS, Android and iOS apps keep working without internet and sync later."
+        },
+        "history": {
+          "title": "Full history",
+          "body": "Every change is recorded: who made it, when and from where."
+        },
+        "security": {
+          "title": "Secure by default",
+          "body": "Two-factor authentication, session control and alerts for sensitive changes."
+        },
+        "languages": {
+          "title": "English and Portuguese",
+          "body": "Use finfy in your language, with amounts and dates in your format."
+        }
+      },
+      "footer": "© {year} finfy"
+    }
+  },
+  "app": {
+    "nav": {
+      "label": "Main navigation",
+      "home": "Home",
+      "statement": "Statement",
+      "accounts": "Accounts and cards",
+      "goals": "Goals",
+      "settings": "Settings"
+    },
+    "wallet": {
+      "label": "Wallet",
+      "none": "No wallet yet"
+    },
+    "home": {
+      "title": "Home",
+      "emptyTitle": "Create your first wallet",
+      "emptyBody": "A wallet holds accounts, cards and entries in one currency. You can share it later.",
+      "createWallet": "Create wallet"
+    },
+    "comingSoon": "Coming soon"
+  },
+  "errors": {
+    "unknown": "Something went wrong. Please try again.",
+    "wallet": {
+      "forbidden": "You don't have permission to do this in this wallet."
+    }
+  }
+}
