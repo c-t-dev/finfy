@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { ExpandIcon, ShrinkIcon, WalletIcon } from "lucide-react";
+import { ExpandIcon, LogOutIcon, ShrinkIcon, WalletIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { MacTitlebar, MacWindow } from "@packages/ui/components/mac-window";
 import { cn } from "@packages/ui/lib/utils";
 import { useTranslations } from "./i18n";
 import { APP_ROUTES, isActiveRoute, useAppNavigation } from "./navigation";
+
+const SETTINGS_PATH = APP_ROUTES.find((route) => route.key === "settings")!.path;
 
 /** Squircle app icon, same family as the image-resizer one. */
 export function AppIcon({ className }: { className?: string }) {
@@ -56,13 +58,17 @@ export function WindowWidthToggle({ wide, onWideChange }: { wide: boolean; onWid
 export function AppShell({
   children,
   trailing,
+  account,
   wide = false,
 }: {
   children: React.ReactNode;
   trailing?: React.ReactNode;
+  /** Signed-in user shown at the bottom of the sidebar. */
+  account?: React.ReactNode;
   wide?: boolean;
 }) {
   const t = useTranslations();
+  const { pathname } = useAppNavigation();
 
   return (
     <main className="flex min-h-dvh justify-center sm:items-center sm:p-6 lg:p-10">
@@ -77,8 +83,13 @@ export function AppShell({
           <aside className="flex w-60 shrink-0 flex-col gap-4 border-r border-border/60 bg-sidebar p-3 max-md:hidden">
             <WalletSwitcher />
             <SidebarNav />
+            {account && <div className="mt-auto">{account}</div>}
           </aside>
-          <section className="min-h-0 flex-1 overflow-y-auto p-6 max-md:pb-24">{children}</section>
+          <section className="min-h-0 flex-1 overflow-y-auto p-6 max-md:pb-24">
+            {/* Phones have no sidebar: the account (and sign-out) shows on Settings instead. */}
+            {account && isActiveRoute(pathname, SETTINGS_PATH) && <div className="mb-6 md:hidden">{account}</div>}
+            {children}
+          </section>
         </div>
         <BottomNav />
       </MacWindow>
@@ -152,5 +163,31 @@ function BottomNav() {
         );
       })}
     </nav>
+  );
+}
+
+/** Name, e-mail and sign-out at the bottom of the sidebar. */
+export function AccountPanel({
+  name,
+  email,
+  onSignOut,
+  pending = false,
+}: {
+  name: string;
+  email: string;
+  onSignOut: () => void;
+  pending?: boolean;
+}) {
+  const t = useTranslations("auth");
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-2">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[13px] font-medium">{name}</div>
+        <div className="truncate text-[11px] text-muted-foreground">{email}</div>
+      </div>
+      <Button variant="ghost" size="icon-sm" aria-label={t("signOut")} title={t("signOut")} disabled={pending} onClick={onSignOut}>
+        <LogOutIcon />
+      </Button>
+    </div>
   );
 }

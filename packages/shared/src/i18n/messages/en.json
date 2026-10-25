@@ -91,6 +91,52 @@
     "unknown": "Something went wrong. Please try again.",
     "wallet": {
       "forbidden": "You don't have permission to do this in this wallet."
+    },
+    "auth": {
+      "invalidInput": "Check the fields and try again.",
+      "invalidCredentials": "Incorrect e-mail or password.",
+      "rateLimited": "Too many attempts. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
+      "invalidCode": "This code is wrong or expired. Request a new one.",
+      "passwordTooShort": "The password needs at least {min} characters.",
+      "passwordTooLong": "The password can have at most {max} characters.",
+      "passwordSameAsEmail": "The password cannot be your e-mail.",
+      "passwordBreached": "This password has appeared in a data breach. Choose another one.",
+      "unauthenticated": "Your session has ended. Sign in again.",
+      "forbiddenOrigin": "This request was blocked for security reasons.",
+      "unavailable": "Sign-in is not available right now. Try again later."
     }
+  },
+  "auth": {
+    "signIn": {
+      "metaTitle": "Sign in",
+      "title": "Sign in to finfy",
+      "submit": "Sign in",
+      "noAccount": "New to finfy?",
+      "toSignUp": "Create an account"
+    },
+    "signUp": {
+      "metaTitle": "Create account",
+      "title": "Create your finfy account",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "toSignIn": "Sign in",
+      "passwordHint": "At least {min} characters. A sentence is easier to remember."
+    },
+    "verify": {
+      "title": "Check your e-mail",
+      "body": "If {email} can be used, we sent it a {length}-digit code. Enter it to continue.",
+      "submit": "Continue",
+      "resend": "Send a new code",
+      "resent": "If the account exists and is not verified yet, a new code is on its way.",
+      "back": "Use another e-mail",
+      "devHint": "Development: the code is printed in the server log."
+    },
+    "fields": {
+      "name": "Name",
+      "email": "E-mail",
+      "password": "Password",
+      "code": "Code"
+    },
+    "signOut": "Sign out"
   }
 }

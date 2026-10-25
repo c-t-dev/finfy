@@ -9,7 +9,8 @@
     "./ids": "./src/ids.ts",
     "./i18n": "./src/i18n/locales.ts",
     "./i18n/messages/*": "./src/i18n/messages/*.json",
-    "./db/schema": "./src/db/schema/index.ts"
+    "./db/schema": "./src/db/schema/index.ts",
+    "./auth": "./src/auth.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

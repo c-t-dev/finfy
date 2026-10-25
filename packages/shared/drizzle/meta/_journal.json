@@ -15,6 +15,13 @@
       "when": 1792950823040,
       "tag": "0001_seed_currencies_audit_and_publication",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792954814725,
+      "tag": "0002_rate_limits",
+      "breakpoints": true
     }
   ]
 }

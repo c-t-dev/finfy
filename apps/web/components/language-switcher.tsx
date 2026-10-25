@@ -30,15 +30,20 @@ export function PublicLanguageSwitcher() {
 }
 
 /**
- * Signed-in app: no locale in the URL. The choice is saved in a cookie until
- * accounts exist; then it becomes `users.language`.
+ * Signed-in app: no locale in the URL. The choice is saved on the account
+ * (`users.language`) and in a cookie, which also covers the sign-in pages.
  */
 export function AppLanguageSwitcher() {
   const router = useNextRouter();
   return (
     <Switcher
-      onChange={(locale) => {
+      onChange={async (locale) => {
         document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
+        await fetch("/api/account/language", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: locale }),
+        });
         router.refresh();
       }}
     />

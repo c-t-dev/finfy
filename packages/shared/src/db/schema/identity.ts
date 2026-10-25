@@ -197,6 +197,17 @@ export const passwordResetTokens = pgTable(
   (t) => [uniqueIndex("password_reset_tokens_token_hash_unique").on(t.tokenHash)],
 );
 
+/**
+ * Fixed-window counters against brute force (per IP, per e-mail), kept in
+ * Postgres because functions on Vercel share no memory. One row per key,
+ * reset in place when its window expires; a cleanup job can delete stale keys.
+ */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  windowStartedAt: timestamptz("window_started_at").notNull(),
+  count: integer("count").notNull(),
+});
+
 /** Account-level events (logins, MFA, password changes), separate from `audit_logs`. */
 export const securityEvents = pgTable(
   "security_events",

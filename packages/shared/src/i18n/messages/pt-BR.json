@@ -91,6 +91,52 @@
     "unknown": "Algo deu errado. Tente de novo.",
     "wallet": {
       "forbidden": "Você não tem permissão para fazer isso nesta wallet."
+    },
+    "auth": {
+      "invalidInput": "Confira os campos e tente de novo.",
+      "invalidCredentials": "E-mail ou senha incorretos.",
+      "rateLimited": "Muitas tentativas. Tente de novo em {minutes, plural, one {# minuto} other {# minutos}}.",
+      "invalidCode": "Código errado ou expirado. Peça um novo.",
+      "passwordTooShort": "A senha precisa ter pelo menos {min} caracteres.",
+      "passwordTooLong": "A senha pode ter no máximo {max} caracteres.",
+      "passwordSameAsEmail": "A senha não pode ser o seu e-mail.",
+      "passwordBreached": "Esta senha já apareceu em um vazamento de dados. Escolha outra.",
+      "unauthenticated": "Sua sessão terminou. Entre de novo.",
+      "forbiddenOrigin": "Este pedido foi bloqueado por segurança.",
+      "unavailable": "O login não está disponível agora. Tente mais tarde."
     }
+  },
+  "auth": {
+    "signIn": {
+      "metaTitle": "Entrar",
+      "title": "Entrar no finfy",
+      "submit": "Entrar",
+      "noAccount": "Novo no finfy?",
+      "toSignUp": "Criar uma conta"
+    },
+    "signUp": {
+      "metaTitle": "Criar conta",
+      "title": "Crie sua conta no finfy",
+      "submit": "Criar conta",
+      "haveAccount": "Já tem uma conta?",
+      "toSignIn": "Entrar",
+      "passwordHint": "Pelo menos {min} caracteres. Uma frase é mais fácil de lembrar."
+    },
+    "verify": {
+      "title": "Confira seu e-mail",
+      "body": "Se {email} puder ser usado, enviamos para ele um código de {length} dígitos. Digite-o para continuar.",
+      "submit": "Continuar",
+      "resend": "Enviar novo código",
+      "resent": "Se a conta existir e ainda não estiver verificada, um novo código está a caminho.",
+      "back": "Usar outro e-mail",
+      "devHint": "Desenvolvimento: o código aparece no log do servidor."
+    },
+    "fields": {
+      "name": "Nome",
+      "email": "E-mail",
+      "password": "Senha",
+      "code": "Código"
+    },
+    "signOut": "Sair"
   }
 }

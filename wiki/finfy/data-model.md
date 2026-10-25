@@ -333,6 +333,7 @@ erDiagram
 | `user_sessions` | `id`, `user_id`, `device_id`, `token_hash`, `ip`, `user_agent`, `last_seen_at`, `idle_expires_at`, `absolute_expires_at`, `step_up_until`, `revoked_at`, `created_at` | Opaque token; only SHA-256 stored |
 | `password_reset_tokens` | `id`, `user_id`, `token_hash`, `expires_at`, `used_at` | 30 min |
 | `security_events` | `id`, `user_id`, `type`, `ip`, `user_agent`, `metadata` (jsonb), `created_at` | Account-level events, separate from `audit_logs` |
+| `rate_limits` | `key` PK (e.g. `signInByIp:1.2.3.4`), `window_started_at`, `count` | Fixed-window counters in Postgres (no Redis); one row per key, reset in place |
 | `devices` | `id`, `user_id`, `name`, `platform` (`WINDOWS`, `MACOS`, `ANDROID`, `IOS`, `WEB`), `schema_version`, `last_sync_at`, `revoked_at` | Web sessions also get a device row, without sync |
 
 ### Wallets and sharing ([0001](../decisoes/0001-multimoeda.md), [0002](../decisoes/0002-wallets-e-compartilhamento.md), [0003](../decisoes/0003-convites-por-email.md))

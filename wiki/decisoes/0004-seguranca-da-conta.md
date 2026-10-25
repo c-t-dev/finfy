@@ -76,6 +76,22 @@ trocar e-mail ou senha, ativar ou desativar MFA, gerar novos códigos de recuper
 
 `PASSWORD_PEPPER_V1` (e versões seguintes), `TOTP_ENCRYPTION_KEY_V1`, `SESSION_COOKIE_NAME`, chaves do provedor de e-mail. Nenhum vai para o repositório; `.env.example` lista só os nomes.
 
+## O que já está implementado (2026-10-25)
+
+Detalhes em [codebase.md → Authentication](../finfy/codebase.md#authentication).
+
+| Implementado | Ainda não |
+| --- | --- |
+| Argon2id com os parâmetros desta decisão, pepper HMAC com versão e re-hash no login | TOTP, códigos de recuperação, step-up |
+| Política de senha, incluindo a consulta ao Have I Been Pwned. Se a consulta falhar, o cadastro segue (falha aberta) | Troca e redefinição de senha |
+| Cadastro com código por e-mail, login e logout | Tela "Dispositivos conectados", encerrar outras sessões |
+| Sessão opaca em cookie, só o hash no banco, 30 dias de inatividade e 90 no total | Envio de e-mails: ficam na fila `email_outbox` até haver provedor |
+| Bloqueio da conta e limites por IP e por e-mail (tabela `rate_limits`, no Postgres) | Avisos por e-mail de login novo e de mudanças |
+| Respostas que não revelam se o e-mail existe, incluindo o mesmo tempo de resposta | CAPTCHA após falhas, login com Google e Apple |
+| Eventos em `security_events` | Tela de segurança para o usuário |
+
+Para fazer login é preciso verificar o e-mail antes. Assim o cadastro pode responder igual exista ou não a conta.
+
 ## Diferenças
 
 - **Wallefy:** pepper só no papel, JWT de 7 dias com wallets dentro, `user_sessions` sem uso, sem limites, sem TOTP nem códigos de recuperação. O finfy implementa tudo isso desde o início.
