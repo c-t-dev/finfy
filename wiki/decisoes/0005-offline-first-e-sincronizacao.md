@@ -173,7 +173,7 @@ O `push` e o `pull` enviam a versão do esquema local. O servidor recusa versõe
 - [x] A versão web também funciona offline? **Não**: só os apps Windows, macOS, Android e iOS (decidido em 2026-10-25).
 - [x] Tecnologia de sincronização: **PowerSync + Postgres, com escrita pela API do finfy** (decidido em 2026-10-25).
 - [x] Tecnologia dos apps: **React com shadcn e Tailwind; Tauri no desktop e Capacitor no celular** (decidido em 2026-10-25, ver [0009](0009-react-tauri-capacitor.md); substitui Flutter, da [0007](0007-flutter-nos-clientes.md)).
-- [ ] PowerSync hospedado ou self-hosted? Revisar licença e preço.
+- [ ] PowerSync hospedado ou self-hosted? Revisar licença e preço. O PowerSync não roda na Vercel, onde ficam a web e a API ([0010](0010-nextjs-na-vercel.md)), e o Postgres precisa de replicação lógica.
 - [ ] A política de conflitos por campo está boa, ou prefere que todo conflito vá para revisão?
 - [ ] Criptografar o banco local é obrigatório desde a v1?
 - [ ] Anexos ficam disponíveis offline (baixados no aparelho) ou só com internet?

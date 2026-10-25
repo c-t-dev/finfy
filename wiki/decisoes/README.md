@@ -15,6 +15,7 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0007](0007-flutter-nos-clientes.md) | Flutter nos apps nativos (Windows, macOS, Android, iOS) e na web | Substituída pela [0009](0009-react-tauri-capacitor.md) |
 | [0008](0008-linguagem-visual.md) | Linguagem visual: a mesma do image-resizer (shadcn, Tailwind, estilo macOS) | Aceita (moldura da janela e celular em aberto) |
 | [0009](0009-react-tauri-capacitor.md) | React com shadcn e Tailwind; Tauri no desktop, Capacitor no celular | Aceita (prova de conceito pendente) |
+| [0010](0010-nextjs-na-vercel.md) | Web primeiro, em Next.js na Vercel, com páginas públicas e a API dentro | Aceita (banco, ORM e contrato da API em aberto) |
 
 ## Status
 

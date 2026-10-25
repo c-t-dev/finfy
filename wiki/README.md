@@ -57,6 +57,7 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [decisoes/0007-flutter-nos-clientes.md](decisoes/0007-flutter-nos-clientes.md) | Flutter em todos os clientes (substituída pela 0009) |
 | [decisoes/0008-linguagem-visual.md](decisoes/0008-linguagem-visual.md) | Interface igual à do image-resizer: shadcn, Tailwind, tokens e princípios Apple |
 | [decisoes/0009-react-tauri-capacitor.md](decisoes/0009-react-tauri-capacitor.md) | React em todos os clientes; Tauri no desktop, Capacitor no celular; web sem dados locais |
+| [decisoes/0010-nextjs-na-vercel.md](decisoes/0010-nextjs-na-vercel.md) | Web primeiro: Next.js na Vercel com páginas públicas, app logado e API; estrutura do monorepo |
 
 ### Modelo do finfy (em inglês)
 

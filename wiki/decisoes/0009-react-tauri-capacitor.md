@@ -31,10 +31,7 @@ Tauri não é usado no celular porque o PowerSync marca iOS e Android no Tauri c
 
 ### Regras para a base de código
 
-1. **Monorepo pnpm**, no mesmo formato do image-resizer:
-   - `packages/ui`: componentes shadcn com o estilo do finfy, tokens e `globals.css` ([0008](0008-linguagem-visual.md));
-   - o app React compartilhado: telas, rotas e regras do cliente;
-   - uma pasta por casca: web, Tauri (desktop) e Capacitor (celular).
+1. **Monorepo pnpm**, no mesmo formato do image-resizer. A estrutura de pastas está na [0010](0010-nextjs-na-vercel.md). A web é a primeira versão; Tauri e Capacitor vêm depois.
 2. **Uma camada de dados com duas implementações** atrás da mesma interface (repositórios). A versão nativa usa o banco local e a fila do PowerSync; a versão web chama a API diretamente. Telas e regras não sabem qual está em uso.
 3. **A web não inicializa o PowerSync** nem o banco local.
 4. **Rotas por URL na web**, com links diretos funcionando para qualquer tela. No Minhas Economias, abrir uma rota pela barra de endereço voltava ao Início ([problemas-encontrados.md](../problemas-encontrados.md)).
@@ -58,13 +55,12 @@ Tauri não é usado no celular porque o PowerSync marca iOS e Android no Tauri c
 
 - O código de interface do Wallefy (React, shadcn/ui) e do image-resizer pode ser reaproveitado.
 - Dois SDKs do PowerSync para manter, em vez de um.
-- O backend (API) continua independente desta decisão e ainda não foi escolhido.
+- O backend é a API dentro do Next.js, na Vercel ([0010](0010-nextjs-na-vercel.md)).
 
 ## Perguntas em aberto
 
 - [ ] **Prova de conceito antes do primeiro código de produto:** um app Tauri (Windows e macOS) e um Capacitor (Android e iOS) sincronizando uma tabela pelo PowerSync, com escrita pela API. Se algum SDK falhar, revisar esta decisão.
 - [ ] Banco local criptografado ([0005](0005-offline-first-e-sincronizacao.md#dados-no-aparelho)): verificar se os SDKs Tauri e Capacitor do PowerSync suportam SQLCipher ou outra criptografia.
-- [ ] Framework do app compartilhado: Tauri e Capacitor precisam de arquivos estáticos (sem servidor). Vite + React Router serve as três cascas; Next.js com exportação estática é a alternativa. Ainda não decidido.
+- [x] Framework e backend: **web primeiro, em Next.js na Vercel, com a API dentro**. Telas em `packages/app`; Vite só para gerar os estáticos do Tauri e do Capacitor, depois (decidido em 2026-10-25, ver [0010](0010-nextjs-na-vercel.md)).
+- [x] Site público: **as páginas públicas ficam no mesmo app Next.js** ([0010](0010-nextjs-na-vercel.md)).
 - [ ] Gerenciamento de estado e dados no cliente (ex.: TanStack Query, Zustand).
-- [ ] Linguagem e framework do backend.
-- [ ] Haverá site institucional separado do app web?
