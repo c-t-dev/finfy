@@ -101,5 +101,5 @@ Decidido em 2026-10-25: **todos os membros veem tudo.**
 
 - [x] EDITOR e VIEWER veem o feed completo? **Sim, todos veem tudo** (decidido em 2026-10-25).
 - [ ] A exportação em CSV fica só com OWNER e ADMIN (proposta) ou também é liberada para todos?
-- [ ] A cadeia de hash é necessária na v1, ou basta bloquear edição no banco?
+- [ ] A cadeia de hash é necessária na v1, ou basta bloquear edição no banco? Já está implementada (2026-10-25, custo baixo, ver [codebase.md → Write path](../finfy/codebase.md#write-path)); falta a verificação periódica. Pode ser retirada se decidirem que não precisa.
 - [ ] Quanto tempo guardar o histórico: enquanto a wallet existir (proposta) ou um prazo fixo (ex.: 5 anos)?

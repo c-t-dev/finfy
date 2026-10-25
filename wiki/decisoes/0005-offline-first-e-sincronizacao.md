@@ -73,7 +73,7 @@ A web sai primeiro e não sincroniza, mas o esquema do Postgres já é desenhado
 
 - tipos compatíveis com o SQLite do aparelho;
 - `id` simples e `wallet_id` em toda linha sincronizada;
-- um único caminho de escrita para a web e para o `push` dos apps;
+- um único caminho de escrita para a web e para o `push` dos apps (já em uso pelas wallets desde 2026-10-25: `mutation_id`, `base_version` e auditoria, ver [codebase.md → Write path](../finfy/codebase.md#write-path));
 - migrações em duas etapas (primeiro adicionar, depois remover);
 - publicação limitada às tabelas sincronizadas.
 

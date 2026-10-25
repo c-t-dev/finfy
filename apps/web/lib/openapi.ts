@@ -9,6 +9,14 @@ import {
   signUpInput,
   verifyEmailInput,
 } from "@packages/shared/auth";
+import {
+  archiveWalletInput,
+  createWalletInput,
+  updateWalletInput,
+  WALLET_ERRORS,
+  walletListSchema,
+  walletSchema,
+} from "@packages/shared/wallets";
 
 /**
  * OpenAPI 3.1 description of the API, built from the same zod schemas the
@@ -69,6 +77,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
     tags: [
       { name: "auth", description: "Sign-up, sign-in and sessions (wiki/decisoes/0004)" },
       { name: "account", description: "The signed-in user's settings" },
+      { name: "wallets", description: "Wallets and roles (wiki/decisoes/0002). Writes are idempotent by `mutationId` and audited" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -85,12 +94,14 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           type: "object",
           required: ["error"],
           properties: {
-            error: { type: "string", enum: [...AUTH_ERRORS] },
+            error: { type: "string", enum: [...new Set([...AUTH_ERRORS, ...WALLET_ERRORS])] },
             retryAfterSeconds: { type: "integer", description: "Only with `rateLimited`." },
           },
         },
         AuthNext: json(authNextSchema),
         CurrentUser: json(currentUserSchema),
+        Wallet: json(walletSchema),
+        WalletList: json(walletListSchema),
         Health: {
           type: "object",
           required: ["status", "database"],
@@ -196,6 +207,86 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           },
         },
       },
+      "/api/wallets": {
+        get: {
+          tags: ["wallets"],
+          summary: "The user's active wallets, with their role",
+          security: [{ session: [] }],
+          responses: {
+            200: response("Oldest first.", ref("WalletList")),
+            401: err("No valid session.", "unauthenticated"),
+          },
+        },
+        post: {
+          tags: ["wallets"],
+          summary: "Create a wallet",
+          description: `The client sends the wallet \`id\` and a \`mutationId\` (both UUIDs it generates). The creator becomes OWNER. Sending the same \`mutationId\` again returns the wallet without creating another. ${originNote}`,
+          security: [{ session: [] }],
+          requestBody: body(createWalletInput),
+          responses: {
+            201: response("Created (or already created by this mutationId).", ref("Wallet")),
+            ...walletErrors("invalidInput"),
+          },
+        },
+      },
+      "/api/wallets/{id}": {
+        patch: {
+          tags: ["wallets"],
+          summary: "Rename or change currency",
+          description: `OWNER or ADMIN. \`baseVersion\` is the version the client was editing. The name is free text: the last write wins and the old value stays in the audit log. The currency can only change before the first entry (\`409 currencyLocked\`) and only from the latest version (\`409 versionConflict\`). ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam],
+          requestBody: body(updateWalletInput),
+          responses: {
+            200: response("The wallet after the change.", ref("Wallet")),
+            ...walletErrors("invalidInput", "forbidden", "notFound", "currencyLocked", "versionConflict"),
+          },
+        },
+      },
+      "/api/wallets/{id}/archive": {
+        post: {
+          tags: ["wallets"],
+          summary: "Archive a wallet",
+          description: `OWNER only, with the password again (step-up; 5 tries per 15 minutes). The wallet leaves every member's list; data and history are kept. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam],
+          requestBody: body(archiveWalletInput),
+          responses: {
+            204: response("Archived."),
+            ...walletErrors("invalidInput", "invalidCredentials", "forbidden", "notFound", "rateLimited"),
+          },
+        },
+      },
     },
   };
+}
+
+const walletIdParam = { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+
+const WALLET_ERROR_STATUS: Record<string, [number, string]> = {
+  invalidInput: [400, "Invalid input."],
+  invalidCredentials: [401, "Wrong password."],
+  forbidden: [403, "The member's role does not allow it."],
+  notFound: [404, "No such wallet, archived, or not a member."],
+  currencyLocked: [409, "The currency is fixed after the first entry."],
+  versionConflict: [409, "The wallet changed since `baseVersion`."],
+  rateLimited: [429, "Too many attempts; see `Retry-After`."],
+};
+
+/** Error responses of a wallet route grouped by status, plus the ones every wallet route has. */
+function walletErrors(...codes: string[]) {
+  const byStatus = new Map<number, { descriptions: string[]; codes: string[] }>();
+  const add = (status: number, description: string, code: string) => {
+    const entry = byStatus.get(status) ?? { descriptions: [], codes: [] };
+    entry.descriptions.push(description);
+    entry.codes.push(code);
+    byStatus.set(status, entry);
+  };
+  for (const code of codes) add(...WALLET_ERROR_STATUS[code], code);
+  add(401, "No valid session.", "unauthenticated");
+  add(403, "Wrong origin.", "forbiddenOrigin");
+  add(503, "Database not configured.", "unavailable");
+  return Object.fromEntries(
+    [...byStatus].map(([status, { descriptions, codes: list }]) => [status, err(descriptions.join(" "), ...list)]),
+  );
 }

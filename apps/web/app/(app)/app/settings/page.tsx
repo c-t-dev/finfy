@@ -1,5 +1,5 @@
-import { ComingSoonScreen } from "@packages/app/screens/coming-soon";
+import { SettingsScreen } from "@packages/app/screens/settings";
 
 export default function Page() {
-  return <ComingSoonScreen route="settings" />;
+  return <SettingsScreen />;
 }

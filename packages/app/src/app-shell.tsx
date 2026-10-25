@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { ExpandIcon, LogOutIcon, ShrinkIcon, WalletIcon } from "lucide-react";
+import { ExpandIcon, LogOutIcon, ShrinkIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { MacTitlebar, MacWindow } from "@packages/ui/components/mac-window";
 import { cn } from "@packages/ui/lib/utils";
 import { useTranslations } from "./i18n";
 import { APP_ROUTES, isActiveRoute, useAppNavigation } from "./navigation";
+import { WalletSwitcher } from "./wallet-ui";
 
 const SETTINGS_PATH = APP_ROUTES.find((route) => route.key === "settings")!.path;
 
@@ -86,7 +87,10 @@ export function AppShell({
             {account && <div className="mt-auto">{account}</div>}
           </aside>
           <section className="min-h-0 flex-1 overflow-y-auto p-6 max-md:pb-24">
-            {/* Phones have no sidebar: the account (and sign-out) shows on Settings instead. */}
+            {/* Phones have no sidebar: the wallet switcher goes on top, the account (and sign-out) on Settings. */}
+            <div className="mb-4 md:hidden">
+              <WalletSwitcher />
+            </div>
             {account && isActiveRoute(pathname, SETTINGS_PATH) && <div className="mb-6 md:hidden">{account}</div>}
             {children}
           </section>
@@ -94,20 +98,6 @@ export function AppShell({
         <BottomNav />
       </MacWindow>
     </main>
-  );
-}
-
-function WalletSwitcher() {
-  const t = useTranslations("app.wallet");
-  // Wallets arrive with the wallet API; until then the switcher shows the empty state.
-  return (
-    <div className="rounded-lg border border-border bg-card/60 px-3 py-2">
-      <div className="text-[11px] font-medium uppercase text-muted-foreground">{t("label")}</div>
-      <div className="mt-0.5 flex items-center gap-2 text-[13px] text-foreground/70">
-        <WalletIcon className="size-4" aria-hidden />
-        {t("none")}
-      </div>
-    </div>
   );
 }
 

@@ -6,7 +6,8 @@ import { LOCALE_PREFIXES } from "@packages/shared/i18n";
 import { AppHost } from "@/components/app-host";
 import { RootDocument } from "@/components/root-document";
 import { getCurrentUser } from "@/lib/server/auth/session";
-import { WINDOW_WIDE_COOKIE } from "@/lib/cookies";
+import { listWallets } from "@/lib/server/wallets";
+import { CURRENT_WALLET_COOKIE, WINDOW_WIDE_COOKIE } from "@/lib/cookies";
 
 export { viewport } from "@/components/root-document";
 
@@ -22,10 +23,19 @@ export default async function SignedInLayout({ children }: LayoutProps<"/app">) 
   const user = await getCurrentUser();
   if (!user) redirect(`${LOCALE_PREFIXES[locale]}/sign-in`);
 
-  const wide = (await cookies()).get(WINDOW_WIDE_COOKIE)?.value === "1";
+  const jar = await cookies();
+  const wide = jar.get(WINDOW_WIDE_COOKIE)?.value === "1";
+  const wallets = await listWallets(user.id);
+  const remembered = jar.get(CURRENT_WALLET_COOKIE)?.value;
+  const currentWalletId = wallets.find((wallet) => wallet.id === remembered)?.id ?? wallets[0]?.id ?? null;
   return (
     <RootDocument locale={locale}>
-      <AppHost initialWide={wide} user={{ name: user.name, email: user.email }}>
+      <AppHost
+        initialWide={wide}
+        user={{ name: user.name, email: user.email }}
+        wallets={wallets}
+        currentWalletId={currentWalletId}
+      >
         {children}
       </AppHost>
     </RootDocument>

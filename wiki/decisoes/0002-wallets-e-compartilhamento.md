@@ -77,6 +77,19 @@ Para dar a wallet a quem ainda não é membro: convidar primeiro ([0003](0003-co
 | POST | `/api/ownership-transfers/:id/decline` | Destinatário |
 | POST | `/api/ownership-transfers/:id/cancel` | OWNER |
 
+## O que já está implementado (2026-10-25)
+
+Detalhes em [codebase.md → Wallets](../finfy/codebase.md#wallets).
+
+| Implementado | Ainda não |
+| --- | --- |
+| Criar, listar e trocar de wallet; quem cria vira `OWNER` | Membros, convites, mudança de papel, sair da wallet |
+| Renomear (OWNER, ADMIN) e trocar a moeda antes do primeiro lançamento | Transferência de posse |
+| Arquivar (só OWNER), pedindo a senha de novo | Step-up com segundo fator (MFA ainda não existe) |
+| Papel conferido no servidor a cada pedido; quem não é membro recebe 404 | E-mail para a pessoa afetada (sem provedor de e-mail) |
+
+Diferença em relação ao item 1 da decisão: o cadastro **não** cria uma wallet automaticamente. O cadastro não pergunta a moeda, então a primeira wallet é criada pela tela inicial ("Crie sua primeira wallet").
+
 ## Diferenças
 
 - **Wallefy:** três papéis; o finfy adiciona `ADMIN` para delegar a gestão de membros sem dar a posse.

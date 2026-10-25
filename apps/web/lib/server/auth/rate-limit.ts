@@ -9,6 +9,8 @@ export const LIMITS = {
   signUpByIp: { limit: 10, windowSeconds: 60 * 60 },
   codeByEmail: { limit: 5, windowSeconds: 15 * 60 },
   verifyByIp: { limit: 30, windowSeconds: 15 * 60 },
+  // Password asked again before a sensitive action (step-up).
+  stepUpByUser: { limit: 5, windowSeconds: 15 * 60 },
 } as const;
 
 /**

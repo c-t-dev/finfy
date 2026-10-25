@@ -90,17 +90,24 @@ export async function endSession(): Promise<string | null> {
   return revoked?.userId ?? null;
 }
 
+export interface SessionInfo {
+  user: CurrentUser;
+  /** The session's device row, recorded in the audit log. */
+  deviceId: string | null;
+}
+
 /**
- * The signed-in user, or null. Works in server components and route handlers;
+ * The current session, or null. Works in server components and route handlers;
  * cached per request, so the layout, the locale lookup and pages share one query.
  */
-export const getCurrentUser = cache(async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getSession = cache(async function getSession(): Promise<SessionInfo | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token || !env.DATABASE_URL) return null;
   const db = getDb();
   const [row] = await db
     .select({
       sessionId: userSessions.id,
+      deviceId: userSessions.deviceId,
       lastSeenAt: userSessions.lastSeenAt,
       id: users.id,
       name: users.name,
@@ -132,10 +139,18 @@ export const getCurrentUser = cache(async function getCurrentUser(): Promise<Cur
       .where(eq(userSessions.id, row.sessionId));
   }
   return {
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    language: row.language,
-    emailVerified: row.emailVerifiedAt !== null,
+    user: {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      language: row.language,
+      emailVerified: row.emailVerifiedAt !== null,
+    },
+    deviceId: row.deviceId,
   };
 });
+
+/** The signed-in user, or null. */
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  return (await getSession())?.user ?? null;
+}

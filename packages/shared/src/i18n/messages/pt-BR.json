@@ -73,23 +73,78 @@
     },
     "wallet": {
       "label": "Wallet",
-      "none": "Nenhuma wallet ainda"
+      "none": "Nenhuma wallet ainda",
+      "switch": "Trocar de wallet",
+      "new": "Nova wallet",
+      "roles": {
+        "OWNER": "Dono",
+        "ADMIN": "Administrador",
+        "EDITOR": "Editor",
+        "VIEWER": "Leitor"
+      },
+      "currencies": {
+        "EUR": "Euro (€)",
+        "BRL": "Real (R$)"
+      },
+      "create": {
+        "title": "Nova wallet",
+        "body": "Uma wallet reúne contas, cartões e lançamentos numa moeda. Você pode compartilhá-la depois.",
+        "name": "Nome",
+        "namePlaceholder": "Casa, Pessoal, Viagem…",
+        "currency": "Moeda",
+        "currencyHint": "Dá para trocar até o primeiro lançamento.",
+        "submit": "Criar wallet",
+        "cancel": "Cancelar"
+      }
     },
     "home": {
       "title": "Início",
       "emptyTitle": "Crie sua primeira wallet",
       "emptyBody": "Uma wallet reúne contas, cartões e lançamentos numa moeda. Você pode compartilhá-la depois.",
-      "createWallet": "Criar wallet"
+      "createWallet": "Criar wallet",
+      "ready": "{name} está pronta. Contas e lançamentos vêm a seguir."
     },
     "comingSoon": "Em breve",
     "window": {
       "widen": "Desbloquear largura da janela",
       "narrow": "Bloquear largura da janela"
+    },
+    "settings": {
+      "wallet": {
+        "title": "Wallet",
+        "name": "Nome",
+        "currency": "Moeda",
+        "currencyLocked": "A moeda fica fixa depois do primeiro lançamento.",
+        "role": "Seu papel: {role}",
+        "readOnly": "Só o dono e os administradores podem alterar a wallet.",
+        "save": "Salvar alterações",
+        "saved": "Salvo.",
+        "none": "Você ainda não tem nenhuma wallet."
+      },
+      "archive": {
+        "title": "Arquivar wallet",
+        "body": "A wallet sai da lista de todos os membros. Os dados e o histórico ficam guardados.",
+        "open": "Arquivar wallet…",
+        "confirmTitle": "Arquivar {name}?",
+        "password": "Sua senha",
+        "passwordHint": "Confirme que é você antes de arquivar.",
+        "confirm": "Arquivar",
+        "cancel": "Cancelar"
+      }
     }
   },
   "errors": {
     "unknown": "Algo deu errado. Tente de novo.",
     "wallet": {
+      "invalidInput": "Confira os campos e tente de novo.",
+      "unauthenticated": "Sua sessão terminou. Entre de novo.",
+      "forbiddenOrigin": "Este pedido foi bloqueado por segurança.",
+      "notFound": "Esta wallet não existe mais, ou você não tem mais acesso a ela.",
+      "currencyLocked": "A moeda não pode mudar depois do primeiro lançamento.",
+      "versionConflict": "Alguém alterou esta wallet enquanto isso. Recarregue a página e tente de novo.",
+      "invalidCredentials": "Senha incorreta.",
+      "rateLimited": "Muitas tentativas. Tente de novo em {minutes, plural, one {# minuto} other {# minutos}}.",
+      "unavailable": "Isto não está disponível agora. Tente mais tarde.",
       "forbidden": "Você não tem permissão para fazer isso nesta wallet."
     },
     "auth": {

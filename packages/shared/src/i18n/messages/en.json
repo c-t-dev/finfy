@@ -73,23 +73,78 @@
     },
     "wallet": {
       "label": "Wallet",
-      "none": "No wallet yet"
+      "none": "No wallet yet",
+      "switch": "Switch wallet",
+      "new": "New wallet",
+      "roles": {
+        "OWNER": "Owner",
+        "ADMIN": "Admin",
+        "EDITOR": "Editor",
+        "VIEWER": "Viewer"
+      },
+      "currencies": {
+        "EUR": "Euro (€)",
+        "BRL": "Brazilian real (R$)"
+      },
+      "create": {
+        "title": "New wallet",
+        "body": "A wallet holds accounts, cards and entries in one currency. You can share it later.",
+        "name": "Name",
+        "namePlaceholder": "Home, Personal, Trip…",
+        "currency": "Currency",
+        "currencyHint": "You can change it until the first entry.",
+        "submit": "Create wallet",
+        "cancel": "Cancel"
+      }
     },
     "home": {
       "title": "Home",
       "emptyTitle": "Create your first wallet",
       "emptyBody": "A wallet holds accounts, cards and entries in one currency. You can share it later.",
-      "createWallet": "Create wallet"
+      "createWallet": "Create wallet",
+      "ready": "{name} is ready. Accounts and entries come next."
     },
     "comingSoon": "Coming soon",
     "window": {
       "widen": "Unlock window width",
       "narrow": "Lock window width"
+    },
+    "settings": {
+      "wallet": {
+        "title": "Wallet",
+        "name": "Name",
+        "currency": "Currency",
+        "currencyLocked": "The currency is fixed after the first entry.",
+        "role": "Your role: {role}",
+        "readOnly": "Only the owner and admins can change the wallet.",
+        "save": "Save changes",
+        "saved": "Saved.",
+        "none": "You have no wallet yet."
+      },
+      "archive": {
+        "title": "Archive wallet",
+        "body": "The wallet leaves the list of every member. Its data and history are kept.",
+        "open": "Archive wallet…",
+        "confirmTitle": "Archive {name}?",
+        "password": "Your password",
+        "passwordHint": "Confirm it's you before archiving.",
+        "confirm": "Archive",
+        "cancel": "Cancel"
+      }
     }
   },
   "errors": {
     "unknown": "Something went wrong. Please try again.",
     "wallet": {
+      "invalidInput": "Check the fields and try again.",
+      "unauthenticated": "Your session has ended. Sign in again.",
+      "forbiddenOrigin": "This request was blocked for security reasons.",
+      "notFound": "This wallet no longer exists, or you no longer have access to it.",
+      "currencyLocked": "The currency can't change after the first entry.",
+      "versionConflict": "Someone changed this wallet in the meantime. Reload the page and try again.",
+      "invalidCredentials": "Incorrect password.",
+      "rateLimited": "Too many attempts. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
+      "unavailable": "This is not available right now. Try again later.",
       "forbidden": "You don't have permission to do this in this wallet."
     },
     "auth": {
