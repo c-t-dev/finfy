@@ -10,7 +10,12 @@ Instruções para qualquer agente de IA que trabalhe neste repositório: Claude 
 - as decisões do próprio finfy em [`wiki/decisoes/`](wiki/decisoes/README.md): várias moedas (EUR e BRL), várias wallets por usuário com compartilhamento, papéis e transferência de posse, convites por e-mail, segurança da conta, offline-first com sincronização e auditoria;
 - a análise do **Wallefy** (projeto `my-fin`), usado como base para wallets, convites e segurança, em [`wiki/referencias/wallefy.md`](wiki/referencias/wallefy.md).
 
-Já decidido sobre a stack: clientes em **Flutter** (apps Windows, macOS, Android e iOS offline; web só online) e sincronização com **PowerSync + Postgres**, com toda escrita passando pela API do finfy. Proposta para a interface: estilo macOS, como no projeto image-resizer, num pacote de widgets `finfy_ui` ([0008](wiki/decisoes/0008-linguagem-visual.md)). O backend (linguagem e framework da API) ainda não foi escolhido.
+Já decidido sobre a stack:
+
+- Clientes em **React + TypeScript, com shadcn/ui e Tailwind v4**: web só online; **Tauri** para Windows e macOS; **Capacitor** para Android e iOS. Os apps nativos funcionam offline ([0009](wiki/decisoes/0009-react-tauri-capacitor.md)). A [0007](wiki/decisoes/0007-flutter-nos-clientes.md) (Flutter) foi substituída: não use Flutter.
+- Interface igual à do projeto **image-resizer** (`D:\projetos\image-resizer`): mesmo `packages/ui`, tokens, estilo macOS e princípios Apple ([0008](wiki/decisoes/0008-linguagem-visual.md)).
+- Sincronização com **PowerSync + Postgres**, com toda escrita passando pela API do finfy ([0005](wiki/decisoes/0005-offline-first-e-sincronizacao.md)).
+- O backend (linguagem e framework da API) ainda não foi escolhido.
 
 Decisões com status "Proposta" têm perguntas em aberto; não as trate como fechadas. O que ainda não foi decidido não deve ser inventado: pergunte.
 

@@ -1,6 +1,8 @@
 # 0007 — Flutter nos apps e na web
 
-> Status: Aceita · Decidido em 2026-10-25
+> Status: **Substituída** pela [0009](0009-react-tauri-capacitor.md) em 2026-10-25 · Decidido em 2026-10-25
+>
+> Não siga esta decisão. Os clientes serão em React com shadcn e Tailwind, com Tauri no desktop e Capacitor no celular. O texto abaixo fica só como histórico.
 
 ## Contexto
 

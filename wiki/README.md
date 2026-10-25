@@ -54,8 +54,9 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [decisoes/0004-seguranca-da-conta.md](decisoes/0004-seguranca-da-conta.md) | Senha (Argon2id, salt, pepper), MFA, sessões, limites |
 | [decisoes/0005-offline-first-e-sincronizacao.md](decisoes/0005-offline-first-e-sincronizacao.md) | O que funciona sem internet, fila de alterações, conflitos, acesso revogado |
 | [decisoes/0006-auditoria.md](decisoes/0006-auditoria.md) | Histórico de alterações e de acesso por wallet |
-| [decisoes/0007-flutter-nos-clientes.md](decisoes/0007-flutter-nos-clientes.md) | Flutter em todos os clientes; web sem dados locais |
-| [decisoes/0008-linguagem-visual.md](decisoes/0008-linguagem-visual.md) | Interface no estilo macOS (tokens, materiais, movimento, acessibilidade), vinda do image-resizer |
+| [decisoes/0007-flutter-nos-clientes.md](decisoes/0007-flutter-nos-clientes.md) | Flutter em todos os clientes (substituída pela 0009) |
+| [decisoes/0008-linguagem-visual.md](decisoes/0008-linguagem-visual.md) | Interface igual à do image-resizer: shadcn, Tailwind, tokens e princípios Apple |
+| [decisoes/0009-react-tauri-capacitor.md](decisoes/0009-react-tauri-capacitor.md) | React em todos os clientes; Tauri no desktop, Capacitor no celular; web sem dados locais |
 
 ### Modelo do finfy (em inglês)
 

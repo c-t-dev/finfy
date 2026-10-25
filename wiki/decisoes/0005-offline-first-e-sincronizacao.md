@@ -62,8 +62,10 @@ Suporte a plataformas por SDK, conferido em 2026-10-25 em [docs.powersync.com/re
 | Kotlin | Sim | Sim | Sim (aarch64) | Só via JVM (x86-64) | Experimental |
 | Swift | — | Sim | Sim | Não | — |
 | .NET | Sim (MAUI) | Sim (MAUI) | Só CLI | Sim (MAUI) | — |
+| Capacitor (8+) | Sim (SDK 24+) | Sim (15+) | — | — | Sim (WASQLite) |
+| Tauri | Não testado | Não testado | Sim | Sim | — |
 
-O **Flutter é o único SDK que cobre Windows, macOS, Android e iOS com uma base de código só**, e também roda na web. Por isso os clientes serão em Flutter ([0007](0007-flutter-nos-clientes.md)).
+O Dart/Flutter é o único SDK que cobre as quatro plataformas nativas sozinho. Mas **Tauri (Windows e macOS) mais Capacitor (Android e iOS)** cobre as mesmas plataformas com uma única base de código React. Essa foi a escolha, para usar shadcn e Tailwind como no image-resizer ([0009](0009-react-tauri-capacitor.md), que substitui a [0007](0007-flutter-nos-clientes.md)).
 
 ### O que funciona sem internet
 
@@ -129,7 +131,7 @@ Conflitos aparecem numa tela "Revisar conflitos" para quem fez a edição, com a
 
 ### Dados no aparelho
 
-- Banco local criptografado (SQLCipher) em todos os apps nativos. O navegador não guarda dados financeiros localmente, porque a web é só online.
+- Banco local criptografado (SQLCipher) em todos os apps nativos. Falta confirmar o suporte nos SDKs Tauri e Capacitor ([0009](0009-react-tauri-capacitor.md)). O navegador não guarda dados financeiros localmente, porque a web é só online.
 - Token de sessão no armazenamento seguro do sistema: Keychain (iOS, macOS), Keystore (Android), Credential Manager / DPAPI (Windows).
 - Bloqueio do app com PIN ou biometria, opcional.
 - Um aparelho só sincroniza wallets em que o usuário é membro ativo; nada de outras wallets fica no aparelho.
@@ -170,7 +172,7 @@ O `push` e o `pull` enviam a versão do esquema local. O servidor recusa versõe
 
 - [x] A versão web também funciona offline? **Não**: só os apps Windows, macOS, Android e iOS (decidido em 2026-10-25).
 - [x] Tecnologia de sincronização: **PowerSync + Postgres, com escrita pela API do finfy** (decidido em 2026-10-25).
-- [x] Tecnologia dos apps: **Flutter para os apps nativos e para a web** (decidido em 2026-10-25, ver [0007](0007-flutter-nos-clientes.md)).
+- [x] Tecnologia dos apps: **React com shadcn e Tailwind; Tauri no desktop e Capacitor no celular** (decidido em 2026-10-25, ver [0009](0009-react-tauri-capacitor.md); substitui Flutter, da [0007](0007-flutter-nos-clientes.md)).
 - [ ] PowerSync hospedado ou self-hosted? Revisar licença e preço.
 - [ ] A política de conflitos por campo está boa, ou prefere que todo conflito vá para revisão?
 - [ ] Criptografar o banco local é obrigatório desde a v1?

@@ -13,7 +13,7 @@ This is the data model of **finfy** itself. It consolidates the decisions in [`.
 
 ## Conventions
 
-- **Database:** PostgreSQL on the server (source of truth). Native apps keep a SQLite replica through PowerSync; the web keeps nothing locally ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0007](../decisoes/0007-flutter-nos-clientes.md)).
+- **Database:** PostgreSQL on the server (source of truth). Native apps keep a SQLite replica through PowerSync; the web keeps nothing locally ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0009](../decisoes/0009-react-tauri-capacitor.md)).
 - **IDs:** UUIDv7 (`uuid`), generated on the client for synced tables. Recurrence occurrences use UUIDv5 of `recurrence_id` + date so two offline devices create the same ID.
 - **Money:** `bigint` in minor units (`*_minor` columns). The currency is always the wallet's (`wallets.currency_code`); entities inside a wallet do not carry their own currency. Decimal places come from `currencies.minor_units`.
 - **Enums:** `text` with a `CHECK` constraint, not native Postgres enums, so values can be added without migrations that lock tables.

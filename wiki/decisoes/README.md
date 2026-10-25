@@ -12,8 +12,9 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0004](0004-seguranca-da-conta.md) | Segurança da conta (senha, MFA, sessões) | Proposta |
 | [0005](0005-offline-first-e-sincronizacao.md) | Offline-first e sincronização: apps nativos offline, web online, PowerSync + Postgres com escrita pela API | Proposta (plataformas e tecnologia de sincronização já decididas) |
 | [0006](0006-auditoria.md) | Auditoria por wallet (imutável, origem, diferença por campo) | Proposta (visibilidade já decidida: todos veem tudo) |
-| [0007](0007-flutter-nos-clientes.md) | Flutter nos apps nativos (Windows, macOS, Android, iOS) e na web | Aceita |
-| [0008](0008-linguagem-visual.md) | Linguagem visual no estilo macOS, como no image-resizer, com o pacote `finfy_ui` | Proposta |
+| [0007](0007-flutter-nos-clientes.md) | Flutter nos apps nativos (Windows, macOS, Android, iOS) e na web | Substituída pela [0009](0009-react-tauri-capacitor.md) |
+| [0008](0008-linguagem-visual.md) | Linguagem visual: a mesma do image-resizer (shadcn, Tailwind, estilo macOS) | Aceita (moldura da janela e celular em aberto) |
+| [0009](0009-react-tauri-capacitor.md) | React com shadcn e Tailwind; Tauri no desktop, Capacitor no celular | Aceita (prova de conceito pendente) |
 
 ## Status
 

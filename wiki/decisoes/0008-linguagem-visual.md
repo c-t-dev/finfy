@@ -1,103 +1,99 @@
-# 0008 — Linguagem visual no estilo macOS
+# 0008 — Linguagem visual: a mesma do image-resizer
 
-> Status: Proposta · Escrita em 2026-10-25
+> Status: Aceita · Decidido em 2026-10-25 · Última atualização: 2026-10-25
 
 ## Contexto
 
-A pessoa quer a interface do finfy "como foi feita no projeto editor de imagens", o **image-resizer** (`D:\projetos\image-resizer`). Lá a interface imita uma janela do macOS e segue os princípios de design da Apple. A referência completa está em `image-resizer/wiki/pt/06-interface-design.md` e os tokens em `image-resizer/packages/ui/src/styles/globals.css`.
+A pessoa quer a interface do finfy "como foi feita no projeto editor de imagens", o **image-resizer** (`D:\projetos\image-resizer`), com **o mesmo shadcn/ui e o mesmo Tailwind**. Lá a interface imita uma janela do macOS e segue os princípios de design da Apple.
 
-O image-resizer é React (Next.js, Tailwind, shadcn). O finfy é Flutter ([0007](0007-flutter-nos-clientes.md)). Por isso a decisão copia a **linguagem visual e as regras**, não o código.
+Isso levou a trocar Flutter por React em todos os clientes ([0009](0009-react-tauri-capacitor.md)). Com isso, a interface pode ser copiada de verdade, não só imitada.
 
-## O que o image-resizer faz
+Referências no image-resizer:
 
-| Aspecto | Como é lá |
+| O quê | Onde |
 | --- | --- |
-| Visual | Janela macOS: semáforos decorativos, barra de título translúcida, barra lateral com "vibrancy", controles segmentados, azul do sistema |
-| Fundo | "Wallpaper" com gradientes suaves (estilo macOS Sonoma), diferente no claro e no escuro |
-| Componentes | Pacote próprio `@packages/ui`: shadcn reestilizado (botão, controle segmentado, tabs, select, menu, diálogo, tooltip, slider, checkbox, input, progresso, spinner de 12 raios, janela, toasts) |
-| Cores | Só por tokens (`background`, `foreground`, `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`, `border`, `input`, `ring`, `window`, `titlebar`, `sidebar`), em claro e escuro. Nada de cor fixa no componente |
-| Tema | Sistema por padrão; troca com transição suave (sem salto de brilho) |
-| Texto | Fonte do sistema (SF Pro), Inter como alternativa; texto de 12–13 px; tracking por tamanho (títulos `-0.022em`, texto pequeno `+0.01em`) |
-| Movimento | Resposta imediata ao toque (escala 96–97%, ~100 ms); superfícies flutuantes "materializam" (desfoque + escala, 220 ms entrada, 140 ms saída); menus nascem do botão que os abriu; loaders com no mínimo 250 ms, só para não piscar |
-| Acessibilidade | Movimento reduzido → só fades; transparência reduzida → materiais sólidos; contraste aumentado → bordas e textos mais fortes; foco visível em todos os controles |
+| Guia de interface | `wiki/pt/06-interface-design.md` (em inglês: `wiki/en/06-ui-design.md`) |
+| Tokens, temas e regras de acessibilidade | `packages/ui/src/styles/globals.css` |
+| Componentes | `packages/ui/src/components/*` |
+| Regras para agentes | `CLAUDE.md`, seção "UI conventions" |
 
 ## Decisão
 
-### 1. Um pacote de design próprio: `finfy_ui`
+### 1. Mesma stack de interface
 
-Equivalente ao `@packages/ui`. As telas usam **só** widgets desse pacote. Widget novo nasce dentro dele, já no estilo.
+- **Tailwind v4** com `@theme inline` e `tw-animate-css`.
+- **shadcn/ui** no estilo *new-york*, com os primitivos do pacote `radix-ui`, reestilizado para macOS.
+- Pacote interno **`packages/ui`** (`@packages/ui`), como no image-resizer. Ele contém os componentes, os tokens e o `globals.css`. Ele é a fonte única de estilo para a web, o Tauri e o Capacitor.
+- Ponto de partida: **copiar** `packages/ui` do image-resizer (componentes, `globals.css`, `cn`, `use-mounted`) e ajustar a partir daí.
 
-Não usar Material com tema padrão nem o pacote `macos_ui` como base: o `macos_ui` só faz sentido no desktop, e o finfy roda também em Android, iOS e web.
+### 2. Componentes
 
-### 2. Tokens copiados do image-resizer
+Os do image-resizer, já reestilizados: `button`, `segmented-control`, `tabs`, `select`, `dropdown-menu`, `dialog`, `tooltip`, `slider`, `checkbox`, `input`, `label`, `progress`, `card`, `spinner` (12 raios), `mac-window` (`MacWindow`, `MacTitlebar`, `TrafficLights`) e `sonner` (toasts).
 
-Os mesmos nomes e valores, num `ThemeExtension` (`FinfyColors`) com versão clara e escura. Valores iniciais:
+O finfy vai precisar de outros, que nascem dentro de `packages/ui` seguindo a receita da seção 5. Exemplos: tabela, calendário e seletor de data, combobox, campo de valor em moeda, gráficos, folha lateral (*sheet*) e barra de navegação inferior para o celular.
 
-| Token | Claro | Escuro |
-| --- | --- | --- |
-| `background` | `#F2F2F5` | `#141416` |
-| `foreground` | `#1D1D1F` | `#F5F5F7` |
-| `card` | `#FFFFFF` | `#2A2A2D` |
-| `popover` | `#FFFFFF` | `#2C2C2F` |
-| `primary` | `#007AFF` | `#0A84FF` |
-| `secondary` | `#E9E9ED` | `#3A3A3D` |
-| `muted` | `#F0F0F3` | `#2A2A2D` |
-| `mutedForeground` | `#6E6E73` | `#98989F` |
-| `accent` | `#ECECF0` | `#3A3A3D` |
-| `destructive` | `#FF3B30` | `#FF453A` |
-| `success` | `#34C759` | `#30D158` |
-| `border` | preto 10% | branco 10% |
-| `input` | preto 14% | branco 14% |
-| `window` | branco 78% | `#202023` 80% |
-| `titlebar` | `#F6F6F8` 72% | `#2C2C2F` 70% |
-| `sidebar` | `#F0F0F3` 60% | `#262629` 55% |
+### 3. Tokens e temas
 
-Raio base 10 px (`sm` 6, `md` 8, `lg` 10, `xl` 14, `2xl` 18). Também há variantes de **contraste aumentado** e de **transparência reduzida**, com os valores do `globals.css` do image-resizer.
+Os mesmos nomes e valores do `globals.css` do image-resizer, em `:root` (claro) e `.dark` (escuro):
 
-Cores de finanças: gasto usa `destructive` e ganho usa `success`. Para não depender só da cor, o sinal ou o ícone sempre acompanha o valor.
+- `background`, `foreground`, `card`, `popover`;
+- `primary` (azul do sistema `#007AFF` / `#0A84FF`);
+- `secondary`, `muted`, `accent`;
+- `destructive`, `success`;
+- `border`, `input`, `ring`;
+- `window`, `titlebar`, `sidebar` e `--wallpaper`.
 
-### 3. Equivalências React → Flutter
+O raio base é `0.625rem` (10 px).
 
-| image-resizer | finfy (Flutter) |
+Regras:
+
+- Nenhuma cor fixa nos componentes; só tokens.
+- O tema é o do sistema por padrão (`next-themes` ou equivalente, com `attribute="class"`). A troca de tema faz uma transição suave com a View Transitions API.
+- Mantêm-se as regras de `prefers-reduced-motion`, `prefers-reduced-transparency` e `prefers-contrast: more` do `globals.css`.
+- Cores de finanças: gasto usa `destructive` e ganho usa `success`. O sinal ou o ícone sempre acompanha o valor, para não depender só da cor.
+
+### 4. Princípios Apple
+
+Os mesmos do image-resizer:
+
+| Princípio | Como |
 | --- | --- |
-| `backdrop-blur` + `saturate` | `BackdropFilter` com `ImageFilter.blur` sobre a cor translúcida do token |
-| `active:scale-[0.97]` | Widget base `Pressable` que escala para 0.97 em ~100 ms no `onTapDown` |
-| `animate-materialize-in/out` | Rota e overlay próprios (menus, diálogos, tooltips): opacidade + escala 0.96 + desfoque, 220 ms / 140 ms, origem no widget que abriu |
-| `next-themes` + View Transitions | `ThemeMode.system` por padrão; troca com fade dos tokens (`AnimatedTheme` ou interpolação via `ThemeExtension.lerp`) |
-| `prefers-reduced-motion` | `MediaQuery.disableAnimations` → só fades |
-| `prefers-contrast: more` | `MediaQuery.highContrast` → tokens de contraste aumentado |
-| `prefers-reduced-transparency` | Não existe no Flutter; ver perguntas em aberto |
-| Spinner de 12 raios | `FinfySpinner` desenhado com `CustomPainter` |
-| `data-slot` | Não precisa; as regras de acessibilidade ficam dentro de cada widget |
+| Resposta imediata | `active:scale-[0.97]` em ~100 ms nos controles |
+| Menos latência artificial | Loader só aparece depois de 250 ms de espera |
+| Materiais | Barra de título, barra lateral e menus translúcidos (`backdrop-blur` + `saturate`) |
+| Materializar | Superfícies flutuantes com `animate-materialize-in/out` (desfoque + escala) |
+| Consistência espacial | Menus nascem do botão que os abriu |
+| Tipografia | Fonte do sistema (SF Pro), Inter como alternativa; texto de 12–13 px; tracking por tamanho |
 
-### 4. Estrutura da tela
+### 5. Criar um componente novo
 
-- **Desktop e web larga (≥ 768 px):** barra lateral translúcida à esquerda com a navegação (Início, Extrato, Contas, Objetivos etc.) e o seletor de wallet no topo. O conteúdo faz scroll por baixo de uma barra de título translúcida.
-- **Telas estreitas (celular):** sem moldura de janela; a navegação vai para uma barra inferior, mantendo os mesmos materiais e tokens.
-- O "wallpaper" com gradientes fica atrás da janela na web e no desktop. No celular, o fundo é `background` liso.
+Mesma receita do image-resizer:
 
-### 5. Regras que valem para todo widget
+1. Gerar dentro de `packages/ui` com `pnpm dlx shadcn@latest add <componente>`.
+2. Ajustar:
+   - texto de 12–13 px e cantos `rounded-md` ou `rounded-lg`;
+   - superfícies flutuantes com `bg-popover/90 backdrop-blur-2xl` e `animate-materialize-in/out`;
+   - controles clicáveis com `active:scale-[0.97]` e `transition-[…,scale] duration-100`;
+   - `data-slot="nome"` na raiz, usado pelas regras de acessibilidade do CSS.
+3. Usar no app por `@packages/ui/components/<nome>`.
 
-1. Nenhuma cor fixa: só tokens.
-2. Texto de controles com 12–13 px no desktop e na web. No celular o mínimo é o tamanho de sistema, para respeitar a fonte dinâmica.
-3. Todo controle clicável tem resposta de pressão e foco visível.
-4. Superfícies flutuantes materializam e nascem do gatilho.
-5. Loader só depois de 250 ms de espera, para não piscar.
-6. `Semantics` em todo botão só com ícone, para leitores de tela (regra 4 da [0007](0007-flutter-nos-clientes.md)).
+### 6. Estrutura da tela
 
-## Diferenças em relação às referências
+- **Desktop e web larga (≥ 768 px):** janela macOS sobre o "wallpaper". À esquerda fica a barra lateral translúcida, com o seletor de wallet no topo e a navegação (Início, Extrato, Contas, Objetivos etc.). O conteúdo faz scroll por baixo da barra de título translúcida.
+- **Celular:** sem moldura de janela. A navegação vai para uma barra inferior, com os mesmos tokens e materiais. Respeita a área segura do sistema (`env(safe-area-inset-*)`).
 
-| Tema | image-resizer | Minhas Economias | finfy |
-| --- | --- | --- | --- |
-| Tecnologia | React + shadcn | Flutter com tema próprio | Flutter com pacote `finfy_ui` |
-| Idioma da interface | pt-PT | pt-BR | pt-BR, pt-PT e en ([0007](0007-flutter-nos-clientes.md)) |
-| Celular | Janela ocupa a tela | App próprio | Sem moldura de janela, navegação inferior |
-| Acessibilidade | Preferências do sistema respeitadas | Árvore de acessibilidade vazia na web | Preferências do sistema + `Semantics` |
+## Diferenças em relação ao image-resizer
+
+| Tema | image-resizer | finfy |
+| --- | --- | --- |
+| Idioma da interface | pt-PT | pt-BR, pt-PT e en ([0009](0009-react-tauri-capacitor.md)) |
+| Plataformas | Só web | Web, Tauri (Windows, macOS) e Capacitor (Android, iOS) |
+| Telas | Uma ferramenta por vez | App completo, com navegação lateral ou inferior |
+| Celular | A janela ocupa a tela | Sem moldura, navegação inferior |
 
 ## Perguntas em aberto
 
-1. **Moldura da janela nos apps de desktop.** No macOS, usar a barra de título nativa transparente com os semáforos reais? No Windows, imitar o macOS (semáforos) ou usar os botões nativos do Windows com o mesmo material?
-2. **Transparência reduzida:** o Flutter não expõe essa preferência. Oferecer uma opção nas configurações do app?
-3. **Celular:** manter o visual macOS no Android ou adaptar para algo mais neutro?
-4. **Fonte:** SF Pro só existe nos aparelhos Apple. Usar Inter em Windows, Android e web (como o image-resizer)?
-5. **Desfoque na web:** o `BackdropFilter` pesa no Flutter Web. Medir e, se precisar, usar superfícies sólidas na web.
+1. **Moldura da janela no Tauri.** No macOS, usar a barra de título nativa transparente com os semáforos reais? No Windows, imitar os semáforos do macOS ou usar os botões nativos do Windows com o mesmo material?
+2. **Celular:** manter o visual macOS no Android ou adaptar para algo mais neutro?
+3. **Desfoque no WebView:** `backdrop-filter` pode pesar em aparelhos Android mais fracos. Medir e, se precisar, usar superfícies sólidas (como na regra de transparência reduzida).
+4. **Pacote compartilhado entre projetos:** copiar `packages/ui` para o finfy (cada projeto evolui sozinho) ou publicar um pacote comum ao image-resizer e ao finfy?
