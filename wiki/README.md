@@ -58,6 +58,7 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [decisoes/0008-linguagem-visual.md](decisoes/0008-linguagem-visual.md) | Interface igual à do image-resizer: shadcn, Tailwind, tokens e princípios Apple |
 | [decisoes/0009-react-tauri-capacitor.md](decisoes/0009-react-tauri-capacitor.md) | React em todos os clientes; Tauri no desktop, Capacitor no celular; web sem dados locais |
 | [decisoes/0010-nextjs-na-vercel.md](decisoes/0010-nextjs-na-vercel.md) | Web primeiro: Next.js na Vercel com páginas públicas, app logado e API; estrutura do monorepo |
+| [decisoes/0011-traducoes.md](decisoes/0011-traducoes.md) | Idiomas pt-BR e en, regras de tradução, idioma por endereço nas páginas públicas e por conta no app |
 
 ### Modelo do finfy (em inglês)
 

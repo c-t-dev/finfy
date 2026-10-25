@@ -86,7 +86,7 @@ Mesma receita do image-resizer:
 
 | Tema | image-resizer | finfy |
 | --- | --- | --- |
-| Idioma da interface | pt-PT | pt-BR, pt-PT e en ([0009](0009-react-tauri-capacitor.md)) |
+| Idioma da interface | pt-PT | pt-BR e en ([0011](0011-traducoes.md)) |
 | Plataformas | Só web | Web, Tauri (Windows, macOS) e Capacitor (Android, iOS) |
 | Telas | Uma ferramenta por vez | App completo, com navegação lateral ou inferior |
 | Celular | A janela ocupa a tela | Sem moldura, navegação inferior |

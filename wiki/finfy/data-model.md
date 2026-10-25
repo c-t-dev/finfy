@@ -274,7 +274,7 @@ erDiagram
 
 | Table | Columns | Notes |
 | --- | --- | --- |
-| `users` | `id`, `name`, `email` (unique, lowercased), `email_verified_at`, `language` (`pt-BR`, `pt-PT`, `en`), `preferred_currency_code` → `currencies`, `mfa_enabled_at`, `failed_login_count`, `locked_until`, `created_at`, `updated_at`, `deleted_at` | `deleted_at` + pseudonymization on account erasure |
+| `users` | `id`, `name`, `email` (unique, lowercased), `email_verified_at`, `language` (`pt-BR`, `en`; `pt-PT` later, see [0011](../decisoes/0011-traducoes.md)), `preferred_currency_code` → `currencies`, `mfa_enabled_at`, `failed_login_count`, `locked_until`, `created_at`, `updated_at`, `deleted_at` | `deleted_at` + pseudonymization on account erasure |
 | `user_credentials` | `user_id` PK, `password_hash`, `pepper_version`, `password_changed_at` | Argon2id in PHC format (salt embedded); HMAC-SHA256 pepper applied before hashing |
 | `user_oauth_providers` | `id`, `user_id`, `provider` (`GOOGLE`, `APPLE`), `provider_user_id`, `email`, `created_at` | Unique (`provider`, `provider_user_id`); provider tokens not stored |
 | `user_mfa_totp` | `user_id` PK, `secret_encrypted`, `key_version`, `confirmed_at`, `last_used_step` | AES-256-GCM, key outside the database |

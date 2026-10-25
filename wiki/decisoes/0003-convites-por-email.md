@@ -62,7 +62,7 @@ Envio de e-mail por uma fila (`email_outbox`: `id`, `to`, `template`, `payload`,
 | `wallet-role-changed` / `wallet-member-removed` | Para o membro afetado |
 | `wallet-ownership-transfer-*` | Pedido, aceite, recusa e cancelamento da transferência ([0002](0002-wallets-e-compartilhamento.md)) |
 
-Todos com o idioma do destinatário (pt-BR ou pt-PT/en conforme a conta; sem conta, o idioma de quem convidou).
+Todos com o idioma do destinatário (pt-BR ou en, conforme a conta; sem conta, o idioma de quem convidou). Ver [0011](0011-traducoes.md).
 
 ## Perguntas em aberto
 

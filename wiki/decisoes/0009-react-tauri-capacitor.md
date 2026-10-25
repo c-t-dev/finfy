@@ -38,7 +38,7 @@ Tauri não é usado no celular porque o PowerSync marca iOS e Android no Tauri c
 5. **Acessibilidade:** HTML semântico e os primitivos Radix do shadcn; testar com leitor de tela. No Minhas Economias (Flutter Web) a árvore de acessibilidade estava vazia.
 6. **Formulários prontos antes de aceitar digitação.** No Minhas Economias, o que era digitado enquanto o formulário carregava se perdia.
 7. Segredos e tokens no armazenamento seguro de cada sistema ([0005](0005-offline-first-e-sincronizacao.md#dados-no-aparelho)); na web, sessão em cookie `HttpOnly` ([0004](0004-seguranca-da-conta.md)).
-8. Idiomas desde o início: pt-BR, pt-PT e en, com formatação de moeda pelo idioma ([0001](0001-multimoeda.md)).
+8. Idiomas desde o início: pt-BR e en; pt-PT depois ([0011](0011-traducoes.md)). A moeda é formatada pelo idioma ([0001](0001-multimoeda.md)).
 9. Tudo em TypeScript; código, comentários e identificadores em inglês.
 
 ## Por que não Flutter
