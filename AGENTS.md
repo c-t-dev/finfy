@@ -14,6 +14,12 @@ Já decidido sobre a stack: clientes em **Flutter** (apps Windows, macOS, Androi
 
 Decisões com status "Proposta" têm perguntas em aberto; não as trate como fechadas. O que ainda não foi decidido não deve ser inventado: pergunte.
 
+## Onde fica cada modelo de dados
+
+- **finfy:** [`wiki/finfy/data-model.md`](wiki/finfy/data-model.md), em inglês. É o modelo a seguir no código. A parte financeira ainda é rascunho.
+- **Minhas Economias (referência):** [`wiki/api/modelo-de-dados.md`](wiki/api/modelo-de-dados.md). Não use como modelo do finfy.
+- Ao mudar uma decisão que afete tabelas, atualize o `data-model.md` no mesmo trabalho.
+
 ## Antes de começar qualquer tarefa
 
 1. Leia [`wiki/README.md`](wiki/README.md) (índice) e a página da funcionalidade envolvida.
@@ -33,7 +39,7 @@ Este repositório é usado por agentes diferentes, que não compartilham memóri
 
 ## Convenções
 
-- Idioma: português do Brasil, frases curtas.
+- Idioma: português do Brasil, frases curtas. Exceção: a documentação técnica do finfy em `wiki/finfy/` (modelo de dados e o que vier a seguir) é em inglês.
 - Markdown simples, tabelas para listas comparáveis, nomes de API em `código` exatamente como aparecem.
 - Commits pequenos e descritivos, em português, no formato `tipo: descrição` (ex.: `docs: documenta ciclo da fatura`).
 

@@ -56,6 +56,12 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [decisoes/0006-auditoria.md](decisoes/0006-auditoria.md) | Histórico de alterações e de acesso por wallet |
 | [decisoes/0007-flutter-nos-clientes.md](decisoes/0007-flutter-nos-clientes.md) | Flutter em todos os clientes; web sem dados locais |
 
+### Modelo do finfy (em inglês)
+
+| Página | Conteúdo |
+| --- | --- |
+| [finfy/data-model.md](finfy/data-model.md) | Modelo de dados do finfy: diagramas e tabelas de identidade, wallets, núcleo financeiro (rascunho), planejamento, sincronização e auditoria |
+
 ### Referências
 
 | Página | Conteúdo |

@@ -4,6 +4,8 @@
 
 Entidades inferidas a partir das respostas da API. Campos listados como aparecem no JSON.
 
+> Este é o modelo do **Minhas Economias**. O modelo do próprio finfy está em [../finfy/data-model.md](../finfy/data-model.md).
+
 ## Diagramas
 
 As relações são **inferidas** pelos campos das respostas (por exemplo, `uuidAccount` dentro de uma transação); não há esquema oficial. Os diagramas mostram só os campos-chave; a lista completa de cada entidade está nas seções abaixo.
