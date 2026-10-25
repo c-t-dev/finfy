@@ -25,5 +25,6 @@ export async function handleAuth<T extends z.ZodType>(
     const retryAfter = result.retryAfterSeconds ?? 60;
     return apiError("rateLimited", 429, { retryAfterSeconds: retryAfter }, { "Retry-After": String(retryAfter) });
   }
-  return apiError(result.error, result.error === "invalidCredentials" || result.error === "invalidCode" ? 401 : 400);
+  const status = result.error === "invalidCredentials" || result.error === "invalidCode" ? 401 : result.error === "emailTaken" ? 409 : 400;
+  return apiError(result.error, status);
 }

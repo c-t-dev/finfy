@@ -11,7 +11,7 @@ Milestone 1 (foundation) and milestone 2 (e-mail and password authentication) ar
 | Done | Not yet |
 | --- | --- |
 | pnpm monorepo, shared configs | MFA (TOTP, recovery codes), step-up, password reset and change, "connected devices" screen, Google/Apple sign-in |
-| Sign-up with e-mail code, sign-in, sign-out, sessions, account lockout, rate limits, `/app` protected (see [Authentication](#authentication)) | Wallet API and screens (create, invite, roles, transfer) |
+| Sign-up, sign-in, sign-out, sessions, account lockout, rate limits, `/app` protected (see [Authentication](#authentication)). No e-mail step for now | Wallet API and screens (create, invite, roles, transfer) |
 | `packages/ui` copied from image-resizer | Security e-mails (new device, password changed) |
 | Drizzle schema + migrations for the whole [data model](data-model.md): identity, wallets and sharing, financial core, planning and patrimony, sync and audit | API and screens for the financial tables; the system category list |
 | Money, IDs, roles and permission matrix, locales | Server write commands, audit hash chain, `POST /api/sync/push` |
@@ -73,12 +73,23 @@ Environment variables are in `apps/web/.env.example`. `DATABASE_URL` and `PASSWO
 
 Implements part of [0004](../decisoes/0004-seguranca-da-conta.md). Server code is in `apps/web/lib/server/auth/`, forms in `packages/app/src/auth.tsx`, shared input rules in `@packages/shared/auth`.
 
-**Flow**
+**E-mail is off for now.** There is no e-mail provider, so nothing that depends on e-mail runs: no codes, no verification, no notices. The switch is `EMAIL_DELIVERY_ENABLED` in `apps/web/lib/server/mail.ts` (`false`). The code for the e-mail step stays in place for when a provider exists ([0003](../decisoes/0003-convites-por-email.md)).
 
-1. `/[locale]/sign-up` → `POST /api/auth/sign-up`. The answer is always "check your e-mail" (`{ next: "verifyEmail" }`), whether or not the e-mail already has an account. An existing account gets a `sign-up-existing-account` e-mail instead of a code.
-2. `/[locale]/sign-in` → `POST /api/auth/sign-in`. A verified account gets a session (`{ next: "app" }`). An unverified one gets a new code (`{ next: "verifyEmail" }`).
-3. The code step (same page, e-mail kept in state, never in the URL) → `POST /api/auth/verify-email` → session.
-4. `POST /api/auth/resend-code`, `POST /api/auth/sign-out`, `GET /api/auth/me`, `POST /api/account/language` (saves `users.language`).
+**Flow (e-mail off, current)**
+
+1. `/[locale]/sign-up` → `POST /api/auth/sign-up`. Creates the account and starts a session (`{ next: "app" }`). An e-mail that already has an account gets `409 emailTaken`. `email_verified_at` stays empty.
+2. `/[locale]/sign-in` → `POST /api/auth/sign-in` → session (`{ next: "app" }`), verified or not.
+3. `POST /api/auth/verify-email` and `POST /api/auth/resend-code` answer `404 unavailable`.
+4. `POST /api/auth/sign-out`, `GET /api/auth/me`, `POST /api/account/language` (saves `users.language`).
+
+**Flow (e-mail on, later)**
+
+1. Sign-up always answers "check your e-mail" (`{ next: "verifyEmail" }`), whether or not the e-mail already has an account. An existing account gets a `sign-up-existing-account` e-mail instead of a code.
+2. Sign-in: a verified account gets a session. An unverified one gets a new code (`{ next: "verifyEmail" }`).
+3. The code step (same page, e-mail kept in state, never in the URL) → `POST /api/auth/verify-email` → session. `POST /api/auth/resend-code` sends a new one.
+
+In both modes:
+
 5. `/app/*` without a session redirects to `/{locale}/sign-in`. Signed-in users opening the auth pages go to `/app`.
 
 **Rules as implemented**
@@ -90,12 +101,12 @@ Implements part of [0004](../decisoes/0004-seguranca-da-conta.md). Server code i
 | E-mail codes | 6 digits, 10 minutes, 5 wrong tries, HMAC-hashed with the pepper; a new code invalidates the previous ones |
 | Sessions | 32-byte random token in an HttpOnly, SameSite=Lax cookie (`__Host-finfy_session` in production, `finfy_session` in development); only its SHA-256 is stored. 30 days idle, 90 days absolute; touched at most once an hour. Each session also creates a `devices` row (`WEB`) |
 | Brute force | Account: 5 failures lock it for 1, 2, 4, 8, then 15 minutes. Per IP: 20 sign-ins / 15 min, 10 sign-ups / hour, 30 code checks / 15 min. Per e-mail: 5 resends / 15 min. Counters in the `rate_limits` table |
-| Enumeration | Generic "incorrect e-mail or password"; unknown e-mails run a dummy Argon2 verification (same timing); sign-up and resend answer the same either way |
+| Enumeration | Generic "incorrect e-mail or password"; unknown e-mails run a dummy Argon2 verification (same timing). **With e-mail off, sign-up reveals that an e-mail has an account** (`emailTaken`): without e-mail there is no private way to tell the owner. The per-IP sign-up limit (10 / hour) slows down probing. With e-mail on, sign-up and resend answer the same either way |
 | CSRF | Every POST checks `Origin` against the app's origin; plus SameSite=Lax |
 | Errors | API returns codes (`errors.auth.*`), translated by the client |
 | Events | `security_events`: `SIGN_UP`, `SIGN_UP_EXISTING_ACCOUNT`, `EMAIL_VERIFIED`, `LOGIN`, `LOGIN_FAILED`, `LOGOUT` |
 
-**E-mails:** queued in `email_outbox`; nothing sends them yet (no provider, [0003](../decisoes/0003-convites-por-email.md)). In development the server log prints each one, including the code: look for `[mail:dev]`. Payloads hold codes, so the future sender must clear them after sending.
+**E-mails:** with e-mail on, they are queued in `email_outbox` and a future job sends them ([0003](../decisoes/0003-convites-por-email.md)). In development the server log prints each one, including the code: look for `[mail:dev]`. Payloads hold codes, so the sender must clear them after sending. With e-mail off (now), nothing is queued.
 
 **Language:** the signed-in app uses `users.language`; the switcher updates it. Sign-up stores the language of the page used.
 

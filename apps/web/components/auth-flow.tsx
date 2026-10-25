@@ -12,7 +12,8 @@ import { webAuthClient } from "@/lib/auth-client";
 const linkClass = "font-medium text-primary hover:underline";
 
 /**
- * Sign-in or sign-up, then the e-mail code step when needed. The step lives
+ * Sign-in or sign-up, then the e-mail code step when the server asks for it
+ * (only while e-mail delivery is on, see lib/server/mail.ts). The step lives
  * in state, so the e-mail never goes into the URL.
  */
 export function AuthFlow({ mode }: { mode: "signIn" | "signUp" }) {
@@ -55,6 +56,7 @@ export function AuthFlow({ mode }: { mode: "signIn" | "signUp" }) {
     <AuthWindow title={t("signUp.title")} trailing={<PublicLanguageSwitcher />}>
       <SignUpForm
         client={webAuthClient}
+        onDone={goToApp}
         onVerify={setVerifyEmail}
         signInLink={
           <Link href="/sign-in" className={linkClass}>

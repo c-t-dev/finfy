@@ -95,6 +95,7 @@
     "auth": {
       "invalidInput": "Check the fields and try again.",
       "invalidCredentials": "Incorrect e-mail or password.",
+      "emailTaken": "This e-mail already has an account. Sign in instead.",
       "rateLimited": "Too many attempts. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
       "invalidCode": "This code is wrong or expired. Request a new one.",
       "passwordTooShort": "The password needs at least {min} characters.",

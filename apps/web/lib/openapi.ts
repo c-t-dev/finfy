@@ -116,16 +116,19 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         post: {
           tags: ["auth"],
           summary: "Create an account",
-          description: `Always answers \`verifyEmail\`, whether or not the e-mail already has an account; a code (or a notice) is e-mailed. ${originNote}`,
+          description: `**While e-mail delivery is off (now):** creates the account, starts a session (cookie) and answers \`app\`; an e-mail that already has an account gets \`409 emailTaken\`. **Once it is on:** always answers \`verifyEmail\`, whether or not the e-mail has an account, and e-mails a code (or a notice). ${originNote}`,
           requestBody: body(signUpInput),
-          responses: authResponses("passwordTooShort", "passwordTooLong", "passwordSameAsEmail", "passwordBreached"),
+          responses: {
+            ...authResponses("passwordTooShort", "passwordTooLong", "passwordSameAsEmail", "passwordBreached"),
+            409: err("The e-mail already has an account (only while e-mail delivery is off).", "emailTaken"),
+          },
         },
       },
       "/api/auth/sign-in": {
         post: {
           tags: ["auth"],
           summary: "Sign in with e-mail and password",
-          description: `A verified account gets a session cookie and \`app\`; an unverified one gets a new code and \`verifyEmail\`. ${originNote}`,
+          description: `Starts a session (cookie) and answers \`app\`. Once e-mail delivery is on, an unverified account gets a new code and \`verifyEmail\` instead. ${originNote}`,
           requestBody: body(signInInput),
           responses: {
             ...authResponses(),
@@ -137,10 +140,11 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         post: {
           tags: ["auth"],
           summary: "Confirm the e-mailed code and start a session",
-          description: `6 digits, valid 10 minutes, 5 tries. ${originNote}`,
+          description: `**Off for now:** answers \`404 unavailable\` while there is no e-mail provider. 6 digits, valid 10 minutes, 5 tries. ${originNote}`,
           requestBody: body(verifyEmailInput),
           responses: {
             ...authResponses(),
+            404: err("E-mail delivery is off.", "unavailable"),
             401: err("Wrong or expired code.", "invalidCode"),
           },
         },
@@ -149,9 +153,9 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         post: {
           tags: ["auth"],
           summary: "Send a new e-mail code",
-          description: `Same answer whether or not the e-mail exists. ${originNote}`,
+          description: `**Off for now:** answers \`404 unavailable\` while there is no e-mail provider. Same answer whether or not the e-mail exists. ${originNote}`,
           requestBody: body(resendCodeInput),
-          responses: authResponses(),
+          responses: { ...authResponses(), 404: err("E-mail delivery is off.", "unavailable") },
         },
       },
       "/api/auth/sign-out": {

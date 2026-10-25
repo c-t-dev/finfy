@@ -6,6 +6,13 @@ import type { getDb } from "@/lib/server/db";
 
 type Db = Pick<ReturnType<typeof getDb>, "insert">;
 
+/**
+ * Off while there is no e-mail provider (wiki/decisoes/0003). Then sign-up
+ * signs in at once, sign-in does not ask for a code, the code routes answer
+ * 404, and nothing is queued. Turn on once a provider sends `email_outbox`.
+ */
+export const EMAIL_DELIVERY_ENABLED = false;
+
 export type EmailTemplate = "verify-email" | "sign-up-existing-account";
 
 /**

@@ -10,7 +10,7 @@ import {
 } from "@packages/shared/auth";
 import { securityEvents, userCredentials, users } from "@packages/shared/db/schema";
 import { getDb } from "@/lib/server/db";
-import { queueEmail } from "@/lib/server/mail";
+import { EMAIL_DELIVERY_ENABLED, queueEmail } from "@/lib/server/mail";
 import { isBreachedPassword } from "./breached";
 import { consumeOtp, issueOtp } from "./otp";
 import { hashPassword, verifyDummyPassword, verifyPassword } from "./password";
@@ -18,9 +18,13 @@ import { hitRateLimit } from "./rate-limit";
 import { startSession } from "./session";
 
 /**
- * Sign-up, sign-in and e-mail verification (wiki/decisoes/0004). Responses
- * never reveal whether an e-mail has an account: sign-up always answers "check
- * your e-mail", and an unknown e-mail on sign-in costs the same hashing time.
+ * Sign-up, sign-in and e-mail verification (wiki/decisoes/0004). An unknown
+ * e-mail on sign-in costs the same hashing time as a known one.
+ *
+ * With e-mail delivery on, sign-up always answers "check your e-mail", so it
+ * never reveals whether an e-mail has an account. With it off (for now, see
+ * EMAIL_DELIVERY_ENABLED), there is no way to tell the owner privately, so
+ * sign-up answers `emailTaken`; the per-IP limit slows down anyone probing.
  */
 
 export type RequestMeta = { ip: string | null; userAgent: string | null };
@@ -50,6 +54,24 @@ export async function signUp(input: SignUpInput, meta: RequestMeta): Promise<Aut
   const password = await hashPassword(input.password);
   const db = getDb();
   const [existing] = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+
+  if (!EMAIL_DELIVERY_ENABLED) {
+    if (existing) return { ok: false, error: "emailTaken" };
+    const userId = await db.transaction(async (tx) => {
+      const [user] = await tx
+        .insert(users)
+        .values({ name: input.name, email: input.email, language: input.locale })
+        .returning({ id: users.id });
+      await tx
+        .insert(userCredentials)
+        .values({ userId: user.id, passwordHash: password.hash, pepperVersion: password.pepperVersion });
+      await tx.insert(securityEvents).values({ userId: user.id, type: "SIGN_UP", ip: meta.ip, userAgent: meta.userAgent });
+      return user.id;
+    });
+    // `email_verified_at` stays empty: nothing proved the address yet.
+    await startSession(userId, meta);
+    return { ok: true, value: { next: "app" } };
+  }
 
   if (existing) {
     await queueEmail(db, {
@@ -130,7 +152,7 @@ export async function signIn(input: SignInInput, meta: RequestMeta): Promise<Aut
       .where(eq(userCredentials.userId, user.id));
   }
 
-  if (!user.emailVerifiedAt) {
+  if (EMAIL_DELIVERY_ENABLED && !user.emailVerifiedAt) {
     const code = await issueOtp(db, { email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
     await queueEmail(db, { to: user.email, template: "verify-email", locale: user.language, payload: { code } });
     return { ok: true, value: { next: "verifyEmail", email: user.email } };

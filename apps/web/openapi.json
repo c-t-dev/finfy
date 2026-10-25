@@ -45,6 +45,7 @@
             "enum": [
               "invalidInput",
               "invalidCredentials",
+              "emailTaken",
               "rateLimited",
               "invalidCode",
               "passwordTooShort",
@@ -193,7 +194,7 @@
           "auth"
         ],
         "summary": "Create an account",
-        "description": "Always answers `verifyEmail`, whether or not the e-mail already has an account; a code (or a notice) is e-mailed. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "description": "**While e-mail delivery is off (now):** creates the account, starts a session (cookie) and answers `app`; an e-mail that already has an account gets `409 emailTaken`. **Once it is on:** always answers `verifyEmail`, whether or not the e-mail has an account, and e-mails a code (or a notice). The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -283,6 +284,24 @@
               }
             }
           },
+          "409": {
+            "description": "The e-mail already has an account (only while e-mail delivery is off).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "emailTaken"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many attempts. `Retry-After` header and `retryAfterSeconds` say when to try again.",
             "content": {
@@ -328,7 +347,7 @@
           "auth"
         ],
         "summary": "Sign in with e-mail and password",
-        "description": "A verified account gets a session cookie and `app`; an unverified one gets a new code and `verifyEmail`. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "description": "Starts a session (cookie) and answers `app`. Once e-mail delivery is on, an unverified account gets a new code and `verifyEmail` instead. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -464,7 +483,7 @@
           "auth"
         ],
         "summary": "Confirm the e-mailed code and start a session",
-        "description": "6 digits, valid 10 minutes, 5 tries. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "description": "**Off for now:** answers `404 unavailable` while there is no e-mail provider. 6 digits, valid 10 minutes, 5 tries. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -554,6 +573,24 @@
               }
             }
           },
+          "404": {
+            "description": "E-mail delivery is off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unavailable"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many attempts. `Retry-After` header and `retryAfterSeconds` say when to try again.",
             "content": {
@@ -599,7 +636,7 @@
           "auth"
         ],
         "summary": "Send a new e-mail code",
-        "description": "Same answer whether or not the e-mail exists. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "description": "**Off for now:** answers `404 unavailable` while there is no e-mail provider. Same answer whether or not the e-mail exists. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -659,6 +696,24 @@
                       "type": "string",
                       "enum": [
                         "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "E-mail delivery is off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unavailable"
                       ]
                     }
                   }

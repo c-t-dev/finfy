@@ -15,6 +15,7 @@ export const OTP_LENGTH = 6;
 export const AUTH_ERRORS = [
   "invalidInput",
   "invalidCredentials",
+  "emailTaken",
   "rateLimited",
   "invalidCode",
   "passwordTooShort",

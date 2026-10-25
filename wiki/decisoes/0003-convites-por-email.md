@@ -66,6 +66,6 @@ Todos com o idioma do destinatário (pt-BR ou en, conforme a conta; sem conta, o
 
 ## Perguntas em aberto
 
-- [ ] Qual provedor de e-mail (Resend, Amazon SES, SMTP próprio)? E qual domínio remetente?
+- [ ] Qual provedor de e-mail (Resend, Amazon SES, SMTP próprio)? E qual domínio remetente? Até isso ser decidido, o finfy não envia e-mail nenhum (2026-10-25): convites por e-mail esperam, e a conta funciona sem verificação do e-mail ([0004](0004-seguranca-da-conta.md#o-que-já-está-implementado-2026-10-25)).
 - [ ] Validade de 7 dias está boa?
 - [ ] O convite para o app (sem wallet), que o Wallefy tem em `user_invites`, continua existindo no finfy?

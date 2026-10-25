@@ -84,13 +84,15 @@ Detalhes em [codebase.md → Authentication](../finfy/codebase.md#authentication
 | --- | --- |
 | Argon2id com os parâmetros desta decisão, pepper HMAC com versão e re-hash no login | TOTP, códigos de recuperação, step-up |
 | Política de senha, incluindo a consulta ao Have I Been Pwned. Se a consulta falhar, o cadastro segue (falha aberta) | Troca e redefinição de senha |
-| Cadastro com código por e-mail, login e logout | Tela "Dispositivos conectados", encerrar outras sessões |
+| Cadastro, login e logout, sem passo de e-mail por enquanto (ver abaixo) | Tela "Dispositivos conectados", encerrar outras sessões |
 | Sessão opaca em cookie, só o hash no banco, 30 dias de inatividade e 90 no total | Envio de e-mails: ficam na fila `email_outbox` até haver provedor |
 | Bloqueio da conta e limites por IP e por e-mail (tabela `rate_limits`, no Postgres) | Avisos por e-mail de login novo e de mudanças |
-| Respostas que não revelam se o e-mail existe, incluindo o mesmo tempo de resposta | CAPTCHA após falhas, login com Google e Apple |
+| Login que não revela se o e-mail existe, incluindo o mesmo tempo de resposta | CAPTCHA após falhas, login com Google e Apple |
 | Eventos em `security_events` | Tela de segurança para o usuário |
 
-Para fazer login é preciso verificar o e-mail antes. Assim o cadastro pode responder igual exista ou não a conta.
+**Sem e-mail por enquanto (2026-10-25).** Não há provedor de e-mail, então nada que dependa de e-mail está ligado: código por e-mail (OTP), verificação do e-mail e avisos. O cadastro já entra direto no app, e o login não pede código. O código desse passo continua pronto e volta a funcionar quando houver provedor ([0003](0003-convites-por-email.md)); a chave é `EMAIL_DELIVERY_ENABLED` em `apps/web/lib/server/mail.ts`.
+
+Consequência: enquanto o e-mail estiver desligado, o cadastro avisa quando o e-mail já tem conta (`emailTaken`). Isso revela se um e-mail está cadastrado, o que a regra contra enumeração queria evitar. Sem e-mail, não há outro jeito de avisar o dono da conta. O limite de 10 cadastros por hora por IP reduz o abuso. Com e-mail ligado, o cadastro volta a responder igual exista ou não a conta, e o login volta a exigir e-mail verificado.
 
 ## Diferenças
 

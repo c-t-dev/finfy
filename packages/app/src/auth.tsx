@@ -159,16 +159,18 @@ export function SignInForm({
 
 export function SignUpForm({
   client,
+  onDone,
   onVerify,
   signInLink,
 }: {
   client: AuthClient;
+  onDone: () => void;
   onVerify: (email: string) => void;
   signInLink: React.ReactNode;
 }) {
   const t = useTranslations("auth");
   const locale = useLocale();
-  const { pending, failure, setFailure, run } = useSubmit((next) => next.next === "verifyEmail" && onVerify(next.email));
+  const { pending, failure, setFailure, run } = useSubmit((next) => (next.next === "app" ? onDone() : onVerify(next.email)));
   return (
     <form
       className="flex flex-col gap-3"
