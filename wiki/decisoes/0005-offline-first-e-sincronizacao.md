@@ -15,7 +15,49 @@ Com wallets compartilhadas ([0002](0002-wallets-e-compartilhamento.md)), esse mo
 
 ## Decisão
 
+### Plataformas (decidido em 2026-10-25)
+
+| Plataforma | Offline |
+| --- | --- |
+| App Windows, macOS, Android, iOS | Sim, com banco local e sincronização |
+| Web (navegador) | **Não.** Só online: lê e grava direto na API, sem banco local, sem fila de alterações |
+
+### Tecnologia de sincronização (recomendação, aguardando confirmação)
+
+**PowerSync + Postgres, com toda escrita passando pela API do finfy.**
+
+| Parte | Quem faz |
+| --- | --- |
+| Banco do servidor | Postgres (fonte da verdade) |
+| Descer dados para o aparelho | PowerSync: replica de forma incremental só as wallets de que o usuário é membro ativo, para um SQLite local em cada plataforma |
+| Fila de alterações no aparelho | SDK do PowerSync (fila local que reenvia quando volta a internet) |
+| Subir alterações | O app envia a fila para a **API do finfy** (`/api/sync/push`), que valida permissão, mescla por campo, cria conflitos e grava a auditoria ([0006](0006-auditoria.md)) |
+| Acesso revogado | Regras de sincronização filtram por `wallet_members`; ao remover o membro, o PowerSync tira os dados daquela wallet do aparelho |
+
+Por que essa opção:
+
+- Faz a parte mais trabalhosa e propensa a erro (descida incremental, SQLite local, fila, reenvio) e tem SDK para as quatro plataformas nativas.
+- Não decide conflitos sozinho: a gravação fica na nossa API, então as regras desta decisão (servidor manda, mescla por campo, conflitos de dinheiro para revisão) continuam valendo.
+- A filtragem por wallet resolve o caso do membro removido sem código próprio de limpeza.
+
+Alternativas avaliadas:
+
+| Opção | Por que não |
+| --- | --- |
+| Turso / libSQL (como no Wallefy) | Replica o banco, mas não oferece um ponto central para validar permissão e mesclar campos; esse código teria de ser escrito por fora, e as permissões por wallet ficariam difíceis de garantir |
+| Implementação própria completa | Controle total, mas exige construir e manter descida incremental, fila, retentativas e esquema local em quatro plataformas |
+| ElectricSQL | Mesmo padrão (sincroniza leitura, escrita pela API), mas o cliente SQLite nativo é menos maduro que o do PowerSync |
+
+Cuidados antes de confirmar:
+
+- Postgres em vez do SQLite + Turso do Wallefy: muda a base técnica em relação ao my-fin.
+- Dependência de fornecedor: o PowerSync tem versão hospedada e versão self-hosted; revisar licença, preço e limites antes de fechar.
+- A escolha do SDK puxa a tecnologia dos apps (Flutter, React Native, Kotlin/Swift ou .NET). Ver perguntas em aberto.
+- Conferir na documentação atual do PowerSync o suporte a Windows e macOS no SDK escolhido.
+
 ### O que funciona sem internet
+
+Vale para os apps nativos. Na web, tudo exige internet.
 
 | Funciona offline | Exige internet |
 | --- | --- |
@@ -49,7 +91,7 @@ IDs novos são UUIDv7, gerados no aparelho.
 ### Sincronização
 
 1. **Enviar:** `POST /api/sync/push` com as mutações pendentes, em ordem. O servidor responde, para cada uma: `ACCEPTED` (com a nova versão), `CONFLICT` ou `REJECTED` (com o motivo).
-2. **Receber:** `GET /api/sync/pull?wallet_id=&since=<seq>` devolve o que mudou desde a última sequência daquela wallet, em páginas.
+2. **Receber:** `GET /api/sync/pull?wallet_id=&since=<seq>` devolve o que mudou desde a última sequência daquela wallet, em páginas. Se a recomendação PowerSync for aceita, esse passo é feito pelo serviço de sincronização e não precisamos de `pull` nem de `wallet_sequences` próprios; o `push` continua sendo nosso.
 3. Cada wallet tem uma **sequência crescente no servidor** (`server_seq`); cada registro tem uma `version` incrementada pelo servidor. A ordem real é a de chegada ao servidor, nunca o relógio do aparelho.
 4. Gatilhos: abrir o app, voltar a ter internet, depois de cada escrita (com espera de alguns segundos) e a cada 5 minutos com o app aberto.
 5. A tela mostra o estado: sincronizado, N alterações pendentes, ou conflitos para revisar.
@@ -77,8 +119,8 @@ Conflitos aparecem numa tela "Revisar conflitos" para quem fez a edição, com a
 
 ### Dados no aparelho
 
-- Banco local criptografado (SQLCipher no celular). No navegador, só se a web também for offline (pergunta em aberto).
-- Token de sessão no armazenamento seguro do sistema (Keychain, Keystore).
+- Banco local criptografado (SQLCipher) em todos os apps nativos. O navegador não guarda dados financeiros localmente, porque a web é só online.
+- Token de sessão no armazenamento seguro do sistema: Keychain (iOS, macOS), Keystore (Android), Credential Manager / DPAPI (Windows).
 - Bloqueio do app com PIN ou biometria, opcional.
 - Um aparelho só sincroniza wallets em que o usuário é membro ativo; nada de outras wallets fica no aparelho.
 
@@ -116,8 +158,9 @@ O `push` e o `pull` enviam a versão do esquema local. O servidor recusa versõe
 
 ## Perguntas em aberto
 
-- [ ] A versão web também funciona offline, ou só o app móvel?
-- [ ] Qual tecnologia de sincronização: implementação própria (como acima), Turso com réplicas embarcadas como no Wallefy, ou uma biblioteca pronta (PowerSync, ElectricSQL)? A escolha muda quanto disto precisa ser construído.
+- [x] A versão web também funciona offline? **Não**: só os apps Windows, macOS, Android e iOS (decidido em 2026-10-25).
+- [ ] Confirmar a recomendação PowerSync + Postgres com escrita pela API do finfy.
+- [ ] Tecnologia dos apps nativos: Flutter (uma base para as quatro plataformas), React Native, ou nativo por plataforma? E a web reaproveita a mesma base ou é separada (ex.: Next.js como no Wallefy)?
 - [ ] A política de conflitos por campo está boa, ou prefere que todo conflito vá para revisão?
 - [ ] Criptografar o banco local é obrigatório desde a v1?
 - [ ] Anexos ficam disponíveis offline (baixados no aparelho) ou só com internet?

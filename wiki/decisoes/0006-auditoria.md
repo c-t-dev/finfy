@@ -40,10 +40,12 @@ Eventos da conta (login, senha, MFA, sessões) **não** entram aqui: ficam em `s
 
 ### Quem vê
 
+Decidido em 2026-10-25: **todos os membros veem tudo.**
+
 | Papel | Vê |
 | --- | --- |
-| OWNER, ADMIN | Histórico completo da wallet, com filtros, e exportação em CSV |
-| EDITOR, VIEWER | Histórico de cada item que conseguem ver (aba "Histórico" no detalhe do lançamento) e o feed de atividade da wallet |
+| OWNER, ADMIN, EDITOR, VIEWER | Histórico completo da wallet (feed de atividade, filtros, histórico de cada item, eventos de acesso) |
+| OWNER, ADMIN | Além disso, exportação do histórico em CSV |
 | Membro removido | Nada da wallet a partir da remoção |
 
 ### Na interface
@@ -86,7 +88,7 @@ Eventos da conta (login, senha, MFA, sessões) **não** entram aqui: ficam em `s
 | Método | Rota | Quem |
 | --- | --- | --- |
 | GET | `/api/wallets/:id/activity` | Todos os membros (feed, paginado) |
-| GET | `/api/wallets/:id/audit?entity=&actor=&action=&from=&to=` | OWNER, ADMIN |
+| GET | `/api/wallets/:id/audit?entity=&actor=&action=&from=&to=` | Todos os membros |
 | GET | `/api/wallets/:id/audit/export` | OWNER, ADMIN (CSV) |
 | GET | `/api/:entity/:id/history` | Quem pode ver o item |
 
@@ -97,6 +99,7 @@ Eventos da conta (login, senha, MFA, sessões) **não** entram aqui: ficam em `s
 
 ## Perguntas em aberto
 
-- [ ] EDITOR e VIEWER devem ver o feed completo da wallet, ou só o histórico de cada item?
+- [x] EDITOR e VIEWER veem o feed completo? **Sim, todos veem tudo** (decidido em 2026-10-25).
+- [ ] A exportação em CSV fica só com OWNER e ADMIN (proposta) ou também é liberada para todos?
 - [ ] A cadeia de hash é necessária na v1, ou basta bloquear edição no banco?
 - [ ] Quanto tempo guardar o histórico: enquanto a wallet existir (proposta) ou um prazo fixo (ex.: 5 anos)?
