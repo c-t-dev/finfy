@@ -83,7 +83,11 @@
               "notFound",
               "currencyLocked",
               "versionConflict",
-              "invoicePaid"
+              "invoicePaid",
+              "alreadyMember",
+              "inviteInvalid",
+              "inviteWrongAccount",
+              "ownerCannotLeave"
             ]
           },
           "retryAfterSeconds": {
