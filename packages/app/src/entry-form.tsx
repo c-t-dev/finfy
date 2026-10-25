@@ -19,10 +19,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Spinner } from "@packages/ui/components/spinner";
 import { cn } from "@packages/ui/lib/utils";
 import type { Account } from "@packages/shared/accounts";
+import type { Card } from "@packages/shared/cards";
 import { newId } from "@packages/shared/ids";
 import { DESCRIPTION_MAX, NOTES_MAX, type Entry, type EntryKind } from "@packages/shared/transactions";
 import type { Wallet } from "@packages/shared/wallets";
 import { useApi } from "./api";
+import { InstallmentsSelect } from "./cards-ui";
 import { CategoryPicker, type CategoryTree } from "./categories";
 import { useTranslations } from "./i18n";
 import { todayIso, useMoney } from "./money";
@@ -40,6 +42,7 @@ function kindOf(entry: Entry): EntryKind {
 export function EntryDialog({
   wallet,
   accounts,
+  cards = [],
   tree,
   editing,
   onClose,
@@ -47,6 +50,8 @@ export function EntryDialog({
 }: {
   wallet: Wallet;
   accounts: Account[];
+  /** Cards an expense can be charged to (new entries only). */
+  cards?: Card[];
   tree: CategoryTree | null;
   editing: EntryEditing;
   onClose: () => void;
@@ -61,6 +66,7 @@ export function EntryDialog({
             key={editing.mode === "edit" ? editing.entry.id : "new"}
             wallet={wallet}
             accounts={accounts}
+            cards={cards}
             tree={tree}
             editing={editing}
             onCancel={onClose}
@@ -72,19 +78,25 @@ export function EntryDialog({
   );
 }
 
+const CARD_PREFIX = "card:";
+
 function AccountSelect({
   id,
   accounts,
+  cards = [],
   value,
   onValueChange,
   disabled,
 }: {
   id: string;
   accounts: Account[];
+  /** Offered after the accounts, as `card:<id>`. */
+  cards?: Card[];
   value: string;
   onValueChange: (value: string) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("app.cards");
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger id={id}>
@@ -96,6 +108,11 @@ function AccountSelect({
             {account.name}
           </SelectItem>
         ))}
+        {cards.map((card) => (
+          <SelectItem key={card.id} value={`${CARD_PREFIX}${card.id}`}>
+            {t("sourceCard", { name: card.name })}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );
@@ -104,6 +121,7 @@ function AccountSelect({
 function EntryForm({
   wallet,
   accounts,
+  cards,
   tree,
   editing,
   onCancel,
@@ -111,6 +129,7 @@ function EntryForm({
 }: {
   wallet: Wallet;
   accounts: Account[];
+  cards: Card[];
   tree: CategoryTree | null;
   editing: NonNullable<EntryEditing>;
   onCancel: () => void;
@@ -140,6 +159,7 @@ function EntryForm({
   const [categoryId, setCategoryId] = React.useState<string | null>(existing?.categoryId ?? null);
   const [paid, setPaid] = React.useState(existing ? existing.status === "PAID" : true);
   const [notes, setNotes] = React.useState(existing?.notes ?? "");
+  const [installments, setInstallments] = React.useState(1);
   const [amountInvalid, setAmountInvalid] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const { pending, failure, setFailure, run } = useWalletRequest();
@@ -152,6 +172,25 @@ function EntryForm({
     if (kind === "TRANSFER" && accountId === toAccountId) return setFailure({ error: "invalidInput" });
     const status = paid ? "PAID" : "PENDING";
     const trimmedNotes = notes.trim() || null;
+
+    // An expense charged to a card is a card purchase: it goes to the card's invoice.
+    if (!existing && kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX)) {
+      const cardId = accountId.slice(CARD_PREFIX.length);
+      const ok = await run(() =>
+        request("POST", `/api/wallets/${wallet.id}/cards/${cardId}/purchases`, {
+          id: newId(),
+          mutationId: newId(),
+          categoryId,
+          description: description.trim(),
+          amountMinor,
+          transactionDate: date,
+          installments,
+          notes: trimmedNotes,
+        }),
+      );
+      if (ok) onSaved();
+      return;
+    }
 
     if (existing) {
       // Only what changed goes up; on a transfer the server mirrors shared fields to the other leg.
@@ -230,6 +269,10 @@ function EntryForm({
 
   const title = existing ? (kind === "TRANSFER" ? t("form.editTransferTitle") : t("form.editTitle")) : t("form.createTitle");
   const needsCategory = kind !== "TRANSFER" && !categoryId;
+  // A card purchase has installments instead of a paid/pending switch.
+  const onCard = !existing && kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX);
+  const parsed = money.parse(amount);
+  const parsedAmount = parsed && parsed > 0 ? parsed : null;
 
   return (
     <form
@@ -325,17 +368,27 @@ function EntryForm({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="entry-account">{t("form.account")}</Label>
-            <AccountSelect id="entry-account" accounts={accounts} value={accountId} onValueChange={setAccountId} />
+            <AccountSelect
+              id="entry-account"
+              accounts={accounts}
+              cards={!existing && kind === "EXPENSE" ? cards : []}
+              value={accountId}
+              onValueChange={setAccountId}
+            />
           </div>
         </div>
       )}
-      <div className="flex items-start gap-2">
-        <Checkbox id="entry-paid" checked={paid} onCheckedChange={(checked) => setPaid(checked === true)} />
-        <div className="flex flex-col gap-0.5">
-          <Label htmlFor="entry-paid">{t("form.paid")}</Label>
-          <p className="text-[11px] text-muted-foreground">{t("form.paidHint")}</p>
+      {onCard ? (
+        <InstallmentsSelect value={installments} onChange={setInstallments} totalMinor={parsedAmount} format={money.format} />
+      ) : (
+        <div className="flex items-start gap-2">
+          <Checkbox id="entry-paid" checked={paid} onCheckedChange={(checked) => setPaid(checked === true)} />
+          <div className="flex flex-col gap-0.5">
+            <Label htmlFor="entry-paid">{t("form.paid")}</Label>
+            <p className="text-[11px] text-muted-foreground">{t("form.paidHint")}</p>
+          </div>
         </div>
-      </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="entry-notes">{t("form.notes")}</Label>
         <textarea

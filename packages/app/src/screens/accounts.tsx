@@ -30,6 +30,7 @@ import { CURRENCIES, formatMoney, parseMoney, type Currency } from "@packages/sh
 import { can } from "@packages/shared/roles";
 import type { Wallet } from "@packages/shared/wallets";
 import { useAccountClient, useAccountList } from "../accounts";
+import { CardsSection } from "../cards-ui";
 import { useLocale, useTranslations } from "../i18n";
 import { decimalSeparator, minorToInput } from "../money";
 import { useWalletRequest, WalletErrorMessage } from "../wallet-ui";
@@ -58,10 +59,6 @@ export function AccountsScreen() {
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("accounts.noWallet")}</p>
       )}
-      <section className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold">{t("accounts.cards.title")}</h2>
-        <p className="text-[13px] text-muted-foreground">{t("accounts.cards.soon")}</p>
-      </section>
     </div>
   );
 }
@@ -189,6 +186,11 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
           reload();
         }}
       />
+      {active.state.status === "ready" && (
+        <div className="mt-4">
+          <CardsSection wallet={wallet} accounts={accounts} />
+        </div>
+      )}
     </section>
   );
 }

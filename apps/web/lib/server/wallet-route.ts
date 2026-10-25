@@ -16,6 +16,7 @@ const STATUS: Record<WalletError, number> = {
   notFound: 404,
   currencyLocked: 409,
   versionConflict: 409,
+  invoicePaid: 409,
   rateLimited: 429,
   unavailable: 503,
 };

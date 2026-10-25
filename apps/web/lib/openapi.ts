@@ -33,6 +33,21 @@ import {
   updateEntryInput,
 } from "@packages/shared/transactions";
 import {
+  cardListSchema,
+  cardSchema,
+  cardStateInput,
+  createCardInput,
+  createPurchaseInput,
+  invoiceDetailSchema,
+  invoiceListSchema,
+  invoiceSchema,
+  payInvoiceInput,
+  purchaseStateInput,
+  reopenInvoiceInput,
+  updateCardInput,
+  updatePurchaseInput,
+} from "@packages/shared/cards";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -104,6 +119,11 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       { name: "accounts", description: "Accounts of a wallet; the balance is computed, never stored" },
       { name: "categories", description: "System categories (read-only, hideable per wallet) and the wallet's own; two levels" },
       { name: "transactions", description: "Income, expenses and transfers; amounts are positive minor units, the type gives the direction" },
+      {
+        name: "cards",
+        description:
+          "Credit cards, purchases (with installments) and invoices. A purchase goes to the invoice whose closing date is on or after its date; invoices are addressed by reference month `YYYY-MM`",
+      },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -134,6 +154,11 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         CategoryList: json(categoryListSchema),
         Entry: json(entrySchema),
         EntryList: json(entryListSchema),
+        Card: json(cardSchema),
+        CardList: json(cardListSchema),
+        Invoice: json(invoiceSchema),
+        InvoiceList: json(invoiceListSchema),
+        InvoiceDetail: json(invoiceDetailSchema),
         Health: {
           type: "object",
           required: ["status", "database"],
@@ -470,6 +495,99 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           responses: { 200: response("The archived entry.", ref("Entry")), ...walletErrors("invalidInput", "forbidden", "notFound") },
         },
       },
+      ...cardPaths(),
+    },
+  };
+}
+
+const cardIdParam = { name: "cardId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+const monthParam = {
+  name: "month",
+  in: "path",
+  required: true,
+  description: "Reference month of the invoice (the month it closes in).",
+  schema: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$", example: "2026-10" },
+};
+
+/** One write operation on a card resource: OWNER, ADMIN, EDITOR, idempotent by `mutationId`. */
+function cardWrite(
+  summary: string,
+  description: string,
+  parameters: unknown[],
+  input: z.ZodType,
+  ok: Record<number, unknown>,
+  errors: string[],
+) {
+  return {
+    tags: ["cards"],
+    summary,
+    description: `${description} ${originNote}`,
+    security: [{ session: [] }],
+    parameters,
+    requestBody: body(input),
+    responses: { ...ok, ...walletErrors(...errors) },
+  };
+}
+
+function cardPaths() {
+  const card = [walletIdParam, cardIdParam];
+  const invoice = [walletIdParam, cardIdParam, monthParam];
+  const purchase = [walletIdParam, cardIdParam, entryIdParam];
+  return {
+    "/api/wallets/{id}/cards": {
+      get: {
+        tags: ["cards"],
+        summary: "Cards with the limit used and the current invoice",
+        description: "Any member. `usedMinor` sums the purchases of unpaid invoices. `?archived=1` lists the archived cards.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam, { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } }],
+        responses: { 200: response("The cards.", ref("CardList")), ...walletErrors("notFound") },
+      },
+      post: cardWrite("Create a card", "OWNER, ADMIN, EDITOR. `paymentAccountId` is the account that usually pays the invoices.", [walletIdParam], createCardInput, { 201: response("The card.", ref("Card")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}": {
+      patch: cardWrite("Edit a card", "Name, brand, color: the last write wins. Limit, days and paying account need the latest version. New days apply to invoices opened afterwards.", card, updateCardInput, { 200: response("The card.", ref("Card")) }, ["invalidInput", "forbidden", "notFound", "versionConflict"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}/archive": {
+      post: cardWrite("Archive a card", "Invoices and purchases are kept.", card, cardStateInput, { 200: response("The card.", ref("Card")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}/restore": {
+      post: cardWrite("Restore a card", "", card, cardStateInput, { 200: response("The card.", ref("Card")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}/invoices": {
+      get: {
+        tags: ["cards"],
+        summary: "Every invoice of the card",
+        description: "Any member. Newest first, with totals and state (`OPEN`, `CLOSED`, `OVERDUE`, `PAID`), including the current invoice even before it has purchases.",
+        security: [{ session: [] }],
+        parameters: card,
+        responses: { 200: response("The invoices.", ref("InvoiceList")), ...walletErrors("notFound") },
+      },
+    },
+    "/api/wallets/{id}/cards/{cardId}/invoices/{month}": {
+      get: {
+        tags: ["cards"],
+        summary: "One invoice with its purchases",
+        description: "Any member. A month without purchases answers an empty invoice with its dates.",
+        security: [{ session: [] }],
+        parameters: invoice,
+        responses: { 200: response("The invoice.", ref("InvoiceDetail")), ...walletErrors("invalidInput", "notFound") },
+      },
+    },
+    "/api/wallets/{id}/cards/{cardId}/invoices/{month}/pay": {
+      post: cardWrite("Pay an invoice", "Pays the whole invoice from an account: `amountMinor` must equal the total. Creates a CREDIT_CARD_PAYMENT entry and marks the invoice and its purchases paid. A paid invoice takes no new purchases.", invoice, payInvoiceInput, { 200: response("The invoice.", ref("Invoice")) }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}/invoices/{month}/reopen": {
+      post: cardWrite("Reopen a paid invoice", "Deletes the payment entry; the invoice and its purchases are open again.", invoice, reopenInvoiceInput, { 200: response("The invoice.", ref("Invoice")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}/purchases": {
+      post: cardWrite("Create a purchase", "OWNER, ADMIN, EDITOR. With `installments` > 1 the total is split in minor units (leftover on the first); installment k is dated k−1 months later and goes to that date's invoice. Answers every installment.", [walletIdParam, cardIdParam], createPurchaseInput, { 201: response("The installments.", { type: "array", items: ref("Entry") }) }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}": {
+      patch: cardWrite("Edit a purchase", "Description, category and notes of every installment; the last write wins. To change amount or date, delete and add again.", purchase, updatePurchaseInput, { 204: response("Saved.") }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
+      post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
     },
   };
 }
@@ -502,7 +620,8 @@ const WALLET_ERROR_STATUS: Record<string, [number, string]> = {
   forbidden: [403, "The member's role does not allow it."],
   notFound: [404, "No such wallet, archived, or not a member."],
   currencyLocked: [409, "The currency is fixed after the first entry."],
-  versionConflict: [409, "The wallet changed since `baseVersion`."],
+  versionConflict: [409, "The row changed since `baseVersion`."],
+  invoicePaid: [409, "The invoice is paid; reopen it first."],
   rateLimited: [429, "Too many attempts; see `Retry-After`."],
 };
 

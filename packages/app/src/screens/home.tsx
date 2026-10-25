@@ -52,7 +52,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
   const label = useCategoryLabel();
   const { Link } = useAppNavigation();
   const canEdit = can(wallet.role, "editEntries");
-  const { accounts, names, reload: reloadAccounts } = useWalletAccounts(wallet.id);
+  const { accounts, cards, names, reload: reloadAccounts } = useWalletAccounts(wallet.id);
   const { tree } = useCategories(wallet.id);
   const { from, to } = monthRange(todayIso().slice(0, 7));
   const month = useResource<EntryList>(`/api/wallets/${wallet.id}/transactions?from=${from}&to=${to}`);
@@ -170,6 +170,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
         <EntryDialog
           wallet={wallet}
           accounts={accounts}
+          cards={cards}
           tree={tree}
           editing={editing}
           onClose={() => setEditing(null)}

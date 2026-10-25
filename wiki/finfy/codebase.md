@@ -17,7 +17,8 @@ Milestones 1 (foundation), 2 (e-mail and password authentication), 3 (wallets) a
 | Money, IDs, roles and permission matrix, locales | `POST /api/sync/push`, conflict records (`sync_conflicts`), audit chain check job |
 | Wallets: create, list, switch (remembered per browser), rename, change currency before the first entry, archive with the password (see [Wallets](#wallets)) | Activity feed and item history screens |
 | One write path: idempotent mutations and a hash-chained audit log (see [Write path](#write-path)) | |
-| Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | Credit cards |
+| Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | |
+| Credit cards: cards, purchases with installments, invoices by month, pay and reopen (see [Credit cards](#credit-cards)) | Partial invoice payments, card refunds |
 | Transactions: income, expense, transfers, pending/paid, Statement by month with filters and search, Home summary (see [Transactions](#transactions)) | Tags, attachments, recurrences, installments outside cards |
 | Categories: 72 system categories (proposal), hide per wallet, own categories and subcategories (see [Categories](#categories)) | |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
@@ -155,6 +156,28 @@ Rules:
 - **Totals** (`summary`): paid `INCOME`; paid `EXPENSE` plus `CREDIT_CARD_PURCHASE` (on its own date, whatever the invoice status); pending income and expense apart. The Home "where the money went" uses the same rule, grouped by top-level category.
 - The first entry locks the wallet's currency.
 - Checked on 2026-10-25: balances after expense, income, pending, transfer, transfer edit and transfer delete; filters by category (with subcategories) and search; stale edits.
+
+## Credit cards
+
+Server: `apps/web/lib/server/cards.ts`. Shared: `@packages/shared/cards` (schemas) and `invoice-math.ts` (pure, tested). Client: `packages/app/src/cards-ui.tsx` (cards section, card form, purchase dialog, `InstallmentsSelect`, `ConfirmDialog`) and `screens/card.tsx` (`/app/accounts/cards/:cardId`). The "New entry" form also charges an expense to a card.
+
+| Route | Who |
+| --- | --- |
+| `GET/POST /api/wallets/:id/cards`, `PATCH .../cards/:cardId`, `POST .../archive`, `.../restore` | Read: any member. Write: OWNER, ADMIN, EDITOR |
+| `GET .../cards/:cardId/invoices` and `.../invoices/:month` (`YYYY-MM`) | Any member |
+| `POST .../invoices/:month/pay` and `.../reopen` | OWNER, ADMIN, EDITOR |
+| `POST .../cards/:cardId/purchases`, `PATCH .../purchases/:entryId`, `POST .../purchases/:entryId/archive` | OWNER, ADMIN, EDITOR |
+
+Rules:
+
+- **Invoice of a purchase:** the invoice of reference month M closes on the closing day of M (the month's last day when shorter) and is due on the due day, in M when the due day comes after the closing day, otherwise in M+1. A purchase goes to the invoice of its own month when its day is on or before the closing day, otherwise to the next one. Invoice rows are created on demand with ID `deterministicId("invoice", cardId, year, month)`.
+- **States:** `OPEN` and `PAID` are stored; `CLOSED` (after closing) and `OVERDUE` (after due) come from today's date.
+- **Installments:** the total is split in minor units with the leftover on the first; installment k is dated k−1 months after the purchase (day clamped) and lands on that date's invoice. IDs: the first keeps the request `id`, the others `deterministicId("installment", id, k)`; `installment_group_id` is the first ID. Editing changes description, category and notes of every installment; amount and date need a new purchase.
+- **Purchases** are `CREDIT_CARD_PURCHASE` rows, `PENDING` until their invoice is paid. They never touch an account balance and count as expense on their own date.
+- **Paying** creates one `CREDIT_CARD_PAYMENT` (paid) from the chosen account for the whole total, marks the invoice and its purchases `PAID` and stores `payment_transaction_id`. Partial payments are not supported yet (`amountMinor` must equal the total). A paid invoice refuses new purchases and deletions (`409 invoicePaid`). **Reopening** archives the payment and puts invoice and purchases back to open/pending.
+- **Limit used** = purchases of unpaid invoices.
+- **Changing closing or due day** affects only invoices opened afterwards; existing invoices keep their dates.
+- Checked on 2026-10-25: purchases before and after closing, 3 installments of 100,00 (33,34 + 33,33 + 33,33 on three invoices), wrong payment amount, payment debit, writes on a paid invoice, reopen, edit and delete of every installment, month totals.
 
 ## API transport on the client
 

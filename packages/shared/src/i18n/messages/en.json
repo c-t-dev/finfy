@@ -200,10 +200,6 @@
         "show": "Show archived accounts",
         "hide": "Hide archived accounts",
         "empty": "No archived accounts."
-      },
-      "cards": {
-        "title": "Credit cards",
-        "soon": "Credit cards come in the next step."
       }
     },
     "categories": {
@@ -313,6 +309,103 @@
         "confirm": "Delete",
         "cancel": "Cancel"
       }
+    },
+    "cards": {
+      "title": "Credit cards",
+      "new": "New card",
+      "empty": "No cards yet.",
+      "emptyHint": "Add a card to track purchases and invoices.",
+      "needsAccount": "Create an account first: a card needs one to pay its invoices.",
+      "used": "{used} of {limit} used",
+      "noLimit": "{used} used",
+      "currentInvoice": "Current invoice",
+      "due": "Due {date}",
+      "closes": "Closes {date}",
+      "brands": {
+        "VISA": "Visa",
+        "MASTERCARD": "Mastercard",
+        "ELO": "Elo",
+        "AMEX": "American Express",
+        "HIPERCARD": "Hipercard",
+        "OTHER": "Other"
+      },
+      "states": {
+        "OPEN": "Open",
+        "CLOSED": "Closed",
+        "OVERDUE": "Overdue",
+        "PAID": "Paid"
+      },
+      "actions": {
+        "menu": "Actions for {name}",
+        "open": "Open",
+        "edit": "Edit",
+        "archive": "Archive",
+        "restore": "Restore"
+      },
+      "archived": {
+        "show": "Show archived cards",
+        "hide": "Hide archived cards",
+        "empty": "No archived cards."
+      },
+      "form": {
+        "createTitle": "New card",
+        "editTitle": "Edit card",
+        "name": "Name",
+        "namePlaceholder": "Bank card, Travel card…",
+        "paymentAccount": "Account that pays the invoice",
+        "brand": "Brand",
+        "limit": "Limit",
+        "limitHint": "Leave empty for no limit.",
+        "closingDay": "Closing day",
+        "dueDay": "Due day",
+        "daysHint": "Purchases after the closing day go to the next invoice.",
+        "color": "Color",
+        "create": "Create card",
+        "save": "Save",
+        "cancel": "Cancel",
+        "dayInvalid": "Use a day from 1 to 31."
+      },
+      "archive": {
+        "title": "Archive {name}?",
+        "body": "The card leaves the list. Its invoices and purchases are kept.",
+        "confirm": "Archive",
+        "cancel": "Cancel"
+      },
+      "detail": {
+        "back": "Accounts and cards",
+        "invoice": "Invoice of {month}",
+        "previous": "Previous invoice",
+        "next": "Next invoice",
+        "total": "Total",
+        "period": "{from} to {to}",
+        "emptyInvoice": "No purchases on this invoice.",
+        "newPurchase": "New purchase",
+        "pay": "Pay invoice",
+        "reopen": "Reopen invoice",
+        "notFound": "This card does not exist or was archived.",
+        "reopenTitle": "Reopen this invoice?",
+        "reopenBody": "The payment is deleted and the money goes back to the account.",
+        "reopenConfirm": "Reopen"
+      },
+      "purchase": {
+        "createTitle": "New purchase on {card}",
+        "editTitle": "Edit purchase",
+        "installments": "Installments",
+        "installmentsHint": "{count}× {amount}",
+        "single": "Single payment",
+        "editHint": "Changes apply to every installment. To change the amount or date, delete it and add it again.",
+        "delete": "Delete purchase",
+        "deleteTitle": "Delete this purchase?",
+        "deleteBody": "All installments are deleted."
+      },
+      "payDialog": {
+        "title": "Pay invoice of {month}",
+        "account": "Pay from",
+        "date": "Payment date",
+        "amount": "Amount",
+        "confirm": "Pay {amount}"
+      },
+      "sourceCard": "Card: {name}"
     }
   },
   "errors": {
@@ -327,7 +420,8 @@
       "invalidCredentials": "Incorrect password.",
       "rateLimited": "Too many attempts. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
       "unavailable": "This is not available right now. Try again later.",
-      "forbidden": "You don't have permission to do this in this wallet."
+      "forbidden": "You don't have permission to do this in this wallet.",
+      "invoicePaid": "This invoice is already paid. Reopen it first."
     },
     "auth": {
       "invalidInput": "Check the fields and try again.",

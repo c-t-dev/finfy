@@ -20,6 +20,7 @@ export const WALLET_ERRORS = [
   "notFound",
   "currencyLocked",
   "versionConflict",
+  "invoicePaid",
   "invalidCredentials",
   "rateLimited",
   "unavailable",

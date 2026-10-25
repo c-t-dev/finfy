@@ -82,3 +82,24 @@ test("month helpers give the first and last day, across years", async () => {
   assert.equal(addMonths("2026-12", 1), "2027-01");
   assert.equal(addMonths("2026-01", -1), "2025-12");
 });
+
+test("card invoices: purchases after the closing day roll to the next invoice", async () => {
+  const { invoiceForDate, invoicePeriod, splitInstallments, addMonthsToDate, invoiceState } = await import("../src/invoice-math.ts");
+  // Closes on the 25th, due on the 5th of the next month.
+  assert.deepEqual(invoiceForDate("2026-10-25", 25, 5), {
+    referenceYear: 2026, referenceMonth: 10, openingDate: "2026-09-26", closingDate: "2026-10-25", dueDate: "2026-11-05",
+  });
+  assert.equal(invoiceForDate("2026-10-26", 25, 5).referenceMonth, 11);
+  assert.equal(invoiceForDate("2026-12-30", 25, 5).referenceYear, 2027);
+  // Closes on the 3rd, due on the 10th of the same month.
+  assert.equal(invoicePeriod(2026, 10, 3, 10).dueDate, "2026-10-10");
+  // Closing day 31 in February closes on the last day.
+  assert.equal(invoicePeriod(2026, 2, 31, 10).closingDate, "2026-02-28");
+  assert.equal(invoicePeriod(2026, 3, 31, 10).openingDate, "2026-03-01");
+  assert.deepEqual(splitInstallments(10000, 3), [3334, 3333, 3333]);
+  assert.equal(splitInstallments(999, 1)[0], 999);
+  assert.equal(addMonthsToDate("2026-01-31", 1), "2026-02-28");
+  assert.equal(invoiceState("OPEN", "2026-10-25", "2026-11-05", "2026-10-30"), "CLOSED");
+  assert.equal(invoiceState("OPEN", "2026-10-25", "2026-11-05", "2026-11-06"), "OVERDUE");
+  assert.equal(invoiceState("PAID", "2026-10-25", "2026-11-05", "2026-11-06"), "PAID");
+});

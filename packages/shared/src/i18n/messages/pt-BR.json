@@ -200,10 +200,6 @@
         "show": "Mostrar contas arquivadas",
         "hide": "Ocultar contas arquivadas",
         "empty": "Nenhuma conta arquivada."
-      },
-      "cards": {
-        "title": "Cartões de crédito",
-        "soon": "Os cartões de crédito chegam no próximo passo."
       }
     },
     "categories": {
@@ -313,6 +309,103 @@
         "confirm": "Apagar",
         "cancel": "Cancelar"
       }
+    },
+    "cards": {
+      "title": "Cartões de crédito",
+      "new": "Novo cartão",
+      "empty": "Nenhum cartão ainda.",
+      "emptyHint": "Adicione um cartão para acompanhar compras e faturas.",
+      "needsAccount": "Crie uma conta primeiro: o cartão precisa de uma para pagar as faturas.",
+      "used": "{used} de {limit} usados",
+      "noLimit": "{used} usados",
+      "currentInvoice": "Fatura atual",
+      "due": "Vence em {date}",
+      "closes": "Fecha em {date}",
+      "brands": {
+        "VISA": "Visa",
+        "MASTERCARD": "Mastercard",
+        "ELO": "Elo",
+        "AMEX": "American Express",
+        "HIPERCARD": "Hipercard",
+        "OTHER": "Outra"
+      },
+      "states": {
+        "OPEN": "Aberta",
+        "CLOSED": "Fechada",
+        "OVERDUE": "Vencida",
+        "PAID": "Paga"
+      },
+      "actions": {
+        "menu": "Ações de {name}",
+        "open": "Abrir",
+        "edit": "Editar",
+        "archive": "Arquivar",
+        "restore": "Restaurar"
+      },
+      "archived": {
+        "show": "Mostrar cartões arquivados",
+        "hide": "Ocultar cartões arquivados",
+        "empty": "Nenhum cartão arquivado."
+      },
+      "form": {
+        "createTitle": "Novo cartão",
+        "editTitle": "Editar cartão",
+        "name": "Nome",
+        "namePlaceholder": "Cartão do banco, Cartão de viagem…",
+        "paymentAccount": "Conta que paga a fatura",
+        "brand": "Bandeira",
+        "limit": "Limite",
+        "limitHint": "Deixe vazio para sem limite.",
+        "closingDay": "Dia do fechamento",
+        "dueDay": "Dia do vencimento",
+        "daysHint": "Compras depois do fechamento vão para a próxima fatura.",
+        "color": "Cor",
+        "create": "Criar cartão",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "dayInvalid": "Use um dia de 1 a 31."
+      },
+      "archive": {
+        "title": "Arquivar {name}?",
+        "body": "O cartão sai da lista. As faturas e compras continuam guardadas.",
+        "confirm": "Arquivar",
+        "cancel": "Cancelar"
+      },
+      "detail": {
+        "back": "Contas e cartões",
+        "invoice": "Fatura de {month}",
+        "previous": "Fatura anterior",
+        "next": "Próxima fatura",
+        "total": "Total",
+        "period": "{from} a {to}",
+        "emptyInvoice": "Nenhuma compra nesta fatura.",
+        "newPurchase": "Nova compra",
+        "pay": "Pagar fatura",
+        "reopen": "Reabrir fatura",
+        "notFound": "Este cartão não existe ou foi arquivado.",
+        "reopenTitle": "Reabrir esta fatura?",
+        "reopenBody": "O pagamento é apagado e o dinheiro volta para a conta.",
+        "reopenConfirm": "Reabrir"
+      },
+      "purchase": {
+        "createTitle": "Nova compra em {card}",
+        "editTitle": "Editar compra",
+        "installments": "Parcelas",
+        "installmentsHint": "{count}× {amount}",
+        "single": "À vista",
+        "editHint": "As mudanças valem para todas as parcelas. Para mudar o valor ou a data, apague e lance de novo.",
+        "delete": "Apagar compra",
+        "deleteTitle": "Apagar esta compra?",
+        "deleteBody": "Todas as parcelas são apagadas."
+      },
+      "payDialog": {
+        "title": "Pagar fatura de {month}",
+        "account": "Pagar com",
+        "date": "Data do pagamento",
+        "amount": "Valor",
+        "confirm": "Pagar {amount}"
+      },
+      "sourceCard": "Cartão: {name}"
     }
   },
   "errors": {
@@ -327,7 +420,8 @@
       "invalidCredentials": "Senha incorreta.",
       "rateLimited": "Muitas tentativas. Tente de novo em {minutes, plural, one {# minuto} other {# minutos}}.",
       "unavailable": "Isto não está disponível agora. Tente mais tarde.",
-      "forbidden": "Você não tem permissão para fazer isso nesta wallet."
+      "forbidden": "Você não tem permissão para fazer isso nesta wallet.",
+      "invoicePaid": "Esta fatura já foi paga. Reabra-a primeiro."
     },
     "auth": {
       "invalidInput": "Confira os campos e tente de novo.",

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Spinner } from "@packages/ui/components/spinner";
 import { cn } from "@packages/ui/lib/utils";
 import type { Account } from "@packages/shared/accounts";
+import type { Card } from "@packages/shared/cards";
 import { newId } from "@packages/shared/ids";
 import { can } from "@packages/shared/roles";
 import { addMonths, monthRange, type Entry, type EntryList } from "@packages/shared/transactions";
@@ -36,23 +37,36 @@ export function StatementScreen() {
   );
 }
 
-/** Active and archived accounts of a wallet; archived ones still name old entries. */
+/**
+ * Accounts and cards of a wallet: the active ones for pickers, and the names
+ * of archived ones too, since old entries still point at them.
+ */
 export function useWalletAccounts(walletId: string) {
   const active = useResource<{ accounts: Account[] }>(`/api/wallets/${walletId}/accounts`);
   const archived = useResource<{ accounts: Account[] }>(`/api/wallets/${walletId}/accounts?archived=1`);
+  const cards = useResource<{ cards: Card[] }>(`/api/wallets/${walletId}/cards`);
+  const archivedCards = useResource<{ cards: Card[] }>(`/api/wallets/${walletId}/cards?archived=1`);
   const activeList = active.state.status === "ready" ? active.state.value.accounts : null;
+  const cardList = React.useMemo(() => (cards.state.status === "ready" ? cards.state.value.cards : []), [cards.state]);
   const names = React.useMemo(() => {
     const map = new Map<string, string>();
     for (const state of [active.state, archived.state]) {
       if (state.status === "ready") for (const account of state.value.accounts) map.set(account.id, account.name);
     }
+    for (const state of [cards.state, archivedCards.state]) {
+      if (state.status === "ready") for (const card of state.value.cards) map.set(card.id, card.name);
+    }
     return map;
-  }, [active.state, archived.state]);
+  }, [active.state, archived.state, cards.state, archivedCards.state]);
+  const { reload: reloadActive } = active;
+  const { reload: reloadArchived } = archived;
+  const { reload: reloadCards } = cards;
   const reload = React.useCallback(() => {
-    active.reload();
-    archived.reload();
-  }, [active, archived]);
-  return { accounts: activeList, names, reload };
+    reloadActive();
+    reloadArchived();
+    reloadCards();
+  }, [reloadActive, reloadArchived, reloadCards]);
+  return { accounts: activeList, cards: cardList, names, reload };
 }
 
 function WalletStatement({ wallet }: { wallet: Wallet }) {
@@ -67,7 +81,7 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
   const [search, setSearch] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [editing, setEditing] = React.useState<EntryEditing>(null);
-  const { accounts, names, reload: reloadAccounts } = useWalletAccounts(wallet.id);
+  const { accounts, cards, names, reload: reloadAccounts } = useWalletAccounts(wallet.id);
   const { tree } = useCategories(wallet.id);
 
   // Typing settles before the list reloads.
@@ -207,6 +221,7 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
         <EntryDialog
           wallet={wallet}
           accounts={accounts}
+          cards={cards}
           tree={tree}
           editing={editing}
           onClose={() => setEditing(null)}
@@ -290,8 +305,11 @@ export function EntryRow({
   const category = entry.categoryId ? tree?.byId.get(entry.categoryId) : undefined;
   const parent = category?.parentId ? tree?.byId.get(category.parentId) : undefined;
   const isTransfer = entry.type === "TRANSFER_IN" || entry.type === "TRANSFER_OUT";
+  // Card purchases wait for their invoice; the invoice state says that, not each row.
+  const pending = entry.status === "PENDING" && entry.type !== "CREDIT_CARD_PURCHASE";
   const incoming = entry.type === "INCOME" || entry.type === "TRANSFER_IN" || entry.type === "REFUND";
-  const accountName = entry.accountId ? (accountNames.get(entry.accountId) ?? "") : "";
+  const source = entry.accountId ?? entry.creditCardId;
+  const accountName = source ? (accountNames.get(source) ?? "") : "";
   const counterpart = entry.counterpartAccountId ? (accountNames.get(entry.counterpartAccountId) ?? "") : "";
   const subtitle = isTransfer
     ? entry.type === "TRANSFER_OUT"
@@ -316,7 +334,7 @@ export function EntryRow({
               {t("installment", { number: entry.installmentNumber, total: entry.installmentTotal ?? 0 })}
             </span>
           )}
-          {entry.status === "PENDING" && (
+          {pending && (
             <span className="shrink-0 rounded-full bg-[#ff9500]/15 px-1.5 py-px text-[10px] font-medium text-[#c93400] dark:text-[#ffb340]">
               {t("pendingBadge")}
             </span>
@@ -328,7 +346,7 @@ export function EntryRow({
         className={cn(
           "shrink-0 text-[13px] font-medium tabular-nums",
           incoming && !isTransfer && "text-[#248a3d] dark:text-[#30d158]",
-          entry.status === "PENDING" && "opacity-60",
+          pending && "opacity-60",
         )}
       >
         {incoming ? "+" : "−"}
