@@ -68,7 +68,7 @@
       "home": "Início",
       "statement": "Extrato",
       "accounts": "Contas e cartões",
-      "goals": "Objetivos",
+      "goals": "Planejamento",
       "settings": "Configurações"
     },
     "wallet": {
@@ -110,7 +110,6 @@
       "topExpenses": "Para onde foi o dinheiro",
       "noExpenses": "Nenhuma despesa neste mês ainda."
     },
-    "comingSoon": "Em breve",
     "window": {
       "widen": "Desbloquear largura da janela",
       "narrow": "Bloquear largura da janela"
@@ -406,6 +405,104 @@
         "confirm": "Pagar {amount}"
       },
       "sourceCard": "Cartão: {name}"
+    },
+    "planning": {
+      "tabs": {
+        "budget": "Orçamento",
+        "goals": "Objetivos"
+      },
+      "noWallet": "Crie uma wallet primeiro.",
+      "readOnly": "Como leitor, você vê o planejamento, mas não pode alterá-lo.",
+      "loadError": "Não foi possível carregar.",
+      "retry": "Tentar de novo",
+      "budget": {
+        "empty": "Nenhum limite neste mês.",
+        "emptyHint": "Defina quanto quer gastar por categoria.",
+        "setLimit": "Definir limite",
+        "copyPrevious": "Copiar do mês anterior",
+        "total": "Orçamento",
+        "spentOf": "{spent} de {limit}",
+        "left": "Restam {amount}",
+        "over": "{amount} acima",
+        "near": "Perto do limite",
+        "exceeded": "Acima do limite",
+        "unbudgeted": "Gastos em categorias sem limite: {amount}",
+        "form": {
+          "title": "Limite de uma categoria",
+          "editTitle": "Limite de {category}",
+          "category": "Categoria",
+          "amount": "Limite mensal",
+          "alert": "Avisar em (%)",
+          "alertHint": "Opcional. A barra fica laranja a partir desta parte.",
+          "save": "Salvar",
+          "cancel": "Cancelar",
+          "remove": "Remover limite",
+          "amountInvalid": "Digite um valor válido, como {example}."
+        }
+      },
+      "goals": {
+        "new": "Novo objetivo",
+        "empty": "Nenhum objetivo ainda.",
+        "emptyHint": "Junte para uma viagem, uma reserva de emergência, uma casa…",
+        "savedOf": "{saved} de {target}",
+        "until": "Até {date}",
+        "monthly": "Guarde {amount} por mês",
+        "achieved": "Concluído",
+        "missing": "Faltam {amount}",
+        "templates": {
+          "EMERGENCY_FUND": "Reserva de emergência",
+          "RETIREMENT": "Aposentadoria",
+          "TRAVEL": "Viagem",
+          "HOUSE": "Casa",
+          "CAR": "Carro",
+          "EDUCATION": "Estudos",
+          "DEBT_PAYOFF": "Quitar uma dívida",
+          "OTHER": "Outro"
+        },
+        "form": {
+          "createTitle": "Novo objetivo",
+          "editTitle": "Editar objetivo",
+          "name": "Nome",
+          "template": "Tipo",
+          "target": "Meta",
+          "initial": "Já guardado",
+          "deadline": "Prazo",
+          "deadlineHint": "Opcional. Com uma data, o finfy mostra quanto guardar por mês.",
+          "create": "Criar objetivo",
+          "save": "Salvar",
+          "cancel": "Cancelar",
+          "amountInvalid": "Digite um valor válido, como {example}."
+        },
+        "detail": {
+          "history": "Histórico",
+          "initial": "Valor inicial",
+          "deposit": "Guardar dinheiro",
+          "withdraw": "Retirar",
+          "noDeposits": "Nenhum depósito ainda.",
+          "archive": "Arquivar objetivo",
+          "archiveTitle": "Arquivar {name}?",
+          "archiveBody": "O objetivo sai da lista. O histórico fica guardado.",
+          "edit": "Editar",
+          "deleteDeposit": "Apagar depósito",
+          "deleteDepositTitle": "Apagar este depósito?",
+          "deleteDepositBody": "O valor guardado diminui nesse valor."
+        },
+        "depositForm": {
+          "depositTitle": "Guardar dinheiro em {name}",
+          "withdrawTitle": "Retirar dinheiro de {name}",
+          "amount": "Valor",
+          "date": "Data",
+          "notes": "Observações",
+          "save": "Salvar",
+          "cancel": "Cancelar"
+        },
+        "archived": {
+          "show": "Mostrar objetivos arquivados",
+          "hide": "Ocultar objetivos arquivados",
+          "empty": "Nenhum objetivo arquivado.",
+          "restore": "Restaurar"
+        }
+      }
     }
   },
   "errors": {

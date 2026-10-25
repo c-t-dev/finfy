@@ -19,6 +19,7 @@ Milestones 1 (foundation), 2 (e-mail and password authentication), 3 (wallets) a
 | One write path: idempotent mutations and a hash-chained audit log (see [Write path](#write-path)) | |
 | Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | |
 | Credit cards: cards, purchases with installments, invoices by month, pay and reopen (see [Credit cards](#credit-cards)) | Partial invoice payments, card refunds |
+| Planning (menu "Planejamento", `/app/goals`): monthly budget per category, goals with deposits (see [Planning](#planning)) | Budget alerts as notifications, goal return rate |
 | Transactions: income, expense, transfers, pending/paid, Statement by month with filters and search, Home summary (see [Transactions](#transactions)) | Tags, attachments, recurrences, installments outside cards |
 | Categories: 72 system categories (proposal), hide per wallet, own categories and subcategories (see [Categories](#categories)) | |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
@@ -178,6 +179,25 @@ Rules:
 - **Limit used** = purchases of unpaid invoices.
 - **Changing closing or due day** affects only invoices opened afterwards; existing invoices keep their dates.
 - Checked on 2026-10-25: purchases before and after closing, 3 installments of 100,00 (33,34 + 33,33 + 33,33 on three invoices), wrong payment amount, payment debit, writes on a paid invoice, reopen, edit and delete of every installment, month totals.
+
+## Planning
+
+Server: `apps/web/lib/server/planning.ts`. Shared: `@packages/shared/planning`. Client: `packages/app/src/screens/planning.tsx` (tabs Budget and Goals).
+
+| Route | Who |
+| --- | --- |
+| `GET /api/wallets/:id/budget/:month` | Any member |
+| `POST .../budget/:month/set`, `/remove`, `/copy-previous` | OWNER, ADMIN, EDITOR |
+| `GET/POST /api/wallets/:id/goals`, `GET/PATCH .../goals/:goalId`, `POST .../archive`, `.../restore` | Read: any member. Write: OWNER, ADMIN, EDITOR |
+| `POST .../goals/:goalId/deposits`, `POST .../deposits/:depositId/archive` | OWNER, ADMIN, EDITOR |
+
+Rules:
+
+- **One budget per wallet**, created on first use with ID `deterministicId("budget", walletId)` (the `budgets` table allows named budgets; the screens do not use that yet).
+- **Limits** are per top-level expense category and month; item ID `deterministicId("budget_item", budgetId, categoryId, year, month)`, so setting a limit is an upsert and removing archives it. Last write wins.
+- **Spent** = paid expenses plus card purchases of the month in the category and its subcategories (same rule as the Statement totals). The screen shows "near the limit" from `alert_percentage` and "over the limit" above 100%. Notifications for alerts do not exist yet.
+- **Goals:** saved = initial amount + deposits (positive adds, negative takes out). `achieved_at` is set while saved ≥ target and cleared when it drops. Deposits are manual, as in Minhas Economias; they do not move money between accounts. The screen shows what to save per month to reach the deadline (`monthlyNeeded`), without returns: `expected_annual_return_bps` is not used yet.
+- Checked on 2026-10-25: limits on subcategories and income categories refused, copy from the previous month, remove twice, goal achieved on, off and on again with deposits and a deleted withdrawal.
 
 ## API transport on the client
 

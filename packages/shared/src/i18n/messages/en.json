@@ -68,7 +68,7 @@
       "home": "Home",
       "statement": "Statement",
       "accounts": "Accounts and cards",
-      "goals": "Goals",
+      "goals": "Planning",
       "settings": "Settings"
     },
     "wallet": {
@@ -110,7 +110,6 @@
       "topExpenses": "Where the money went",
       "noExpenses": "No expenses this month yet."
     },
-    "comingSoon": "Coming soon",
     "window": {
       "widen": "Unlock window width",
       "narrow": "Lock window width"
@@ -406,6 +405,104 @@
         "confirm": "Pay {amount}"
       },
       "sourceCard": "Card: {name}"
+    },
+    "planning": {
+      "tabs": {
+        "budget": "Budget",
+        "goals": "Goals"
+      },
+      "noWallet": "Create a wallet first.",
+      "readOnly": "As a viewer, you can see the plan but not change it.",
+      "loadError": "This could not be loaded.",
+      "retry": "Try again",
+      "budget": {
+        "empty": "No limits for this month.",
+        "emptyHint": "Set how much you want to spend per category.",
+        "setLimit": "Set a limit",
+        "copyPrevious": "Copy last month",
+        "total": "Budget",
+        "spentOf": "{spent} of {limit}",
+        "left": "{amount} left",
+        "over": "{amount} over",
+        "near": "Near the limit",
+        "exceeded": "Over the limit",
+        "unbudgeted": "Spent in categories without a limit: {amount}",
+        "form": {
+          "title": "Limit for a category",
+          "editTitle": "Limit for {category}",
+          "category": "Category",
+          "amount": "Monthly limit",
+          "alert": "Warn at (%)",
+          "alertHint": "Optional. The bar turns orange from this share.",
+          "save": "Save",
+          "cancel": "Cancel",
+          "remove": "Remove limit",
+          "amountInvalid": "Enter a valid amount, like {example}."
+        }
+      },
+      "goals": {
+        "new": "New goal",
+        "empty": "No goals yet.",
+        "emptyHint": "Save for a trip, an emergency fund, a house…",
+        "savedOf": "{saved} of {target}",
+        "until": "By {date}",
+        "monthly": "Save {amount} a month",
+        "achieved": "Achieved",
+        "missing": "{amount} to go",
+        "templates": {
+          "EMERGENCY_FUND": "Emergency fund",
+          "RETIREMENT": "Retirement",
+          "TRAVEL": "Travel",
+          "HOUSE": "House",
+          "CAR": "Car",
+          "EDUCATION": "Education",
+          "DEBT_PAYOFF": "Pay off a debt",
+          "OTHER": "Other"
+        },
+        "form": {
+          "createTitle": "New goal",
+          "editTitle": "Edit goal",
+          "name": "Name",
+          "template": "Kind",
+          "target": "Target",
+          "initial": "Already saved",
+          "deadline": "Deadline",
+          "deadlineHint": "Optional. With a date, finfy shows how much to save per month.",
+          "create": "Create goal",
+          "save": "Save",
+          "cancel": "Cancel",
+          "amountInvalid": "Enter a valid amount, like {example}."
+        },
+        "detail": {
+          "history": "History",
+          "initial": "Initial amount",
+          "deposit": "Add money",
+          "withdraw": "Take out",
+          "noDeposits": "No deposits yet.",
+          "archive": "Archive goal",
+          "archiveTitle": "Archive {name}?",
+          "archiveBody": "The goal leaves the list. Its history is kept.",
+          "edit": "Edit",
+          "deleteDeposit": "Delete deposit",
+          "deleteDepositTitle": "Delete this deposit?",
+          "deleteDepositBody": "The saved amount goes down by it."
+        },
+        "depositForm": {
+          "depositTitle": "Add money to {name}",
+          "withdrawTitle": "Take money out of {name}",
+          "amount": "Amount",
+          "date": "Date",
+          "notes": "Notes",
+          "save": "Save",
+          "cancel": "Cancel"
+        },
+        "archived": {
+          "show": "Show archived goals",
+          "hide": "Hide archived goals",
+          "empty": "No archived goals.",
+          "restore": "Restore"
+        }
+      }
     }
   },
   "errors": {

@@ -48,6 +48,19 @@ import {
   updatePurchaseInput,
 } from "@packages/shared/cards";
 import {
+  budgetMonthSchema,
+  copyBudgetInput,
+  createDepositInput,
+  createGoalInput,
+  depositStateInput,
+  goalDetailSchema,
+  goalListSchema,
+  goalStateInput,
+  removeBudgetItemInput,
+  setBudgetItemInput,
+  updateGoalInput,
+} from "@packages/shared/planning";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -124,6 +137,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         description:
           "Credit cards, purchases (with installments) and invoices. A purchase goes to the invoice whose closing date is on or after its date; invoices are addressed by reference month `YYYY-MM`",
       },
+      { name: "planning", description: "Monthly budget limits per top-level expense category, and goals with deposits" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -159,6 +173,9 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         Invoice: json(invoiceSchema),
         InvoiceList: json(invoiceListSchema),
         InvoiceDetail: json(invoiceDetailSchema),
+        BudgetMonth: json(budgetMonthSchema),
+        GoalList: json(goalListSchema),
+        GoalDetail: json(goalDetailSchema),
         Health: {
           type: "object",
           required: ["status", "database"],
@@ -496,6 +513,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         },
       },
       ...cardPaths(),
+      ...planningPaths(),
     },
   };
 }
@@ -588,6 +606,75 @@ function cardPaths() {
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+  };
+}
+
+function planningPaths() {
+  const budgetMonthParam = { ...monthParam, description: "Budget month." };
+  const goalIdParam = { name: "goalId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const depositIdParam = { name: "depositId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const write = (summary: string, description: string, parameters: unknown[], input: z.ZodType, ok: Record<number, unknown>, errors: string[]) => ({
+    ...cardWrite(summary, `OWNER, ADMIN, EDITOR. ${description}`, parameters, input, ok, errors),
+    tags: ["planning"],
+  });
+  const budget = [walletIdParam, budgetMonthParam];
+  const goal = [walletIdParam, goalIdParam];
+  const budgetOk = { 200: response("The month after the change.", ref("BudgetMonth")) };
+  const goalOk = { 200: response("The goal.", ref("GoalDetail")) };
+  return {
+    "/api/wallets/{id}/budget/{month}": {
+      get: {
+        tags: ["planning"],
+        summary: "Budget of a month",
+        description: "Any member. Each limit with what its category and subcategories spent (paid expenses plus card purchases), and the spending in categories without a limit.",
+        security: [{ session: [] }],
+        parameters: budget,
+        responses: { 200: response("The month.", ref("BudgetMonth")), ...walletErrors("invalidInput", "notFound") },
+      },
+    },
+    "/api/wallets/{id}/budget/{month}/set": {
+      post: write("Set a category limit", "Top-level expense categories only. Creates, changes or restores the limit; the last write wins.", budget, setBudgetItemInput, budgetOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/budget/{month}/remove": {
+      post: write("Remove a category limit", "", budget, removeBudgetItemInput, budgetOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/budget/{month}/copy-previous": {
+      post: write("Copy last month's limits", "Limits already set in this month are kept.", budget, copyBudgetInput, budgetOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/goals": {
+      get: {
+        tags: ["planning"],
+        summary: "Goals with the amount saved",
+        description: "Any member. `savedMinor` = initial amount + deposits. `?archived=1` lists the archived goals.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam, { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } }],
+        responses: { 200: response("The goals.", ref("GoalList")), ...walletErrors("notFound") },
+      },
+      post: write("Create a goal", "", [walletIdParam], createGoalInput, { 201: response("The goal.", ref("GoalDetail")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/goals/{goalId}": {
+      get: {
+        tags: ["planning"],
+        summary: "A goal with its deposits",
+        description: "Any member.",
+        security: [{ session: [] }],
+        parameters: goal,
+        responses: { 200: response("The goal.", ref("GoalDetail")), ...walletErrors("notFound") },
+      },
+      patch: write("Edit a goal", "The last write wins.", goal, updateGoalInput, goalOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/goals/{goalId}/archive": {
+      post: write("Archive a goal", "Deposits are kept.", goal, goalStateInput, goalOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/goals/{goalId}/restore": {
+      post: write("Restore a goal", "", goal, goalStateInput, goalOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/goals/{goalId}/deposits": {
+      post: write("Add or take out money", "Positive adds, negative takes out (never 0). The goal is marked achieved while the saved amount reaches the target.", goal, createDepositInput, { 201: response("The goal.", ref("GoalDetail")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/goals/{goalId}/deposits/{depositId}/archive": {
+      post: write("Delete a deposit", "", [...goal, depositIdParam], depositStateInput, goalOk, ["invalidInput", "forbidden", "notFound"]),
     },
   };
 }
