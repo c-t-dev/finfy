@@ -4,6 +4,206 @@
 
 Entidades inferidas a partir das respostas da API. Campos listados como aparecem no JSON.
 
+## Diagramas
+
+As relações são **inferidas** pelos campos das respostas (por exemplo, `uuidAccount` dentro de uma transação); não há esquema oficial. Os diagramas mostram só os campos-chave; a lista completa de cada entidade está nas seções abaixo.
+
+### Núcleo financeiro
+
+```mermaid
+erDiagram
+  CONTA ||--o{ CARTAO : "paga fatura"
+  CONTA ||--o{ TRANSACAO : registra
+  CARTAO |o--o{ TRANSACAO : "compra em"
+  CATEGORIA ||--o{ SUBCATEGORIA : agrupa
+  CATEGORIA ||--o{ TRANSACAO : classifica
+  SUBCATEGORIA |o--o{ TRANSACAO : detalha
+  MEMBRO |o--o{ TRANSACAO : "atribuida a"
+  TRANSACAO }o--o{ TAG : marcada
+  TRANSACAO |o--o| TRANSACAO : "par da transferencia"
+  RECORRENCIA |o--o{ TRANSACAO : gera
+  CONTA ||--o{ RECORRENCIA : "lanca em"
+  CATEGORIA ||--o{ RECORRENCIA : usa
+  CATEGORIA ||--o{ LIMITE : orcamento
+  REGRA ||--|{ CONDICAO : filtra
+  REGRA ||--|{ ACAO : aplica
+  CONTA {
+    uuid uuidAccount PK
+    string name
+    enum type
+    bool main
+    bool archived
+  }
+  CARTAO {
+    uuid uuidCreditCard PK
+    uuid uuidAccount FK
+    enum brand
+    decimal limit
+    int dueDate
+    int cutOffDate
+  }
+  TRANSACAO {
+    uuid uuidTransaction PK
+    uuid uuidAccount FK
+    int idCategory FK
+    uuid uuidMember FK
+    enum typeTransaction
+    decimal value
+    date dateTransaction
+    int quantityInstallments
+    bool isConsolidated
+    bool is_review
+    uuid uuidTransferTransaction FK
+  }
+  CATEGORIA {
+    int idCategory PK
+    string categoryName
+    enum typeTransaction
+    bool isInternal
+    bool flagEdit
+  }
+  SUBCATEGORIA {
+    int idSubCategory PK
+    int idCategory FK
+    string subCategoryName
+  }
+  TAG {
+    uuid uuidTag PK
+    string description
+  }
+  MEMBRO {
+    uuid uuidMember PK
+    string memberName
+    enum relationship
+  }
+  RECORRENCIA {
+    uuid id PK
+    uuid uuidAccount FK
+    int idCategory FK
+    decimal value
+    int day
+    enum frequencyType
+    int dayBegin
+    int dayEnd
+    decimal valueBegin
+    decimal valueEnd
+  }
+  LIMITE {
+    uuid id PK
+    int category_id FK
+    string year_month
+    decimal monthly_limit
+    int alert_percentage
+  }
+  REGRA {
+    uuid ruleUUID PK
+    string name
+    int weight
+    bool isAppliedToHistorical
+  }
+  CONDICAO {
+    int idCondition PK
+    enum fieldName
+    enum operator
+    string value
+  }
+  ACAO {
+    int idAction PK
+    enum fieldName
+    string value
+  }
+```
+
+Notas:
+
+- Transação pertence a uma conta ou a um cartão (gasto no cartão ainda não testado).
+- Tags são associadas pelo **nome** no `PATCH` (`{"tags": ["teste"]}`), não pelo `uuidTag`.
+- Uma transferência são duas transações ligadas por `uuidTransferTransaction`.
+- Ocorrências geradas por recorrência têm `isConsolidated: false`. O campo que liga a transação à recorrência não foi visto na resposta.
+- Regras valem para todas as transações do usuário (`scope: INVESTOR`); não há chave estrangeira para conta ou categoria, só condições e ações.
+
+### Planejamento, patrimônio e painéis
+
+```mermaid
+erDiagram
+  TIPO_OBJETIVO ||--o{ OBJETIVO : classifica
+  OBJETIVO ||--o{ DEPOSITO : recebe
+  TIPO_BEM ||--o{ BEM : classifica
+  BEM }o--o{ DIVIDA : "financiado por"
+  INSTITUICAO ||--o{ CONEXAO : "open finance"
+  CONEXAO |o--o{ CONTA : sincroniza
+  INSTITUICAO ||--o{ CONTA : emite
+  PAINEL ||--o{ COMPONENTE : contem
+  TIPO_OBJETIVO {
+    uuid uuidTypeGoal PK
+    enum typeGoalCode
+    decimal typeGoalFee
+  }
+  OBJETIVO {
+    uuid uuidGoal PK
+    uuid uuidTypeGoal FK
+    string goalName
+    decimal value
+    decimal totalValue
+    date endDate
+    bool isCompleted
+  }
+  DEPOSITO {
+    uuid id PK
+    uuid uuidGoal FK
+    decimal value
+    date date
+  }
+  TIPO_BEM {
+    int idTypeCode PK
+    string code
+    string name
+  }
+  BEM {
+    uuid id PK
+    int idTypeCode FK
+    decimal currentValue
+    decimal purchaseValue
+    date purchaseDate
+    decimal depreciationRate
+  }
+  DIVIDA {
+    int id PK
+  }
+  INSTITUICAO {
+    int idFinancialInstitution PK
+    string name
+    int ispbCode
+    enum connectorType
+  }
+  CONEXAO {
+    uuid id PK
+  }
+  CONTA {
+    uuid uuidAccount PK
+    int idFinancialInstitution FK
+  }
+  PAINEL {
+    uuid id PK
+    string name
+    enum type
+    bool locked
+  }
+  COMPONENTE {
+    uuid id PK
+    uuid workspace_id FK
+    enum type
+    json metadata
+  }
+```
+
+Notas:
+
+- Dívidas (`credit-operations/options`) e conexões (`v2/connections`) vieram vazias na conta de teste; seus campos ainda não foram vistos.
+- `DEPOSITO` é o lançamento criado por `goals/{uuid}/register` (`typeTransaction: GANHO`). **(inferido)** Pode ser uma transação comum ligada ao objetivo.
+- O vínculo bem–dívida vem de `creditOperationIds` no bem e de `debtPosition` na resposta.
+- Componentes guardam posição e tamanho em `metadata`, um JSON serializado em string.
+
 ## Conta
 
 `uuidAccount`, `name`, `description`, `type`, `typeValue`, `idFinancialInstitution`, `financialInstitution` (`id`, `name`, `image_url`, `color`, `svg_white`), `image`, `color`, `main`, `archived`, `lastSyncedAt`, `connectionDeletion`, `dateInsert`, `dateUpdate`, `createdAt`, `updatedAt`.
