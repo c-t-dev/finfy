@@ -1,6 +1,6 @@
 # 0011 — Traduções: inglês e português do Brasil
 
-> Status: Aceita · Decidido em 2026-10-25 (idioma padrão e biblioteca em aberto)
+> Status: Aceita · Decidido em 2026-10-25 (biblioteca em aberto)
 
 ## Contexto
 
@@ -36,7 +36,7 @@ A lista de idiomas fica num só lugar (`packages/shared`). Incluir um idioma nov
 
 | Parte | Como |
 | --- | --- |
-| Páginas públicas | **Pelo endereço**, para SEO: `/pt-br/...` e `/en/...`, com `hreflang` e metadados por idioma. A raiz `/` redireciona pelo `Accept-Language` do navegador |
+| Páginas públicas | **Pelo endereço**, para SEO: `/pt-br/...` e `/en/...`, com `hreflang` e metadados por idioma. A raiz `/` redireciona pelo `Accept-Language` do navegador; se não houver pt-BR nem en, vai para **`en`**, o idioma padrão |
 | App logado (web e nativos) | Pela preferência da conta (`users.language`), alterável nas configurações. No cadastro, começa com o idioma em que a pessoa estava navegando |
 | E-mails | Pelo idioma do destinatário (regra 7) |
 
@@ -58,7 +58,7 @@ Os arquivos de mensagens ficam num pacote compartilhado (ex.: `packages/shared/m
 
 ## Perguntas em aberto
 
-- [ ] **Idioma padrão** quando o navegador não indica nenhum dos dois: `pt-BR` ou `en`?
+- [x] **Idioma padrão** quando o navegador não indica nenhum dos dois: **`en`** (decidido em 2026-10-25).
 - [ ] Confirmar `next-intl` + `use-intl` como biblioteca.
 - [ ] Quem traduz: textos escritos nos dois idiomas por quem desenvolve, ou com revisão de outra pessoa antes de publicar?
 - [ ] Os endereços das páginas públicas também são traduzidos (ex.: `/pt-br/precos` e `/en/pricing`) ou só o prefixo muda?
