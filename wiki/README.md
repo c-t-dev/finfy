@@ -43,6 +43,22 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [api/payloads.md](api/payloads.md) | Corpos de requisição e resposta das escritas |
 | [api/modelo-de-dados.md](api/modelo-de-dados.md) | Entidades, campos e enums |
 
+### Decisões do finfy
+
+| Página | Conteúdo |
+| --- | --- |
+| [decisoes/README.md](decisoes/README.md) | Índice e status das decisões |
+| [decisoes/0001-multimoeda.md](decisoes/0001-multimoeda.md) | Wallets em EUR ou BRL, dinheiro em centavos, consolidação |
+| [decisoes/0002-wallets-e-compartilhamento.md](decisoes/0002-wallets-e-compartilhamento.md) | Várias wallets, papéis, matriz de permissões, transferência de posse |
+| [decisoes/0003-convites-por-email.md](decisoes/0003-convites-por-email.md) | Convites para wallets por e-mail |
+| [decisoes/0004-seguranca-da-conta.md](decisoes/0004-seguranca-da-conta.md) | Senha (Argon2id, salt, pepper), MFA, sessões, limites |
+
+### Referências
+
+| Página | Conteúdo |
+| --- | --- |
+| [referencias/wallefy.md](referencias/wallefy.md) | O que o Wallefy (my-fin) já tem e as lacunas encontradas |
+
 ### Qualidade e testes
 
 | Página | Conteúdo |
