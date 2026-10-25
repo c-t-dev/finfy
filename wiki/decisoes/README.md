@@ -10,6 +10,8 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0002](0002-wallets-e-compartilhamento.md) | Wallets, papéis, compartilhamento e transferência de posse | Proposta |
 | [0003](0003-convites-por-email.md) | Convites para wallets por e-mail | Proposta |
 | [0004](0004-seguranca-da-conta.md) | Segurança da conta (senha, MFA, sessões) | Proposta |
+| [0005](0005-offline-first-e-sincronizacao.md) | Offline-first e sincronização (servidor decide, mescla por campo, conflitos) | Proposta |
+| [0006](0006-auditoria.md) | Auditoria por wallet (imutável, origem, diferença por campo) | Proposta |
 
 ## Status
 

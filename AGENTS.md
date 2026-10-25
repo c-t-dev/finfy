@@ -7,7 +7,7 @@ Instruções para qualquer agente de IA que trabalhe neste repositório: Claude 
 **finfy** é um projeto de finanças pessoais. O repositório contém:
 
 - a documentação de referência do app **Minhas Economias**, obtida por engenharia reversa do portal web, em [`wiki/`](wiki/README.md);
-- as decisões do próprio finfy em [`wiki/decisoes/`](wiki/decisoes/README.md): várias moedas (EUR e BRL), várias wallets por usuário com compartilhamento, papéis e transferência de posse, convites por e-mail e segurança da conta;
+- as decisões do próprio finfy em [`wiki/decisoes/`](wiki/decisoes/README.md): várias moedas (EUR e BRL), várias wallets por usuário com compartilhamento, papéis e transferência de posse, convites por e-mail, segurança da conta, offline-first com sincronização e auditoria;
 - a análise do **Wallefy** (projeto `my-fin`), usado como base para wallets, convites e segurança, em [`wiki/referencias/wallefy.md`](wiki/referencias/wallefy.md).
 
 Decisões com status "Proposta" têm perguntas em aberto; não as trate como fechadas. O que ainda não foi decidido (stack, demais funcionalidades) não deve ser inventado: pergunte.

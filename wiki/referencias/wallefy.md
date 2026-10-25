@@ -30,14 +30,14 @@ Recursos que existem no Wallefy (no código, na documentação ou nos wireframes
 
 | Funcionalidade | Como está no Wallefy | Onde |
 | --- | --- | --- |
-| Offline-first com sincronização ✱ | SQLite local é a fonte da verdade; Turso replica; IDs gerados no cliente; apagar é sempre lógico (`archived_at`); conflito resolvido pelo `updated_at` mais recente | `CLAUDE.md`, `docs/architecture.md`, `POST /api/wallets/:id/sync` |
+| Offline-first com sincronização ✱ (decidido em [0005](../decisoes/0005-offline-first-e-sincronizacao.md)) | SQLite local é a fonte da verdade; Turso replica; IDs gerados no cliente; apagar é sempre lógico (`archived_at`); conflito resolvido pelo `updated_at` mais recente | `CLAUDE.md`, `docs/architecture.md`, `POST /api/wallets/:id/sync` |
 | Anexos em transações ✱ | `transaction_attachments` (arquivo em S3/R2, nome, tamanho, quem enviou) | `docs/data-model.md`, wireframe "Anexo" |
 | Estornos ✱ | `transaction_links` do tipo `REFUND` liga a devolução à compra | `docs/data-model.md` |
 | Ajuste de saldo | Transação `ADJUSTMENT` com valor com sinal, criada informando o saldo desejado | `POST /api/balance-adjustments` |
 | Fatura de cartão completa | Faturas `OPEN`/`CLOSED`/`PAID`/`OVERDUE`, compra vai para a fatura pela data de fechamento, parcelas em faturas diferentes, pagamento integral gera `CREDIT_CARD_PAYMENT` | `credit_card_invoices`, `POST /api/invoices/:id/pay` |
 | Orçamentos com nome ✱ | Vários orçamentos por wallet, cada um uma grade categoria × mês do ano | `budgets` + `budget_items`, telas `/budgets` |
 | Notificações no app | Fatura vencendo, orçamento estourado, objetivo atingido, convite de wallet; lidas e não lidas | `notifications`, wireframe "Notificações" |
-| Auditoria por wallet ✱ | Antes e depois de cada criação e edição, com quem fez | `audit_logs` |
+| Auditoria por wallet ✱ (decidido em [0006](../decisoes/0006-auditoria.md)) | Antes e depois de cada criação e edição, com quem fez | `audit_logs` |
 | Relatórios e exportação | Resumo, saldos, fluxo de caixa; exportar transações em CSV | `/api/reports/*`, `GET /api/transactions/export` |
 | Importar dados ✱ | Item "Importar dados" nas configurações (só no wireframe) | wireframe de configurações |
 | Convite para o app | Convidar alguém para se cadastrar, sem wallet | `user_invites` |

@@ -52,6 +52,8 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [decisoes/0002-wallets-e-compartilhamento.md](decisoes/0002-wallets-e-compartilhamento.md) | Várias wallets, papéis, matriz de permissões, transferência de posse |
 | [decisoes/0003-convites-por-email.md](decisoes/0003-convites-por-email.md) | Convites para wallets por e-mail |
 | [decisoes/0004-seguranca-da-conta.md](decisoes/0004-seguranca-da-conta.md) | Senha (Argon2id, salt, pepper), MFA, sessões, limites |
+| [decisoes/0005-offline-first-e-sincronizacao.md](decisoes/0005-offline-first-e-sincronizacao.md) | O que funciona sem internet, fila de alterações, conflitos, acesso revogado |
+| [decisoes/0006-auditoria.md](decisoes/0006-auditoria.md) | Histórico de alterações e de acesso por wallet |
 
 ### Referências
 
