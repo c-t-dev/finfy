@@ -122,7 +122,7 @@ async function clearDefault(tx: Tx, actor: Actor, walletId: string, exceptId: st
  * Money now exists in the wallet's currency, so it can no longer change
  * (wiki/decisoes/0001). Returns the audit change when it was not locked yet.
  */
-async function lockCurrency(tx: Tx, actor: Actor, walletId: string): Promise<Change[]> {
+export async function lockCurrency(tx: Tx, actor: Actor, walletId: string): Promise<Change[]> {
   const locked = await tx
     .update(wallets)
     .set({ currencyLockedAt: sql`now()`, version: sql`${wallets.version} + 1`, updatedAt: sql`now()`, updatedBy: actor.userId })

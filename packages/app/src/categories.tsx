@@ -107,8 +107,10 @@ export function CategoryBadge({
   parent?: Pick<Category, "icon" | "color"> | null;
   className?: string;
 }) {
-  const icon = (category?.icon ?? parent?.icon ?? "tag") as CategoryIconName;
-  const color = category?.color ?? parent?.color ?? "gray";
+  // A subcategory always shows its parent's icon and color.
+  const look = parent ?? category;
+  const icon = (look?.icon ?? "tag") as CategoryIconName;
+  const color = look?.color ?? "gray";
   const Icon = CATEGORY_ICON_COMPONENTS[icon] ?? TagIcon;
   return (
     <span

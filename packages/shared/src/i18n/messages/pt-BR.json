@@ -102,7 +102,13 @@
       "emptyTitle": "Crie sua primeira wallet",
       "emptyBody": "Uma wallet reúne contas, cartões e lançamentos numa moeda. Você pode compartilhá-la depois.",
       "createWallet": "Criar wallet",
-      "ready": "{name} está pronta. Contas e lançamentos vêm a seguir."
+      "ready": "{name} está pronta. Contas e lançamentos vêm a seguir.",
+      "balance": "Saldo nas contas",
+      "month": "Este mês",
+      "recent": "Últimos lançamentos",
+      "seeAll": "Ver extrato",
+      "topExpenses": "Para onde foi o dinheiro",
+      "noExpenses": "Nenhuma despesa neste mês ainda."
     },
     "comingSoon": "Em breve",
     "window": {
@@ -248,6 +254,64 @@
         "show": "Mostrar categorias arquivadas",
         "hide": "Ocultar categorias arquivadas",
         "empty": "Nenhuma categoria arquivada."
+      }
+    },
+    "entries": {
+      "new": "Novo lançamento",
+      "empty": "Nenhum lançamento neste período.",
+      "emptyHint": "Adicione uma despesa, uma receita ou uma transferência.",
+      "noAccounts": "Crie uma conta primeiro, em Contas e cartões.",
+      "noWallet": "Crie uma wallet primeiro.",
+      "readOnly": "Como leitor, você vê os lançamentos, mas não pode alterá-los.",
+      "loadError": "Não foi possível carregar os lançamentos.",
+      "retry": "Tentar de novo",
+      "income": "Receitas",
+      "expense": "Despesas",
+      "result": "Resultado",
+      "pending": "Pendente: {amount}",
+      "pendingBadge": "Pendente",
+      "transferFromTo": "{from} → {to}",
+      "installment": "{number}/{total}",
+      "allAccounts": "Todas as contas",
+      "allCategories": "Todas as categorias",
+      "search": "Buscar na descrição",
+      "previousMonth": "Mês anterior",
+      "nextMonth": "Próximo mês",
+      "today": "Hoje",
+      "markPaid": "Marcar como pago",
+      "kinds": {
+        "EXPENSE": "Despesa",
+        "INCOME": "Receita",
+        "TRANSFER": "Transferência"
+      },
+      "form": {
+        "createTitle": "Novo lançamento",
+        "editTitle": "Editar lançamento",
+        "editTransferTitle": "Editar transferência",
+        "description": "Descrição",
+        "descriptionPlaceholder": "O que foi?",
+        "amount": "Valor",
+        "amountInvalid": "Digite um valor válido maior que zero, como {example}.",
+        "date": "Data",
+        "account": "Conta",
+        "fromAccount": "De",
+        "toAccount": "Para",
+        "category": "Categoria",
+        "paid": "Pago",
+        "paidHint": "Desligue para algo que ainda vai pagar ou receber.",
+        "notes": "Observações",
+        "save": "Salvar",
+        "create": "Adicionar",
+        "cancel": "Cancelar",
+        "delete": "Apagar",
+        "sameAccount": "Escolha duas contas diferentes."
+      },
+      "delete": {
+        "title": "Apagar este lançamento?",
+        "transferBody": "Os dois lados da transferência são apagados. O histórico guarda o registro.",
+        "body": "O histórico guarda o registro.",
+        "confirm": "Apagar",
+        "cancel": "Cancelar"
       }
     }
   },

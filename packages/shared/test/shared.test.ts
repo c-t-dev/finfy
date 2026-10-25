@@ -74,3 +74,11 @@ test("system categories: unique keys, parents first, translated, and seeded with
     .join("\n");
   for (const key of keys) assert.ok(sql.includes(deterministicId("system_category", key)), `migration: ${key}`);
 });
+
+test("month helpers give the first and last day, across years", async () => {
+  const { addMonths, monthRange } = await import("../src/transactions.ts");
+  assert.deepEqual(monthRange("2026-02"), { from: "2026-02-01", to: "2026-02-28" });
+  assert.deepEqual(monthRange("2028-02"), { from: "2028-02-01", to: "2028-02-29" });
+  assert.equal(addMonths("2026-12", 1), "2027-01");
+  assert.equal(addMonths("2026-01", -1), "2025-12");
+});

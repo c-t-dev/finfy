@@ -25,6 +25,14 @@ import {
   updateCategoryInput,
 } from "@packages/shared/categories";
 import {
+  createEntryInput,
+  createTransferInput,
+  entryListSchema,
+  entrySchema,
+  entryStateInput,
+  updateEntryInput,
+} from "@packages/shared/transactions";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -95,6 +103,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       { name: "wallets", description: "Wallets and roles (wiki/decisoes/0002). Writes are idempotent by `mutationId` and audited" },
       { name: "accounts", description: "Accounts of a wallet; the balance is computed, never stored" },
       { name: "categories", description: "System categories (read-only, hideable per wallet) and the wallet's own; two levels" },
+      { name: "transactions", description: "Income, expenses and transfers; amounts are positive minor units, the type gives the direction" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -123,6 +132,8 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         AccountList: json(accountListSchema),
         Category: json(categorySchema),
         CategoryList: json(categoryListSchema),
+        Entry: json(entrySchema),
+        EntryList: json(entryListSchema),
         Health: {
           type: "object",
           required: ["status", "database"],
@@ -390,6 +401,75 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       ...categoryAction("restore", "Restore a wallet category (a subcategory needs its parent active)", categoryStateInput),
       ...categoryAction("hide", "Hide a system category in this wallet", categoryVisibilityInput),
       ...categoryAction("show", "Show a hidden system category again", categoryVisibilityInput),
+      "/api/wallets/{id}/transactions": {
+        get: {
+          tags: ["transactions"],
+          summary: "Entries of a period, with totals",
+          description:
+            "Any member. Newest first, up to 2000. `categoryId` also matches its subcategories; `q` searches the description. Totals: paid income, paid expenses plus card purchases, and pending amounts. Transfers count as neither.",
+          security: [{ session: [] }],
+          parameters: [
+            walletIdParam,
+            { name: "from", in: "query", required: true, schema: { type: "string", format: "date" } },
+            { name: "to", in: "query", required: true, schema: { type: "string", format: "date" } },
+            { name: "accountId", in: "query", required: false, schema: { type: "string", format: "uuid" } },
+            { name: "categoryId", in: "query", required: false, schema: { type: "string", format: "uuid" } },
+            { name: "q", in: "query", required: false, schema: { type: "string" } },
+          ],
+          responses: { 200: response("The entries and totals.", ref("EntryList")), ...walletErrors("invalidInput", "notFound") },
+        },
+        post: {
+          tags: ["transactions"],
+          summary: "Create an income or an expense",
+          description: `OWNER, ADMIN, EDITOR. The category must fit the type (an expense category for an expense). Locks the wallet's currency. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam],
+          requestBody: body(createEntryInput),
+          responses: {
+            201: response("Created (or already created by this mutationId).", ref("Entry")),
+            ...walletErrors("invalidInput", "forbidden", "notFound"),
+          },
+        },
+      },
+      "/api/wallets/{id}/transactions/transfers": {
+        post: {
+          tags: ["transactions"],
+          summary: "Transfer between two accounts",
+          description: `OWNER, ADMIN, EDITOR. Creates TRANSFER_OUT (\`id\`) and TRANSFER_IN (\`inId\`) linked by \`transaction_links\`. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam],
+          requestBody: body(createTransferInput),
+          responses: {
+            201: response("The outgoing leg.", ref("Entry")),
+            ...walletErrors("invalidInput", "forbidden", "notFound"),
+          },
+        },
+      },
+      "/api/wallets/{id}/transactions/{entryId}": {
+        patch: {
+          tags: ["transactions"],
+          summary: "Edit an entry",
+          description: `OWNER, ADMIN, EDITOR. Description, notes and category: the last write wins. Amount, date, account and status: only from the latest version (\`409 versionConflict\`). On a transfer, shared fields change on both legs; \`accountId\` moves only this leg. Card purchases answer \`403\`. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam, entryIdParam],
+          requestBody: body(updateEntryInput),
+          responses: {
+            200: response("The entry after the change.", ref("Entry")),
+            ...walletErrors("invalidInput", "forbidden", "notFound", "versionConflict"),
+          },
+        },
+      },
+      "/api/wallets/{id}/transactions/{entryId}/archive": {
+        post: {
+          tags: ["transactions"],
+          summary: "Delete (archive) an entry",
+          description: `OWNER, ADMIN, EDITOR. Both legs of a transfer go together; the audit log keeps the record. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam, entryIdParam],
+          requestBody: body(entryStateInput),
+          responses: { 200: response("The archived entry.", ref("Entry")), ...walletErrors("invalidInput", "forbidden", "notFound") },
+        },
+      },
     },
   };
 }
@@ -410,6 +490,7 @@ function categoryAction(action: string, summary: string, input: z.ZodType) {
   };
 }
 
+const entryIdParam = { name: "entryId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
 const categoryIdParam = { name: "categoryId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
 
 const walletIdParam = { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } };

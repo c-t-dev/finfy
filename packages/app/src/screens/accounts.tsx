@@ -31,6 +31,7 @@ import { can } from "@packages/shared/roles";
 import type { Wallet } from "@packages/shared/wallets";
 import { useAccountClient, useAccountList } from "../accounts";
 import { useLocale, useTranslations } from "../i18n";
+import { decimalSeparator, minorToInput } from "../money";
 import { useWalletRequest, WalletErrorMessage } from "../wallet-ui";
 import { useWallets } from "../wallets";
 
@@ -45,19 +46,6 @@ const COLOR_CLASS: Record<AccountColor, string> = {
   teal: "bg-[#30b0c7]",
   gray: "bg-[#8e8e93]",
 };
-
-function decimalSeparator(locale: string): "." | "," {
-  return new Intl.NumberFormat(locale).formatToParts(1.5).find((part) => part.type === "decimal")?.value === "," ? "," : ".";
-}
-
-/** Minor units as an editable number ("-123,45"), without floats or grouping. */
-function minorToInput(minor: number, currency: Currency, separator: "." | ","): string {
-  const sign = minor < 0 ? "-" : "";
-  const digits = String(Math.abs(minor)).padStart(currency.minorUnits + 1, "0");
-  const whole = digits.slice(0, digits.length - currency.minorUnits);
-  const fraction = digits.slice(digits.length - currency.minorUnits);
-  return currency.minorUnits ? `${sign}${whole}${separator}${fraction}` : `${sign}${whole}`;
-}
 
 export function AccountsScreen() {
   const t = useTranslations("app");

@@ -10,6 +10,7 @@
     "./wallets": "./src/wallets.ts",
     "./accounts": "./src/accounts.ts",
     "./categories": "./src/categories.ts",
+    "./transactions": "./src/transactions.ts",
     "./system-categories": "./src/system-categories.ts",
     "./ids": "./src/ids.ts",
     "./i18n": "./src/i18n/locales.ts",

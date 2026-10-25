@@ -102,7 +102,13 @@
       "emptyTitle": "Create your first wallet",
       "emptyBody": "A wallet holds accounts, cards and entries in one currency. You can share it later.",
       "createWallet": "Create wallet",
-      "ready": "{name} is ready. Accounts and entries come next."
+      "ready": "{name} is ready. Accounts and entries come next.",
+      "balance": "Balance in accounts",
+      "month": "This month",
+      "recent": "Latest entries",
+      "seeAll": "See statement",
+      "topExpenses": "Where the money went",
+      "noExpenses": "No expenses this month yet."
     },
     "comingSoon": "Coming soon",
     "window": {
@@ -248,6 +254,64 @@
         "show": "Show archived categories",
         "hide": "Hide archived categories",
         "empty": "No archived categories."
+      }
+    },
+    "entries": {
+      "new": "New entry",
+      "empty": "No entries in this period.",
+      "emptyHint": "Add an expense, an income or a transfer.",
+      "noAccounts": "Create an account first, in Accounts and cards.",
+      "noWallet": "Create a wallet first.",
+      "readOnly": "As a viewer, you can see the entries but not change them.",
+      "loadError": "The entries could not be loaded.",
+      "retry": "Try again",
+      "income": "Income",
+      "expense": "Expenses",
+      "result": "Result",
+      "pending": "Pending: {amount}",
+      "pendingBadge": "Pending",
+      "transferFromTo": "{from} → {to}",
+      "installment": "{number}/{total}",
+      "allAccounts": "All accounts",
+      "allCategories": "All categories",
+      "search": "Search description",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "today": "Today",
+      "markPaid": "Mark as paid",
+      "kinds": {
+        "EXPENSE": "Expense",
+        "INCOME": "Income",
+        "TRANSFER": "Transfer"
+      },
+      "form": {
+        "createTitle": "New entry",
+        "editTitle": "Edit entry",
+        "editTransferTitle": "Edit transfer",
+        "description": "Description",
+        "descriptionPlaceholder": "What was it?",
+        "amount": "Amount",
+        "amountInvalid": "Enter a valid amount greater than zero, like {example}.",
+        "date": "Date",
+        "account": "Account",
+        "fromAccount": "From",
+        "toAccount": "To",
+        "category": "Category",
+        "paid": "Paid",
+        "paidHint": "Turn off for something still to pay or receive.",
+        "notes": "Notes",
+        "save": "Save",
+        "create": "Add",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "sameAccount": "Pick two different accounts."
+      },
+      "delete": {
+        "title": "Delete this entry?",
+        "transferBody": "Both sides of the transfer are deleted. The history keeps a record.",
+        "body": "The history keeps a record of it.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
       }
     }
   },

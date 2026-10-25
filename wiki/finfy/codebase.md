@@ -17,7 +17,8 @@ Milestones 1 (foundation), 2 (e-mail and password authentication), 3 (wallets) a
 | Money, IDs, roles and permission matrix, locales | `POST /api/sync/push`, conflict records (`sync_conflicts`), audit chain check job |
 | Wallets: create, list, switch (remembered per browser), rename, change currency before the first entry, archive with the password (see [Wallets](#wallets)) | Activity feed and item history screens |
 | One write path: idempotent mutations and a hash-chained audit log (see [Write path](#write-path)) | |
-| Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | Credit cards, transactions |
+| Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | Credit cards |
+| Transactions: income, expense, transfers, pending/paid, Statement by month with filters and search, Home summary (see [Transactions](#transactions)) | Tags, attachments, recurrences, installments outside cards |
 | Categories: 72 system categories (proposal), hide per wallet, own categories and subcategories (see [Categories](#categories)) | |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
 | Signed-in app shell (`/app`): sidebar, bottom bar on phones, language and theme switchers, window width lock/unlock (cookie `finfy-window-wide`, desktop only) | E-mail sending (provider not chosen), cron jobs |
@@ -132,6 +133,28 @@ Server: `apps/web/lib/server/categories.ts`. Client: `packages/app/src/categorie
 - **Own categories:** name, icon (fixed set of lucide names in `CATEGORY_ICONS`), color token. A subcategory hangs from a top-level category of the same kind, system or own; two levels at most. Subcategories take the parent's icon and color.
 - **Archive:** archiving a category archives its subcategories; a subcategory is restored only while its parent is active. Transactions keep pointing at archived categories.
 - `usableCategory()` is what other commands call to accept a category in a write (system, or the wallet's, not archived).
+
+## Transactions
+
+Server: `apps/web/lib/server/entries.ts`. Shared: `@packages/shared/transactions`. Client: `packages/app/src/entry-form.tsx` (`EntryDialog`), `screens/statement.tsx` (Statement, `EntryRow`, `useWalletAccounts`), `screens/home.tsx`, `money.tsx` (`useMoney`, `todayIso`).
+
+| Route | Who |
+| --- | --- |
+| `GET /api/wallets/:id/transactions?from&to[&accountId&categoryId&q]` | Any member |
+| `POST /api/wallets/:id/transactions` (income or expense) | OWNER, ADMIN, EDITOR |
+| `POST /api/wallets/:id/transactions/transfers` | OWNER, ADMIN, EDITOR |
+| `PATCH /api/wallets/:id/transactions/:entryId` | OWNER, ADMIN, EDITOR |
+| `POST /api/wallets/:id/transactions/:entryId/archive` ("delete") | OWNER, ADMIN, EDITOR |
+
+Rules:
+
+- Amounts are positive minor units; the type gives the direction. The category must fit the type (`EXPENSE`/`INCOME`, or `BOTH`).
+- **Status:** `PAID` sets `paid_at`; `PENDING` counts in no balance or total, only in the "pending" figures. "Mark as paid" is a `PATCH` of `status`.
+- **Transfers:** two rows (`TRANSFER_OUT` with the request `id`, `TRANSFER_IN` with `inId`) and a `transaction_links` row (`TRANSFER`, ID `deterministicId("transaction_link", outId, inId, "TRANSFER")`). Editing a leg mirrors amount, date, status, description and notes to the other; `accountId` moves only that leg. Archiving one leg archives both and the link. Transfers are not income or expense.
+- **Conflicts:** description, notes and category, last write wins. Amount, date, account and status need the latest `baseVersion` (`409 versionConflict`).
+- **Totals** (`summary`): paid `INCOME`; paid `EXPENSE` plus `CREDIT_CARD_PURCHASE` (on its own date, whatever the invoice status); pending income and expense apart. The Home "where the money went" uses the same rule, grouped by top-level category.
+- The first entry locks the wallet's currency.
+- Checked on 2026-10-25: balances after expense, income, pending, transfer, transfer edit and transfer delete; filters by category (with subcategories) and search; stale edits.
 
 ## API transport on the client
 
