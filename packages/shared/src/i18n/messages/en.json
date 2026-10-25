@@ -81,7 +81,11 @@
       "emptyBody": "A wallet holds accounts, cards and entries in one currency. You can share it later.",
       "createWallet": "Create wallet"
     },
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "window": {
+      "widen": "Unlock window width",
+      "narrow": "Lock window width"
+    }
   },
   "errors": {
     "unknown": "Something went wrong. Please try again.",

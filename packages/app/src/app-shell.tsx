@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { WalletIcon } from "lucide-react";
+import { ExpandIcon, ShrinkIcon, WalletIcon } from "lucide-react";
+import { Button } from "@packages/ui/components/button";
 import { MacTitlebar, MacWindow } from "@packages/ui/components/mac-window";
 import { cn } from "@packages/ui/lib/utils";
 import { useTranslations } from "./i18n";
@@ -25,15 +26,52 @@ export function AppIcon({ className }: { className?: string }) {
 }
 
 /**
+ * Locks or unlocks the window width. The host decides where the choice is
+ * saved; on phones the window is always full width, so it is hidden there.
+ */
+export function WindowWidthToggle({ wide, onWideChange }: { wide: boolean; onWideChange: (wide: boolean) => void }) {
+  const t = useTranslations("app.window");
+  const label = wide ? t("narrow") : t("widen");
+  const Icon = wide ? ShrinkIcon : ExpandIcon;
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label={label}
+      aria-pressed={wide}
+      title={label}
+      onClick={() => onWideChange(!wide)}
+      className="max-md:hidden"
+    >
+      <Icon />
+    </Button>
+  );
+}
+
+/**
  * The signed-in window (wiki/decisoes/0008): translucent sidebar with the
  * wallet switcher and navigation on wide screens, bottom bar on phones.
+ * `wide` lifts the max-width so the window fills the screen.
  */
-export function AppShell({ children, trailing }: { children: React.ReactNode; trailing?: React.ReactNode }) {
+export function AppShell({
+  children,
+  trailing,
+  wide = false,
+}: {
+  children: React.ReactNode;
+  trailing?: React.ReactNode;
+  wide?: boolean;
+}) {
   const t = useTranslations();
 
   return (
     <main className="flex min-h-dvh justify-center sm:items-center sm:p-6 lg:p-10">
-      <MacWindow className="min-h-dvh w-full max-w-6xl sm:h-[calc(100dvh-3rem)] sm:min-h-[560px] lg:h-[calc(100dvh-5rem)]">
+      <MacWindow
+        className={cn(
+          "min-h-dvh w-full transition-[max-width] duration-300 ease-out motion-reduce:transition-none sm:h-[calc(100dvh-3rem)] sm:min-h-[560px] lg:h-[calc(100dvh-5rem)]",
+          wide ? "max-w-[100vw]" : "max-w-6xl",
+        )}
+      >
         <MacTitlebar icon={<AppIcon />} title={t("common.appName")} trailing={trailing} />
         <div className="flex min-h-0 flex-1 pt-12 max-md:flex-col">
           <aside className="flex w-60 shrink-0 flex-col gap-4 border-r border-border/60 bg-sidebar p-3 max-md:hidden">

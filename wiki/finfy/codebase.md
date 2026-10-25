@@ -15,7 +15,7 @@ Milestone 1 (foundation) is in place:
 | Drizzle schema + migrations: identity, wallets and sharing, sync and audit | Financial core tables (still a draft in [data-model.md](data-model.md)) |
 | Money, IDs, roles and permission matrix, locales | Server write commands, audit hash chain, `POST /api/sync/push` |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
-| Signed-in app shell (`/app`): sidebar, bottom bar on phones, language and theme switchers | E-mail sending (provider not chosen), cron jobs |
+| Signed-in app shell (`/app`): sidebar, bottom bar on phones, language and theme switchers, window width lock/unlock (cookie `finfy-window-wide`, desktop only) | E-mail sending (provider not chosen), cron jobs |
 | `GET /api/health` | Tauri and Capacitor shells, PowerSync |
 
 ## Layout

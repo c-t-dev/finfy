@@ -81,7 +81,11 @@
       "emptyBody": "Uma wallet reúne contas, cartões e lançamentos numa moeda. Você pode compartilhá-la depois.",
       "createWallet": "Criar wallet"
     },
-    "comingSoon": "Em breve"
+    "comingSoon": "Em breve",
+    "window": {
+      "widen": "Desbloquear largura da janela",
+      "narrow": "Bloquear largura da janela"
+    }
   },
   "errors": {
     "unknown": "Algo deu errado. Tente de novo.",
