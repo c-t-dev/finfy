@@ -22,7 +22,7 @@ Com wallets compartilhadas ([0002](0002-wallets-e-compartilhamento.md)), esse mo
 | App Windows, macOS, Android, iOS | Sim, com banco local e sincronização |
 | Web (navegador) | **Não.** Só online: lê e grava direto na API, sem banco local, sem fila de alterações |
 
-### Tecnologia de sincronização (recomendação, aguardando confirmação)
+### Tecnologia de sincronização (decidido em 2026-10-25)
 
 **PowerSync + Postgres, com toda escrita passando pela API do finfy.**
 
@@ -48,12 +48,22 @@ Alternativas avaliadas:
 | Implementação própria completa | Controle total, mas exige construir e manter descida incremental, fila, retentativas e esquema local em quatro plataformas |
 | ElectricSQL | Mesmo padrão (sincroniza leitura, escrita pela API), mas o cliente SQLite nativo é menos maduro que o do PowerSync |
 
-Cuidados antes de confirmar:
+Consequências:
 
-- Postgres em vez do SQLite + Turso do Wallefy: muda a base técnica em relação ao my-fin.
-- Dependência de fornecedor: o PowerSync tem versão hospedada e versão self-hosted; revisar licença, preço e limites antes de fechar.
-- A escolha do SDK puxa a tecnologia dos apps (Flutter, React Native, Kotlin/Swift ou .NET). Ver perguntas em aberto.
-- Conferir na documentação atual do PowerSync o suporte a Windows e macOS no SDK escolhido.
+- Postgres em vez do SQLite + Turso do Wallefy: pouco do código de banco do my-fin é reaproveitado.
+- Dependência de fornecedor: o PowerSync tem versão hospedada e versão self-hosted; **licença, preço e limites ainda precisam ser revisados** antes de ir para produção.
+
+Suporte a plataformas por SDK, conferido em 2026-10-25 em [docs.powersync.com/resources/supported-platforms](https://docs.powersync.com/resources/supported-platforms):
+
+| SDK | Android | iOS | macOS | Windows | Web |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Dart/Flutter | Sim (7.0+) | Sim (13+) | Sim (12+) | Sim (10+) | Sim |
+| React Native | Sim | Sim | — | Não ("React Native for Windows: No") | Sim (RN for Web) |
+| Kotlin | Sim | Sim | Sim (aarch64) | Só via JVM (x86-64) | Experimental |
+| Swift | — | Sim | Sim | Não | — |
+| .NET | Sim (MAUI) | Sim (MAUI) | Só CLI | Sim (MAUI) | — |
+
+O **Flutter é o único SDK que cobre Windows, macOS, Android e iOS com uma base de código só**, e também roda na web. Isso pesa na escolha da tecnologia dos apps (pergunta em aberto abaixo).
 
 ### O que funciona sem internet
 
@@ -159,8 +169,9 @@ O `push` e o `pull` enviam a versão do esquema local. O servidor recusa versõe
 ## Perguntas em aberto
 
 - [x] A versão web também funciona offline? **Não**: só os apps Windows, macOS, Android e iOS (decidido em 2026-10-25).
-- [ ] Confirmar a recomendação PowerSync + Postgres com escrita pela API do finfy.
-- [ ] Tecnologia dos apps nativos: Flutter (uma base para as quatro plataformas), React Native, ou nativo por plataforma? E a web reaproveita a mesma base ou é separada (ex.: Next.js como no Wallefy)?
+- [x] Tecnologia de sincronização: **PowerSync + Postgres, com escrita pela API do finfy** (decidido em 2026-10-25).
+- [ ] Tecnologia dos apps nativos: Flutter (único SDK do PowerSync que cobre as quatro plataformas), ou outra combinação? E a web reaproveita a mesma base (Flutter Web) ou é separada (ex.: Next.js como no Wallefy)?
+- [ ] PowerSync hospedado ou self-hosted? Revisar licença e preço.
 - [ ] A política de conflitos por campo está boa, ou prefere que todo conflito vá para revisão?
 - [ ] Criptografar o banco local é obrigatório desde a v1?
 - [ ] Anexos ficam disponíveis offline (baixados no aparelho) ou só com internet?
