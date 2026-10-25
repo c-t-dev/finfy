@@ -114,4 +114,6 @@ From `packages/shared/drizzle/0001_seed_currencies_audit_and_publication.sql`:
 - trigger `audit_logs_no_update_delete`: `audit_logs` rejects `UPDATE` and `DELETE`;
 - publication `powersync` for `wallets` and `wallet_members`.
 
-The migrations were checked on 2026-10-25 against an embedded Postgres (PGlite). The checks were: one active owner per wallet, lowercase e-mail, the role check and the append-only audit log. They have not run on the Docker database yet, because Docker Desktop was not running.
+The migrations were checked on 2026-10-25 against an embedded Postgres (PGlite). The checks were: one active owner per wallet, lowercase e-mail, the role check and the append-only audit log. The same day they were applied to the Docker database (Postgres 17, `wal_level=logical`, no warnings), and sign-up, e-mail verification and `/app` were tested on it.
+
+If Docker Desktop crashes on start with `sailor-ingest.sock ... The file cannot be accessed by the system`, quit it, run `wsl --shutdown`, delete the `sailor-ingest.sock*` files in `%LOCALAPPDATA%\Docker\run`, and open it again. Do not use "Reset to factory defaults": it erases every image and volume.
