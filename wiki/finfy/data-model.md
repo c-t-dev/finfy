@@ -358,7 +358,7 @@ erDiagram
 
 | Table | Columns | Notes |
 | --- | --- | --- |
-| `accounts` | `name`, `type` (`CHECKING`, `SAVINGS`, `CASH`, `INVESTMENT`, `BENEFITS`, `OTHER`), `initial_balance_minor`, `institution_code` (nullable), `color`, `icon`, `is_default` | Balance is derived, not stored |
+| `accounts` | `name`, `type` (`CHECKING`, `SAVINGS`, `CASH`, `INVESTMENT`, `BENEFITS`, `OTHER`), `initial_balance_minor`, `institution_code` (nullable), `color` (token: `blue`, `green`, `orange`, `red`, `purple`, `pink`, `teal`, `gray`), `icon`, `is_default` | Balance is derived, not stored (`BALANCE_SIGN` in `@packages/shared/finance`). One active `is_default` per wallet (partial unique index) |
 | `credit_cards` | `name`, `payment_account_id` → `accounts`, `brand` (`VISA`, `MASTERCARD`, `ELO`, `AMEX`, `HIPERCARD`, `OTHER`), `limit_minor`, `closing_day`, `due_day`, `color` | |
 | `credit_card_invoices` | `credit_card_id`, `reference_year`, `reference_month`, `opening_date`, `closing_date`, `due_date`, `status` (`OPEN`, `PAID`; `CLOSED`/`OVERDUE` derived), `paid_at`, `payment_transaction_id` | Unique (`credit_card_id`, `reference_year`, `reference_month`) |
 | `categories` | `wallet_id` (NULL = system), `parent_id` (max 2 levels), `name`, `translation_key`, `kind` (`INCOME`, `EXPENSE`, `BOTH`), `is_system`, `icon`, `color` | System rows: no wallet, `translation_key`, no name; read-only. Wallet rows: a name. Enforced by a `CHECK`. The system list is not seeded yet |

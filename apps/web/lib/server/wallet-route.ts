@@ -4,7 +4,7 @@ import { env } from "@packages/env/server";
 import type { WalletError } from "@packages/shared/wallets";
 import { getSession } from "@/lib/server/auth/session";
 import { apiError, clientIp, isSameOrigin, userAgent } from "@/lib/server/request";
-import type { WalletResult } from "@/lib/server/wallets";
+import type { CommandResult } from "@/lib/server/commands";
 import type { Actor } from "@/lib/server/write";
 
 const STATUS: Record<WalletError, number> = {
@@ -38,7 +38,7 @@ export async function requireActor(): Promise<Actor | Response> {
 export async function walletWrite<T extends z.ZodType, R>(
   request: Request,
   schema: T,
-  action: (actor: Actor, input: z.infer<T>, meta: RequestMeta) => Promise<WalletResult<R>>,
+  action: (actor: Actor, input: z.infer<T>, meta: RequestMeta) => Promise<CommandResult<R>>,
   okStatus = 200,
 ): Promise<Response> {
   if (!isSameOrigin(request)) return apiError("forbiddenOrigin", STATUS.forbiddenOrigin);
@@ -49,12 +49,19 @@ export async function walletWrite<T extends z.ZodType, R>(
   if (!parsed.success) return apiError("invalidInput", STATUS.invalidInput);
 
   const result = await action(actor, parsed.data, { ip: clientIp(request), userAgent: userAgent(request) });
-  if (!result.ok) {
-    if (result.error === "rateLimited") {
-      const retryAfter = result.retryAfterSeconds ?? 60;
-      return apiError("rateLimited", 429, { retryAfterSeconds: retryAfter }, { "Retry-After": String(retryAfter) });
-    }
-    return apiError(result.error, STATUS[result.error]);
-  }
+  if (!result.ok) return errorResponse(result);
   return result.value === null ? new Response(null, { status: 204 }) : Response.json(result.value, { status: okStatus });
+}
+
+/** Answers a read command: the shaped value as JSON, or the error code. */
+export function walletRead<R>(result: CommandResult<R>, shape: (value: R) => unknown = (value) => value): Response {
+  return result.ok ? Response.json(shape(result.value)) : errorResponse(result);
+}
+
+function errorResponse(result: Extract<CommandResult<unknown>, { ok: false }>): Response {
+  if (result.error === "rateLimited") {
+    const retryAfter = result.retryAfterSeconds ?? 60;
+    return apiError("rateLimited", 429, { retryAfterSeconds: retryAfter }, { "Retry-After": String(retryAfter) });
+  }
+  return apiError(result.error, STATUS[result.error]);
 }

@@ -131,6 +131,74 @@
         "confirm": "Archive",
         "cancel": "Cancel"
       }
+    },
+    "accounts": {
+      "total": "Total balance",
+      "section": "Accounts",
+      "new": "New account",
+      "emptyTitle": "No accounts yet",
+      "emptyBody": "Add your checking account, savings, or the cash in your wallet.",
+      "noWallet": "Create a wallet first.",
+      "readOnly": "As a viewer, you can see the accounts but not change them.",
+      "loadError": "The accounts could not be loaded.",
+      "retry": "Try again",
+      "main": "Main",
+      "types": {
+        "CHECKING": "Checking",
+        "SAVINGS": "Savings",
+        "CASH": "Cash",
+        "INVESTMENT": "Investment",
+        "BENEFITS": "Benefits",
+        "OTHER": "Other"
+      },
+      "colors": {
+        "blue": "Blue",
+        "green": "Green",
+        "orange": "Orange",
+        "red": "Red",
+        "purple": "Purple",
+        "pink": "Pink",
+        "teal": "Teal",
+        "gray": "Gray"
+      },
+      "actions": {
+        "menu": "Actions for {name}",
+        "edit": "Edit",
+        "makeMain": "Make main account",
+        "archive": "Archive",
+        "restore": "Restore"
+      },
+      "form": {
+        "createTitle": "New account",
+        "editTitle": "Edit account",
+        "name": "Name",
+        "namePlaceholder": "Bank, Savings, Cash…",
+        "type": "Type",
+        "initialBalance": "Initial balance",
+        "initialBalanceHint": "What the account had before your first entry in finfy. It can be negative.",
+        "initialBalanceInvalid": "Enter a valid amount, like {example}.",
+        "color": "Color",
+        "isDefault": "Main account",
+        "isDefaultHint": "Comes selected when you add an entry.",
+        "create": "Create account",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "archive": {
+        "title": "Archive {name}?",
+        "body": "The account leaves the list. Its entries are kept, and you can restore it later.",
+        "confirm": "Archive",
+        "cancel": "Cancel"
+      },
+      "archived": {
+        "show": "Show archived accounts",
+        "hide": "Hide archived accounts",
+        "empty": "No archived accounts."
+      },
+      "cards": {
+        "title": "Credit cards",
+        "soon": "Credit cards come in the next step."
+      }
     }
   },
   "errors": {

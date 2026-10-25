@@ -4,6 +4,7 @@ import * as React from "react";
 import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
+import { AccountClientProvider } from "@packages/app/accounts";
 import { AccountPanel, AppShell, WindowWidthToggle } from "@packages/app/app-shell";
 import { AppNavigationProvider, type AppLinkProps } from "@packages/app/navigation";
 import { WalletProvider } from "@packages/app/wallets";
@@ -13,6 +14,7 @@ import { AppLanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { signOut } from "@/lib/auth-client";
 import { CURRENT_WALLET_COOKIE, WINDOW_WIDE_COOKIE } from "@/lib/cookies";
+import { webAccountClient } from "@/lib/account-client";
 import { webWalletClient } from "@/lib/wallet-client";
 
 function Link(props: AppLinkProps) {
@@ -65,21 +67,23 @@ export function AppHost({
         initialCurrentId={currentWalletId}
         onCurrentChange={rememberWallet}
       >
-        <AppShell
-          wide={wide}
-          account={
-            <AccountPanel name={user.name} email={user.email} pending={signingOut} onSignOut={() => void handleSignOut()} />
-          }
-          trailing={
-            <div className="flex items-center gap-2">
-              <WindowWidthToggle wide={wide} onWideChange={changeWide} />
-              <AppLanguageSwitcher />
-              <ThemeToggle />
-            </div>
-          }
-        >
-          {children}
-        </AppShell>
+        <AccountClientProvider client={webAccountClient}>
+          <AppShell
+            wide={wide}
+            account={
+              <AccountPanel name={user.name} email={user.email} pending={signingOut} onSignOut={() => void handleSignOut()} />
+            }
+            trailing={
+              <div className="flex items-center gap-2">
+                <WindowWidthToggle wide={wide} onWideChange={changeWide} />
+                <AppLanguageSwitcher />
+                <ThemeToggle />
+              </div>
+            }
+          >
+            {children}
+          </AppShell>
+        </AccountClientProvider>
       </WalletProvider>
     </AppNavigationProvider>
   );

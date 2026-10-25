@@ -43,3 +43,12 @@ test("Accept-Language falls back to English (wiki/decisoes/0011)", () => {
   assert.equal(matchLocale("en-GB"), "en");
   assert.equal(matchLocale(null), "en");
 });
+
+test("every transaction type has a balance sign, and card purchases skip the account", async () => {
+  const { BALANCE_SIGN, TRANSACTION_TYPES } = await import("../src/finance.ts");
+  assert.deepEqual(Object.keys(BALANCE_SIGN).sort(), [...TRANSACTION_TYPES].sort());
+  assert.equal(BALANCE_SIGN.CREDIT_CARD_PURCHASE, 0);
+  assert.equal(BALANCE_SIGN.EXPENSE, -1);
+  // ADJUSTMENT is stored signed, so it adds as is.
+  assert.equal(BALANCE_SIGN.ADJUSTMENT, 1);
+});

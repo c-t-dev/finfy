@@ -10,7 +10,7 @@ O Minhas Economias só trabalha em reais. O finfy precisa atender pessoas com di
 
 1. **Cada wallet tem uma moeda**, escolhida na criação: `EUR` ou `BRL` (códigos ISO 4217). A lista de moedas aceitas fica numa tabela de configuração, para incluir outras depois (ex.: `USD`) sem mudar código.
 2. **Tudo dentro da wallet usa a moeda dela:** contas, cartões, transações, orçamentos, objetivos, bens. Nenhuma soma mistura moedas.
-3. **A moeda não muda depois que a wallet tem lançamentos.** Antes disso pode ser trocada.
+3. **A moeda não muda depois que a wallet tem lançamentos.** Antes disso pode ser trocada. Conta como "lançamento", para esse fim, o primeiro valor em dinheiro gravado na wallet: uma transação ou uma conta com saldo inicial diferente de zero (definido em 2026-10-25, ao implementar as contas).
 4. **Dinheiro é inteiro em unidades menores** (centavos) mais o código da moeda. Nunca ponto flutuante. EUR e BRL têm 2 casas; a quantidade de casas vem da tabela de moedas (`minor_units`), não fixa em ×100.
 5. **Formatação pelo idioma do usuário**, não pela moeda: em pt-BR, `R$ 1.234,56` e `€ 1.234,56`; em en, `R$1,234.56` e `€1,234.56`. Usar `Intl.NumberFormat`. Idiomas em [0011](0011-traducoes.md).
 6. **Visão consolidada entre wallets (v1):** mostra um total por moeda, lado a lado, sem converter.

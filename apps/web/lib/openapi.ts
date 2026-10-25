@@ -10,6 +10,13 @@ import {
   verifyEmailInput,
 } from "@packages/shared/auth";
 import {
+  accountListSchema,
+  accountSchema,
+  accountStateInput,
+  createAccountInput,
+  updateAccountInput,
+} from "@packages/shared/accounts";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -78,6 +85,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       { name: "auth", description: "Sign-up, sign-in and sessions (wiki/decisoes/0004)" },
       { name: "account", description: "The signed-in user's settings" },
       { name: "wallets", description: "Wallets and roles (wiki/decisoes/0002). Writes are idempotent by `mutationId` and audited" },
+      { name: "accounts", description: "Accounts of a wallet; the balance is computed, never stored" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -102,6 +110,8 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         CurrentUser: json(currentUserSchema),
         Wallet: json(walletSchema),
         WalletList: json(walletListSchema),
+        Account: json(accountSchema),
+        AccountList: json(accountListSchema),
         Health: {
           type: "object",
           required: ["status", "database"],
@@ -257,11 +267,83 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           },
         },
       },
+      "/api/wallets/{id}/accounts": {
+        get: {
+          tags: ["accounts"],
+          summary: "Accounts with their balance",
+          description:
+            "Any member. Main account first, then oldest first. `?archived=1` lists the archived ones. `balanceMinor` = `initialBalanceMinor` + paid, non-archived transactions of the account.",
+          security: [{ session: [] }],
+          parameters: [
+            walletIdParam,
+            { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } },
+          ],
+          responses: {
+            200: response("The accounts.", ref("AccountList")),
+            ...walletErrors("notFound"),
+          },
+        },
+        post: {
+          tags: ["accounts"],
+          summary: "Create an account",
+          description: `OWNER, ADMIN, EDITOR. The client sends the account \`id\` and a \`mutationId\`. The wallet's first account becomes the main one; \`isDefault: true\` moves the mark. A non-zero initial balance locks the wallet's currency. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam],
+          requestBody: body(createAccountInput),
+          responses: {
+            201: response("Created (or already created by this mutationId).", ref("Account")),
+            ...walletErrors("invalidInput", "forbidden", "notFound"),
+          },
+        },
+      },
+      "/api/wallets/{id}/accounts/{accountId}": {
+        patch: {
+          tags: ["accounts"],
+          summary: "Edit an account",
+          description: `OWNER, ADMIN, EDITOR. Name and color: the last write wins. Type and initial balance: only from the latest version (\`409 versionConflict\`). ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam, accountIdParam],
+          requestBody: body(updateAccountInput),
+          responses: {
+            200: response("The account after the change.", ref("Account")),
+            ...walletErrors("invalidInput", "forbidden", "notFound", "versionConflict"),
+          },
+        },
+      },
+      "/api/wallets/{id}/accounts/{accountId}/archive": {
+        post: {
+          tags: ["accounts"],
+          summary: "Archive an account",
+          description: `OWNER, ADMIN, EDITOR. Its transactions are kept. If it was the main account, the oldest active account becomes the main one. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam, accountIdParam],
+          requestBody: body(accountStateInput),
+          responses: {
+            200: response("The archived account.", ref("Account")),
+            ...walletErrors("invalidInput", "forbidden", "notFound"),
+          },
+        },
+      },
+      "/api/wallets/{id}/accounts/{accountId}/restore": {
+        post: {
+          tags: ["accounts"],
+          summary: "Restore an archived account",
+          description: `OWNER, ADMIN, EDITOR. It becomes the main account if the wallet has none. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [walletIdParam, accountIdParam],
+          requestBody: body(accountStateInput),
+          responses: {
+            200: response("The restored account.", ref("Account")),
+            ...walletErrors("invalidInput", "forbidden", "notFound"),
+          },
+        },
+      },
     },
   };
 }
 
 const walletIdParam = { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+const accountIdParam = { name: "accountId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
 
 const WALLET_ERROR_STATUS: Record<string, [number, string]> = {
   invalidInput: [400, "Invalid input."],

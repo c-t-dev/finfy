@@ -131,6 +131,74 @@
         "confirm": "Arquivar",
         "cancel": "Cancelar"
       }
+    },
+    "accounts": {
+      "total": "Saldo total",
+      "section": "Contas",
+      "new": "Nova conta",
+      "emptyTitle": "Nenhuma conta ainda",
+      "emptyBody": "Adicione a conta corrente, a poupança ou o dinheiro da carteira.",
+      "noWallet": "Crie uma wallet primeiro.",
+      "readOnly": "Como leitor, você vê as contas, mas não pode alterá-las.",
+      "loadError": "Não foi possível carregar as contas.",
+      "retry": "Tentar de novo",
+      "main": "Principal",
+      "types": {
+        "CHECKING": "Conta corrente",
+        "SAVINGS": "Poupança",
+        "CASH": "Dinheiro",
+        "INVESTMENT": "Investimento",
+        "BENEFITS": "Benefícios",
+        "OTHER": "Outra"
+      },
+      "colors": {
+        "blue": "Azul",
+        "green": "Verde",
+        "orange": "Laranja",
+        "red": "Vermelho",
+        "purple": "Roxo",
+        "pink": "Rosa",
+        "teal": "Turquesa",
+        "gray": "Cinza"
+      },
+      "actions": {
+        "menu": "Ações de {name}",
+        "edit": "Editar",
+        "makeMain": "Tornar principal",
+        "archive": "Arquivar",
+        "restore": "Restaurar"
+      },
+      "form": {
+        "createTitle": "Nova conta",
+        "editTitle": "Editar conta",
+        "name": "Nome",
+        "namePlaceholder": "Banco, Poupança, Carteira…",
+        "type": "Tipo",
+        "initialBalance": "Saldo inicial",
+        "initialBalanceHint": "Quanto havia na conta antes do primeiro lançamento no finfy. Pode ser negativo.",
+        "initialBalanceInvalid": "Digite um valor válido, como {example}.",
+        "color": "Cor",
+        "isDefault": "Conta principal",
+        "isDefaultHint": "Vem selecionada ao registrar um lançamento.",
+        "create": "Criar conta",
+        "save": "Salvar",
+        "cancel": "Cancelar"
+      },
+      "archive": {
+        "title": "Arquivar {name}?",
+        "body": "A conta sai da lista. Os lançamentos dela continuam guardados, e dá para restaurá-la depois.",
+        "confirm": "Arquivar",
+        "cancel": "Cancelar"
+      },
+      "archived": {
+        "show": "Mostrar contas arquivadas",
+        "hide": "Ocultar contas arquivadas",
+        "empty": "Nenhuma conta arquivada."
+      },
+      "cards": {
+        "title": "Cartões de crédito",
+        "soon": "Os cartões de crédito chegam no próximo passo."
+      }
     }
   },
   "errors": {

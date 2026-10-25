@@ -85,3 +85,21 @@ export type AssetType = (typeof ASSET_TYPES)[number];
 
 /** Basis points: 10000 = 100%. Used for ownership shares and rates. */
 export const FULL_BPS = 10000;
+
+/**
+ * How each transaction type moves an account's balance: +1 adds the amount,
+ * -1 subtracts it, 0 does not touch the account (card purchases hit the
+ * invoice instead). `ADJUSTMENT` is signed already, so it adds as stored.
+ * Balances and reports use this same table and the same filter (paid, not
+ * archived), so they never disagree (wiki/finfy/data-model.md).
+ */
+export const BALANCE_SIGN: Record<TransactionType, 1 | -1 | 0> = {
+  INCOME: 1,
+  TRANSFER_IN: 1,
+  REFUND: 1,
+  ADJUSTMENT: 1,
+  EXPENSE: -1,
+  TRANSFER_OUT: -1,
+  CREDIT_CARD_PAYMENT: -1,
+  CREDIT_CARD_PURCHASE: 0,
+};

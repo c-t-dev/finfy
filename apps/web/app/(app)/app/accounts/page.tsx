@@ -1,5 +1,5 @@
-import { ComingSoonScreen } from "@packages/app/screens/coming-soon";
+import { AccountsScreen } from "@packages/app/screens/accounts";
 
 export default function Page() {
-  return <ComingSoonScreen route="accounts" />;
+  return <AccountsScreen />;
 }

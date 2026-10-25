@@ -8,9 +8,9 @@ import type {
   CreateWalletInput,
   UpdateWalletInput,
   Wallet,
-  WalletError,
 } from "@packages/shared/wallets";
 import { verifyPassword } from "@/lib/server/auth/password";
+import { CommandError, fail, runCommand, type CommandResult } from "@/lib/server/commands";
 import { hitRateLimit } from "@/lib/server/auth/rate-limit";
 import { getDb } from "@/lib/server/db";
 import { diff, findApplied, recordMutation, type Actor, type Tx } from "@/lib/server/write";
@@ -21,20 +21,7 @@ import { diff, findApplied, recordMutation, type Actor, type Tx } from "@/lib/se
  * `recordMutation`, so it is idempotent and audited.
  */
 
-export type WalletResult<T> = { ok: true; value: T } | { ok: false; error: WalletError; retryAfterSeconds?: number };
-
-const fail = (error: WalletError, retryAfterSeconds?: number): { ok: false; error: WalletError; retryAfterSeconds?: number } => ({
-  ok: false,
-  error,
-  retryAfterSeconds,
-});
-
-/** Thrown inside a transaction to roll it back and answer with a code. */
-class CommandError extends Error {
-  constructor(readonly code: WalletError) {
-    super(code);
-  }
-}
+export type WalletResult<T> = CommandResult<T>;
 
 const walletColumns = {
   id: wallets.id,
@@ -97,18 +84,8 @@ async function current(tx: Tx, walletId: string, userId: string): Promise<Wallet
   return row ? toWallet(row) : null;
 }
 
-/** Runs a command in one transaction, turning CommandError into a result. */
-async function run<T>(body: (tx: Tx) => Promise<T>): Promise<WalletResult<T>> {
-  try {
-    return { ok: true, value: await getDb().transaction(body) };
-  } catch (error) {
-    if (error instanceof CommandError) return fail(error.code);
-    throw error;
-  }
-}
-
 export async function createWallet(actor: Actor, input: CreateWalletInput): Promise<WalletResult<Wallet>> {
-  return run(async (tx) => {
+  return runCommand(async (tx) => {
     const applied = await findApplied(tx, input.mutationId, actor.userId);
     if (applied === "foreign") throw new CommandError("invalidInput");
     if (applied === "applied") {
@@ -168,7 +145,7 @@ export async function createWallet(actor: Actor, input: CreateWalletInput): Prom
  * can only change before the first entry, and only from the latest version.
  */
 export async function updateWallet(actor: Actor, walletId: string, input: UpdateWalletInput): Promise<WalletResult<Wallet>> {
-  return run(async (tx) => {
+  return runCommand(async (tx) => {
     const applied = await findApplied(tx, input.mutationId, actor.userId);
     if (applied === "foreign") throw new CommandError("invalidInput");
     if (applied === "applied") {
@@ -233,7 +210,7 @@ export async function archiveWallet(
     return fail("invalidCredentials");
   }
 
-  return run(async (tx) => {
+  return runCommand(async (tx) => {
     const applied = await findApplied(tx, input.mutationId, actor.userId);
     if (applied === "foreign") throw new CommandError("invalidInput");
     if (applied === "applied") return null;

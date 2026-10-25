@@ -6,7 +6,7 @@ How the code is organized and how to run it. The reasons behind each choice are 
 
 ## Status
 
-Milestones 1 (foundation), 2 (e-mail and password authentication) and 3 (wallets) are in place, plus every database table of the approved data model:
+Milestones 1 (foundation), 2 (e-mail and password authentication), 3 (wallets) and 4 (accounts) are in place, plus every database table of the approved data model:
 
 | Done | Not yet |
 | --- | --- |
@@ -17,6 +17,7 @@ Milestones 1 (foundation), 2 (e-mail and password authentication) and 3 (wallets
 | Money, IDs, roles and permission matrix, locales | `POST /api/sync/push`, conflict records (`sync_conflicts`), audit chain check job |
 | Wallets: create, list, switch (remembered per browser), rename, change currency before the first entry, archive with the password (see [Wallets](#wallets)) | Activity feed and item history screens |
 | One write path: idempotent mutations and a hash-chained audit log (see [Write path](#write-path)) | |
+| Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | Credit cards, transactions, categories |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
 | Signed-in app shell (`/app`): sidebar, bottom bar on phones, language and theme switchers, window width lock/unlock (cookie `finfy-window-wide`, desktop only) | E-mail sending (provider not chosen), cron jobs |
 | `GET /api/health`; API documented with OpenAPI + Swagger UI (see [API documentation](#api-documentation)) | Tauri and Capacitor shells, PowerSync |
@@ -28,7 +29,7 @@ Milestones 1 (foundation), 2 (e-mail and password authentication) and 3 (wallets
 | `apps/web` | Next.js 16: public pages (`app/(public)/[locale]`), signed-in app (`app/(app)/app`), API (`app/api`) | everything below |
 | `packages/app` | Signed-in screens. **Never imports Next.js**: routing comes in through `AppNavigationProvider` (`Link` + `pathname`), data through transports the host passes in (`AuthClient`, `WalletClient`) | `ui`, `shared`, `use-intl` |
 | `packages/ui` | shadcn components restyled for macOS, tokens, `globals.css`. A copy of image-resizer's, evolving on its own | — |
-| `packages/shared` | Pure code used by client and server: `money`, `ids`, `roles`, `finance` (value lists), `auth` and `wallets` (input and response schemas), `i18n` (locales + messages), and the Drizzle schema (`db/schema`, server only) | `drizzle-orm`, `uuid`, `zod` |
+| `packages/shared` | Pure code used by client and server: `money`, `ids`, `roles`, `finance` (value lists, `BALANCE_SIGN`), `auth`, `wallets` and `accounts` (input and response schemas), `i18n` (locales + messages), and the Drizzle schema (`db/schema`, server only) | `drizzle-orm`, `uuid`, `zod` |
 | `packages/env` | Env validation (t3-env + zod): `client` and `server` | — |
 
 Two root layouts, each rendering `<html>` through `components/root-document.tsx`:
@@ -100,6 +101,26 @@ Implements part of [0002](../decisoes/0002-wallets-e-compartilhamento.md). Serve
 Roles are read from `wallet_members` on every request. A wallet the user cannot see answers `404`, never `403`, so its existence is not revealed.
 
 The current wallet is remembered per browser in the `finfy-wallet` cookie and read on the server, so the first paint shows it. On phones the switcher sits at the top of every screen.
+
+## Accounts
+
+Server: `apps/web/lib/server/accounts.ts`; shared helpers for every wallet-scoped command (one transaction, role check, error codes) in `lib/server/commands.ts`. Client: `packages/app/src/accounts.tsx` (`AccountClient`, `useAccountList`) and `screens/accounts.tsx`.
+
+| Route | Who |
+| --- | --- |
+| `GET /api/wallets/:id/accounts[?archived=1]` | Any member |
+| `POST /api/wallets/:id/accounts` | OWNER, ADMIN, EDITOR |
+| `PATCH /api/wallets/:id/accounts/:accountId` | OWNER, ADMIN, EDITOR |
+| `POST /api/wallets/:id/accounts/:accountId/archive` and `/restore` | OWNER, ADMIN, EDITOR |
+
+Rules:
+
+- **Balance** = `initial_balance_minor` + Σ amount × `BALANCE_SIGN[type]` over the account's `PAID`, non-archived transactions. Computed in the list query, never stored. Card purchases do not touch the account (they go to the invoice). Checked on 2026-10-25 with temporary rows: a pending income was ignored, an expense, an income and a negative adjustment added up.
+- **Main account:** exactly one per wallet among active accounts. The first account becomes it; making another one main clears the previous (both audited). Archiving the main account passes the mark to the oldest active account; restoring one makes it main only if the wallet has none.
+- **Conflicts:** name and color, last write wins. Type and initial balance change money, so they need the latest `baseVersion` (`409 versionConflict`).
+- **Currency lock:** an account with a non-zero initial balance sets `wallets.currency_locked_at` (audited as `CURRENCY_LOCKED`). See [0001](../decisoes/0001-multimoeda.md).
+- **Colors** are tokens (`blue`, `green`...), drawn with Apple system colors; no institution list yet.
+- **Amounts typed by the user** are parsed with `parseMoney` and the language's decimal separator; floats never reach the API (`initialBalanceMinor` must be an integer).
 
 ## Authentication
 
