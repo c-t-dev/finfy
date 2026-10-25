@@ -54,6 +54,29 @@ A API fica **dentro do Next.js** para começar. Se um dia precisar escalar ou ro
 
 Os nomes das pastas podem mudar na criação do projeto. Se mudarem, atualize esta tabela.
 
+### Banco de dados e sincronização
+
+- **Drizzle ORM** no servidor, com Postgres. O esquema e as migrações (`drizzle-kit`) ficam em `packages/shared`, e os esquemas zod saem das tabelas (`drizzle-zod`).
+- Por que Drizzle:
+  - é o que o my-fin já usa;
+  - os tipos saem do próprio esquema;
+  - fica próximo do SQL, o que dá controle sobre transações, índices parciais e `jsonb`;
+  - é leve para as funções da Vercel.
+- Por que não as outras opções:
+  - **Kysely** não gera migrações a partir do esquema;
+  - **Prisma** usa uma linguagem própria e dá menos controle sobre o SQL.
+- Ressalva: o Drizzle ainda não chegou à versão 1.0, então atualizações podem quebrar código.
+
+**A sincronização offline já entra no esquema**, mesmo com a web saindo primeiro e sem sincronizar. As regras estão em [data-model.md → Sync-ready schema rules](../finfy/data-model.md#sync-ready-schema-rules). Em resumo:
+
+- chave primária `id` simples em toda tabela sincronizada, e `wallet_id` em toda linha;
+- só tipos que viram bem SQLite no aparelho;
+- **um único caminho de escrita** no servidor. A web e o `push` dos apps passam pelos mesmos comandos, e a web já envia IDs gerados no cliente, `mutation_id` e `base_version`;
+- migrações em duas etapas: primeiro adicionar, depois remover. Nunca renomear coluna sincronizada de uma vez;
+- a publicação do Postgres para o PowerSync lista só as tabelas sincronizadas, sem senhas, sessões, tokens nem auditoria.
+
+No aparelho, o PowerSync tem um driver para Drizzle (`@powersync/drizzle-driver`). A documentação cita só os SDKs Web e React Native, e o driver não aplica unique, chaves estrangeiras nem cascata. Testar com Tauri e Capacitor na prova de conceito ([0009](0009-react-tauri-capacitor.md)).
+
 ### Tarefas em segundo plano
 
 O envio de e-mails (convites, segurança), a geração de recorrências e as limpezas não podem depender de alguém estar com a página aberta. Elas usam **Vercel Cron** para as tarefas agendadas e fila (**Vercel Queues** ou a tabela `email_outbox` lida pelo cron) para as tarefas por evento.
@@ -71,8 +94,8 @@ O envio de e-mails (convites, segurança), a geração de recorrências e as lim
 
 ## Perguntas em aberto
 
-- [ ] Provedor do Postgres. Ex.: Neon, pela Vercel Marketplace. Precisa ter replicação lógica para o PowerSync.
-- [ ] Acesso ao banco: **Drizzle** (o que o my-fin usa) ou Kysely.
+- [ ] Provedor do Postgres. Ex.: Neon, pela Vercel Marketplace. Precisa ter replicação lógica para o PowerSync. No Neon, ligar a replicação lógica não tem volta, reinicia o banco e impede que ele "durma" enquanto o PowerSync estiver conectado, o que conta horas de uso no plano.
+- [x] Acesso ao banco: **Drizzle ORM** (decidido em 2026-10-25, ver a seção "Banco de dados e sincronização").
 - [ ] Contrato entre cliente e API: REST com esquemas zod compartilhados, tRPC ou OpenAPI gerado.
 - [ ] Gerenciamento de dados no cliente (ex.: TanStack Query).
 - [ ] Quais páginas públicas existem na primeira versão.

@@ -67,6 +67,16 @@ Suporte a plataformas por SDK, conferido em 2026-10-25 em [docs.powersync.com/re
 
 O Dart/Flutter é o único SDK que cobre as quatro plataformas nativas sozinho. Mas **Tauri (Windows e macOS) mais Capacitor (Android e iOS)** cobre as mesmas plataformas com uma única base de código React. Essa foi a escolha, para usar shadcn e Tailwind como no image-resizer ([0009](0009-react-tauri-capacitor.md), que substitui a [0007](0007-flutter-nos-clientes.md)).
 
+### Esquema pronto para sincronizar
+
+A web sai primeiro e não sincroniza, mas o esquema do Postgres já é desenhado para o PowerSync. As regras estão em [data-model.md → Sync-ready schema rules](../finfy/data-model.md#sync-ready-schema-rules):
+
+- tipos compatíveis com o SQLite do aparelho;
+- `id` simples e `wallet_id` em toda linha sincronizada;
+- um único caminho de escrita para a web e para o `push` dos apps;
+- migrações em duas etapas (primeiro adicionar, depois remover);
+- publicação limitada às tabelas sincronizadas.
+
 ### O que funciona sem internet
 
 Vale para os apps nativos. Na web, tudo exige internet.

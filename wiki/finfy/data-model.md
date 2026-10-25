@@ -13,7 +13,7 @@ This is the data model of **finfy** itself. It consolidates the decisions in [`.
 
 ## Conventions
 
-- **Database:** PostgreSQL on the server (source of truth). Native apps keep a SQLite replica through PowerSync; the web keeps nothing locally ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0009](../decisoes/0009-react-tauri-capacitor.md)).
+- **Database:** PostgreSQL on the server (source of truth), schema and migrations with **Drizzle** ([0010](../decisoes/0010-nextjs-na-vercel.md)). Native apps keep a SQLite replica through PowerSync; the web keeps nothing locally ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0009](../decisoes/0009-react-tauri-capacitor.md)).
 - **IDs:** UUIDv7 (`uuid`), generated on the client for synced tables. Recurrence occurrences use UUIDv5 of `recurrence_id` + date so two offline devices create the same ID.
 - **Money:** `bigint` in minor units (`*_minor` columns). The currency is always the wallet's (`wallets.currency_code`); entities inside a wallet do not carry their own currency. Decimal places come from `currencies.minor_units`.
 - **Enums:** `text` with a `CHECK` constraint, not native Postgres enums, so values can be added without migrations that lock tables.
@@ -35,6 +35,54 @@ Every table marked **synced** below has these columns in addition to its own:
 | `archived_at`, `archived_by` | timestamptz, uuid FK → `users` | Soft delete |
 
 They are omitted from the diagrams and tables below to keep them readable.
+
+### Sync-ready schema rules
+
+The web ships first and does not sync, but the schema must already work with PowerSync, so the native apps can be added without reshaping tables ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0010](../decisoes/0010-nextjs-na-vercel.md)). The server schema is written with **Drizzle**.
+
+**Table shape**
+
+1. Every synced table has a single-column primary key named `id` (uuid). No composite primary keys: link tables get their own `id` plus a unique constraint on the pair.
+2. Link rows that two offline devices could create independently use a **deterministic UUIDv5** (e.g. `transaction_tags.id` from `transaction_id` + `tag_id`), the same trick as recurrence occurrences.
+3. Every synced row carries `wallet_id` directly, so sync streams can filter by wallet without deep joins. Exceptions: `wallets` (filtered by its own `id`) and system rows with `wallet_id` NULL (system categories), which go to every user.
+4. Use only types with a clean SQLite mapping on the client. PowerSync maps them as follows:
+
+| Postgres | Client SQLite | Rule |
+| --- | --- | --- |
+| `uuid`, `text`, `date`, `jsonb` | `text` | jsonb arrives as a JSON string; parse it in the data layer |
+| `bigint`, `integer` | `integer` | All money (`*_minor`) |
+| `boolean` | `integer` (0/1) | |
+| `timestamptz` | `text` (ISO 8601, UTC) | Never `timestamp` without time zone |
+| `numeric` | `text` | Avoid on synced tables; money is never `numeric` |
+| `bytea` | does not sync | Not allowed on synced tables; files go to object storage |
+| native enums, arrays, ranges | `text` | Not used: enums are `text` + `CHECK`; lists are jsonb or a link table |
+
+**What the client cannot enforce**
+
+5. The local SQLite has no foreign keys, unique constraints or cascades. Rows can arrive in any order. The client must tolerate a missing parent (e.g. a transaction whose category has not synced yet).
+6. Uniqueness is decided by the server when the mutation arrives. Example: two devices create the tag "food" offline; the server keeps one and repoints the other's links, recording it in the audit log.
+
+**One write path**
+
+7. Every write goes through one set of server commands, whether it comes from a web request or from `POST /api/sync/push`. Each command checks permission, validates, merges by field, bumps `version` and writes the audit log ([0006](../decisoes/0006-auditoria.md)).
+8. The web follows the same rules as the native apps:
+   - it generates the UUIDv7 IDs on the client;
+   - it sends a `mutation_id` for idempotency;
+   - it sends the `version` it was editing as `base_version`.
+
+   A web edit can then produce the same conflicts as an offline one.
+
+**Migrations**
+
+9. **Expand, then contract.** Add columns or tables first. Stop using the old ones in a later release. Drop them only once no supported app version reads them. Never rename or drop a synced column in a single release.
+10. A schema change and the matching PowerSync sync config (and client schema) ship together. The client sends its `schema_version`; the server rejects versions that are too old ([0005](../decisoes/0005-offline-first-e-sincronizacao.md#versões-do-app)).
+11. The client-side PowerSync schema is generated from (or checked in CI against) the Drizzle schema in `packages/shared`, so the two cannot drift.
+
+**Replication and security**
+
+12. The Postgres publication `powersync` lists only synced tables. Never use `FOR ALL TABLES`: credentials, sessions, MFA secrets, invites' token hashes, the email outbox and the audit log must not flow through the sync service.
+13. The replication role (`REPLICATION`, `BYPASSRLS`, `LOGIN`, `SELECT` only on published tables) is separate from the API role.
+14. Columns that a member should not see (e.g. another user's email) are not selected by the sync streams, even if the table is synced.
 
 ## Diagrams
 
@@ -308,7 +356,7 @@ erDiagram
 | `transactions` | `account_id`, `credit_card_id`, `invoice_id`, `category_id`, `household_member_id`, `recurrence_id`, `occurrence_date`, `installment_group_id`, `installment_number`, `installment_total`, `type`, `status`, `description`, `amount_minor`, `transaction_date`, `due_date`, `paid_at`, `notes`, `needs_review` | See types and rules below |
 | `transaction_links` | `source_transaction_id`, `target_transaction_id`, `type` (`TRANSFER`, `INVOICE_PAYMENT`, `REFUND`) | Both legs of a transfer; a refund to its purchase |
 | `tags` | `name`, `color` | Unique (`wallet_id`, lower(`name`)) |
-| `transaction_tags` | `transaction_id`, `tag_id` | PK (`transaction_id`, `tag_id`); tags are referenced by ID, never by name |
+| `transaction_tags` | `transaction_id`, `tag_id` | `id` is UUIDv5 of (`transaction_id`, `tag_id`); unique (`transaction_id`, `tag_id`); tags are referenced by ID, never by name |
 | `transaction_attachments` | `transaction_id`, `storage_key`, `file_name`, `mime_type`, `size_bytes`, `sha256` | File in object storage; upload requires internet |
 | `recurrences` | `type` (`INCOME`, `EXPENSE`), `description`, `amount_minor`, `account_id` or `credit_card_id`, `category_id`, `frequency` (`DAILY`, `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `BIMONTHLY`, `QUARTERLY`, `SEMIANNUAL`, `YEARLY`), `weekdays`, `months`, `day_of_month`, `start_date`, `end_date`, `match_day_tolerance`, `match_amount_tolerance_bps` | Tolerances recomputed whenever `amount_minor` changes (fixes the Minhas Economias bug) |
 | `household_members` | `name`, `relationship` (`SELF`, `PARTNER`, `CHILD`, `PARENT`, `SIBLING`, `PET`, `OTHER`), `birth_date`, `color` | "Who spent it" labels; not app users |
