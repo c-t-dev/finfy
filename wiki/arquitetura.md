@@ -23,6 +23,37 @@ O portal é um app **Flutter Web** de página única que conversa com uma API RE
 - A sessão é um cookie do domínio da API. Confirmado: um `fetch(..., {credentials: 'include'})` feito da página, sem token, foi aceito.
 - `POST /api/authentication/v2/session/alive` é chamado a cada ~30 segundos para manter a sessão.
 
+### Fluxo
+
+A chamada de login em si ainda não foi capturada (a conta já estava logada quando a rede começou a ser monitorada); por isso ela aparece como "não capturado". Ver [pendencias.md](pendencias.md).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuário
+    participant P as Portal (Flutter Web)
+    participant IdP as Google GSI / Apple ID
+    participant R as reCAPTCHA v3
+    participant A as API (api.minhaseconomias.com.br)
+
+    U->>P: Abre o portal e escolhe Google, Apple ou e-mail e senha
+    alt Google ou Apple
+        P->>IdP: Inicia login (client_id do Google na meta google-signin-client_id)
+        IdP-->>P: Credencial do provedor
+    end
+    P->>R: Pede token invisível
+    R-->>P: Token reCAPTCHA
+    P->>A: Login (endpoint não capturado)
+    A-->>P: Cookie de sessão
+    P->>P: Guarda dados do usuário no localStorage (FlutterSecureStorage)
+    loop Enquanto o portal está aberto
+        P->>A: Chamadas fetch com credentials (cookie)
+        P->>A: POST /api/authentication/v2/session/alive (~30 s)
+    end
+```
+
+Com login salvo, o portal reabre direto na última rota (`keyCurrentRoute`) e pede o token do reCAPTCHA logo após a primeira tela; o script da página carrega o reCAPTCHA cedo por isso.
+
 ## Estado local do navegador
 
 O app guarda dados em `localStorage` com o prefixo `FlutterSecureStorage.`:

@@ -18,6 +18,8 @@ O que ainda não foi testado ou documentado. Ao testar um item, mova o resultado
 - [ ] Exportar planilha de novo e confirmar se o arquivo é baixado; documentar as colunas.
 - [ ] Redimensionar e maximizar componentes de um painel; renomear painel.
 - [ ] Quanto tempo leva o processamento assíncrono de edições de recorrência e regra.
+- [ ] Capturar o login: endpoint, corpo (credencial do Google/Apple ou e-mail e senha, token do reCAPTCHA), cookie retornado e tempo de expiração da sessão. Exige sair e entrar de novo com o monitor de rede ativo.
+- [ ] Capturar o logout e o que acontece quando a sessão expira.
 
 ## Exclusões (precisam de quem tenha autorização para apagar)
 
