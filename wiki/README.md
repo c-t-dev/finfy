@@ -60,6 +60,8 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 | [decisoes/0010-nextjs-na-vercel.md](decisoes/0010-nextjs-na-vercel.md) | Web primeiro: Next.js na Vercel com páginas públicas, app logado e API; estrutura do monorepo |
 | [decisoes/0011-traducoes.md](decisoes/0011-traducoes.md) | Idiomas pt-BR e en, regras de tradução, idioma por endereço nas páginas públicas e por conta no app |
 
+Início personalizável: [0019 — Blocos e gráficos por pessoa](decisoes/0019-inicio-personalizavel.md) (aceita; disposição fora da auditoria).
+
 Bens e financiamentos: [0017 — Associação entre bem e dívida](decisoes/0017-bens-e-financiamentos.md) (aceita; implementação com seleção nos dois cadastros).
 
 Competência de cartão: [0016 — Faturas pelo vencimento](decisoes/0016-competencia-das-faturas.md) (aceita).

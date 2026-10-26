@@ -161,24 +161,26 @@
         }
       },
       "charts": {
-        "period": "Período",
         "months": "{count} meses",
+        "history": "Histórico",
+        "ahead": "Próximos",
         "loadError": "Não foi possível carregar o gráfico.",
         "retry": "Tentar de novo",
         "balance": {
           "title": "Saldo ao longo do tempo",
-          "description": "Saldo das contas no fim de cada mês. A linha tracejada soma os lançamentos pendentes e as faturas em aberto.",
+          "description": "Saldo das contas no fim de cada mês. A linha tracejada soma os lançamentos pendentes, as faturas em aberto e, depois de 90 dias, as suas recorrências.",
           "actual": "Saldo",
           "projected": "Previsto",
           "projection": "Previsto para {month}:"
         },
         "cashflow": {
           "title": "Receitas x despesas",
-          "description": "Receitas e despesas pagas de cada mês; compras no cartão contam no mês de vencimento da fatura.",
+          "description": "Receitas e despesas pagas de cada mês; compras no cartão contam no mês de vencimento da fatura. As barras claras são os próximos meses: lançamentos pendentes e, depois de 90 dias, as suas recorrências.",
           "income": "Receitas",
           "expense": "Despesas",
           "result": "Resultado no período:",
-          "empty": "Nenhuma receita ou despesa neste período."
+          "empty": "Nenhuma receita ou despesa neste período.",
+          "projectedMonth": "{month} · previsto"
         }
       }
     },

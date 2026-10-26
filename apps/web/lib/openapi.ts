@@ -834,12 +834,13 @@ function homePaths() {
         tags: ["home"],
         summary: "Month figures for the Home charts",
         description:
-          "Any member. `months` months up to `month` (the person's current month), then 3 projected months. Each month uses the Statement totals of that month: income, expense, the confirmed balance at its last day and the projected one (plus pending entries and unpaid card purchases due by then).",
+          "Any member. `months` months up to `month` (the person's current month), then `ahead` projected months (default 3). Each month uses the Statement totals of that month: income, expense, pending income and expense, the confirmed balance at its last day and the projected one (plus pending entries and unpaid card purchases due by then). After the 90-day recurrence horizon, active recurrences are simulated (never saved): `forecastIncomeMinor`, `forecastExpenseMinor`, also included in `projectedMinor`; card ones count on their invoice due date.",
         security: [{ session: [] }],
         parameters: [
           walletIdParam,
           { name: "month", in: "query", required: true, schema: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } },
           { name: "months", in: "query", required: true, schema: { type: "integer", enum: [6, 12] } },
+          { name: "ahead", in: "query", required: false, schema: { type: "integer", enum: [3, 6, 12], default: 3 } },
         ],
         responses: { 200: response("The months, oldest first.", ref("HomeInsights")), ...walletErrors("invalidInput", "notFound") },
       },

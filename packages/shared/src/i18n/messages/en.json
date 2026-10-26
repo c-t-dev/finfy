@@ -161,24 +161,26 @@
         }
       },
       "charts": {
-        "period": "Period",
         "months": "{count} months",
+        "history": "History",
+        "ahead": "Ahead",
         "loadError": "Could not load the chart.",
         "retry": "Try again",
         "balance": {
           "title": "Balance over time",
-          "description": "Balance of your accounts at the end of each month. The dashed line adds pending entries and unpaid card bills.",
+          "description": "Balance of your accounts at the end of each month. The dashed line adds pending entries, unpaid card bills and, after 90 days, your recurrences.",
           "actual": "Balance",
           "projected": "Projected",
           "projection": "Projected for {month}:"
         },
         "cashflow": {
           "title": "Income x expenses",
-          "description": "Paid income and expenses of each month; card purchases count in the bill's due month.",
+          "description": "Paid income and expenses of each month; card purchases count in the bill's due month. Lighter bars are the next months: pending entries and, after 90 days, your recurrences.",
           "income": "Income",
           "expense": "Expenses",
           "result": "Result in the period:",
-          "empty": "No income or expenses in this period."
+          "empty": "No income or expenses in this period.",
+          "projectedMonth": "{month} · projected"
         }
       }
     },

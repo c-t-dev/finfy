@@ -11,7 +11,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/wallets/[id]
   if (actor instanceof Response) return actor;
   const { id } = await ctx.params;
   const params = new URL(request.url).searchParams;
-  const query = homeInsightsQuery.safeParse({ month: params.get("month"), months: params.get("months") });
+  const query = homeInsightsQuery.safeParse({ month: params.get("month"), months: params.get("months"), ahead: params.get("ahead") ?? "3" });
   if (!query.success) return apiError("invalidInput", 400);
   return walletRead(await homeInsights(actor.userId, id, query.data));
 }

@@ -3847,7 +3847,27 @@
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991
                 },
+                "pendingIncomeMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "pendingExpenseMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
                 "balanceMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "forecastIncomeMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "forecastExpenseMinor": {
                   "type": "integer",
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991
@@ -3862,7 +3882,11 @@
                 "month",
                 "incomeMinor",
                 "expenseMinor",
+                "pendingIncomeMinor",
+                "pendingExpenseMinor",
                 "balanceMinor",
+                "forecastIncomeMinor",
+                "forecastExpenseMinor",
                 "projectedMinor"
               ],
               "additionalProperties": false
@@ -19215,7 +19239,7 @@
           "home"
         ],
         "summary": "Month figures for the Home charts",
-        "description": "Any member. `months` months up to `month` (the person's current month), then 3 projected months. Each month uses the Statement totals of that month: income, expense, the confirmed balance at its last day and the projected one (plus pending entries and unpaid card purchases due by then).",
+        "description": "Any member. `months` months up to `month` (the person's current month), then `ahead` projected months (default 3). Each month uses the Statement totals of that month: income, expense, pending income and expense, the confirmed balance at its last day and the projected one (plus pending entries and unpaid card purchases due by then). After the 90-day recurrence horizon, active recurrences are simulated (never saved): `forecastIncomeMinor`, `forecastExpenseMinor`, also included in `projectedMinor`; card ones count on their invoice due date.",
         "security": [
           {
             "session": []
@@ -19250,6 +19274,20 @@
                 6,
                 12
               ]
+            }
+          },
+          {
+            "name": "ahead",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3,
+                6,
+                12
+              ],
+              "default": 3
             }
           }
         ],

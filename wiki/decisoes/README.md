@@ -20,6 +20,7 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0014](0014-prestacoes-por-recorrencia.md) | Valor da prestação, primeiro vencimento e término por data ou quantidade usando recorrências | Aceita |
 | [0016](0016-competencia-das-faturas.md) | Faturas e compras no extrato pelo mês de vencimento | Aceita |
 | [0017](0017-bens-e-financiamentos.md) | Associação entre bens e dívidas, sem duplicação no patrimônio | Aceita |
+| [0019](0019-inicio-personalizavel.md) | Início personalizável por pessoa e wallet, com gráficos de saldo e de receitas x despesas | Aceita (sync nos apps nativos em aberto) |
 
 ## Status
 

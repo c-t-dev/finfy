@@ -25,6 +25,7 @@ The web version is complete for daily use (2026-10-26). Everything below runs on
 | Planning (menu "Planejamento", `/app/goals`): monthly budget per category, goals with deposits (see [Planning](#planning)) | Goal return rate |
 | Tags, recurrences, categorization rules, patrimony and net worth (see their sections) | Attachments, household members |
 | In-app notifications (see [Notifications](#notifications)) | Push and e-mail notifications |
+| Customizable Home per member and wallet, with balance and income x expense charts (see [Home](#home)) | Net worth chart, more blocks, layout sync on native apps |
 | Transactions: income, expense, transfers, pending/paid, Statement by month with filters and search, Home summary (see [Transactions](#transactions)) | Installments outside cards, CSV import |
 | Categories: 72 system categories (proposal), hide per wallet, own categories and subcategories (see [Categories](#categories)) | |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
@@ -228,6 +229,23 @@ Server: `apps/web/lib/server/notifications.ts`. Client: `packages/app/src/notifi
 - Computed on each read across the user's wallets: budget limits near (`alert_percentage`) or over this month, unpaid invoices due within 5 days or overdue, pending income/expenses dated today or earlier (key per day, so it comes back daily while they wait).
 - Only "read" is stored: a `notifications` row per user and key, ID `deterministicId("notification", userId, key)`. Opening the bell marks the unread ones read. Texts are message keys (`app.notifications.types.*`) filled with the payload, in the reader's language.
 - Not yet: push and e-mail, invite and transfer notifications.
+
+## Home
+
+Implements [0019](../decisoes/0019-inicio-personalizavel.md). Shared: `@packages/shared/home` (block keys, sizes, `DEFAULT_HOME_LAYOUT`, `readHomeLayout`, `moveWidget`, insight schemas). Server: `apps/web/lib/server/home.ts`. Client: `packages/app/src/screens/home.tsx` (`useHomeLayout`, `HomeEditor`) and `home-charts.tsx` (`BalanceChart`, `CashflowChart`). Charts use `@packages/ui/components/chart` (shadcn Chart on Recharts 3).
+
+| Route | Who |
+| --- | --- |
+| `GET/POST /api/wallets/:id/home/layout` | Any member, readers included; each one only changes their own |
+| `GET /api/wallets/:id/home/insights?month=YYYY-MM&months=6\|12&ahead=3\|6\|12` | Any member |
+
+- **Layout:** `home_layouts` row per user and wallet (not synced, not audited, so it skips `recordMutation` on purpose). It stores the visible blocks in order; everything else is hidden. Reading drops unknown keys and repeats, so an older app never breaks on a newer layout. `widgets: null` deletes the row (back to the default).
+- **Saving:** the screen applies changes at once and posts the latest list 400 ms after the last change; a pending save is sent when the screen closes. A failed save shows an inline error and keeps the local state.
+- **Insights:** one `selectStatementTotals` per month, so the charts always match the Statement of that month: `months` up to the client's current month plus `ahead` projected (default 3). `projectedMinor` = confirmed + accumulated pending at the month's last day. The cash-flow chart shows the projected months too: paid plus pending plus forecast, lighter bars, tooltip "projected"; its period result counts only up to the current month.
+- **Forecast:** `lib/server/forecast.ts` (`forecastEntries`, pure, tested) simulates active recurrences after the 90-day horizon (server UTC today + `RECURRENCE_HORIZON_DAYS`, the same one the top-up uses) with `occurrenceDates`; card ones on `invoiceForDate(...).dueDate`, moving cash only when the payment account is active. Nothing is saved. They fill `forecastIncomeMinor`/`forecastExpenseMinor` and add to `projectedMinor` cumulatively.
+- **Charts:** money stays in minor units; `useMoney().compact` formats axis labels only. Animations are off with reduced motion.
+- **New block:** add the key to `HOME_WIDGETS` and `DEFAULT_WIDGET_SIZE`, render it in `WalletHome`, add `app.home.widgets.<key>` to both message files. Never rename or reuse a key.
+- Checked on 2026-10-26 with synthetic accounts on the local Docker database: insights matched the Statement (balance, pending projection, card rules), duplicate keys and wrong `months` refused, missing `Origin` 403, foreign wallet 404, layout absent from the activity feed; headless Chrome screenshots of edit mode, reload and phone width. In headless Chrome, Recharts animations sometimes stalled mid-way; with reduced motion the charts were complete.
 
 ## Patrimony
 

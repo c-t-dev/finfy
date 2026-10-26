@@ -77,9 +77,9 @@ export function moveWidget(widgets: HomeWidget[], from: number, to: number): Hom
   return next;
 }
 
-/** Charts: months of history the person can pick, and months projected after the current one. */
+/** Charts: months of history, and months projected after the current one, that the person can pick. */
 export const INSIGHT_PERIODS = [6, 12] as const;
-export const PROJECTION_MONTHS = 3;
+export const FORECAST_PERIODS = [3, 6, 12] as const;
 
 export const yearMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 
@@ -87,6 +87,7 @@ export const homeInsightsQuery = z.object({
   /** The person's current month, from their own clock. */
   month: yearMonth,
   months: z.coerce.number().pipe(z.literal([...INSIGHT_PERIODS])),
+  ahead: z.coerce.number().pipe(z.literal([...FORECAST_PERIODS])),
 });
 export type HomeInsightsQuery = z.infer<typeof homeInsightsQuery>;
 
@@ -95,21 +96,30 @@ export const monthInsightSchema = z.object({
   /** Same rules as the Statement totals of that month. */
   incomeMinor: z.number().int(),
   expenseMinor: z.number().int(),
+  /** Pending income and expenses dated in the month (card purchases are already in `expenseMinor`). */
+  pendingIncomeMinor: z.number().int(),
+  pendingExpenseMinor: z.number().int(),
   /** Opening balances plus paid movements through the month's last day, active accounts only. */
   balanceMinor: z.number().int(),
-  /** `balanceMinor` plus pending movements and unpaid card purchases due through that day. */
+  /**
+   * Recurrence occurrences past the stored 90-day horizon, simulated (never
+   * saved). Card ones count in their invoice's due month.
+   */
+  forecastIncomeMinor: z.number().int(),
+  forecastExpenseMinor: z.number().int(),
+  /** `balanceMinor` plus pending movements, unpaid card purchases and simulated occurrences through that day. */
   projectedMinor: z.number().int(),
 });
 export type MonthInsight = z.infer<typeof monthInsightSchema>;
 
 export const homeInsightsSchema = z.object({
   month: yearMonth,
-  /** `months` months up to the current one, then `PROJECTION_MONTHS` after it. */
+  /** `months` months up to the current one, then `ahead` months after it. */
   months: z.array(monthInsightSchema),
 });
 export type HomeInsights = z.infer<typeof homeInsightsSchema>;
 
 /** The months a chart covers, oldest first. */
-export function insightMonths(month: string, months: number): string[] {
-  return Array.from({ length: months + PROJECTION_MONTHS }, (_, index) => addMonths(month, index - months + 1));
+export function insightMonths(month: string, months: number, ahead: number): string[] {
+  return Array.from({ length: months + ahead }, (_, index) => addMonths(month, index - months + 1));
 }

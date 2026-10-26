@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Area, Bar, BarChart, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from "recharts";
+import { useReducedMotion } from "motion/react";
+import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@packages/ui/components/chart";
 import { SegmentedControl } from "@packages/ui/components/segmented-control";
 import { Button } from "@packages/ui/components/button";
 import { Spinner } from "@packages/ui/components/spinner";
 import { cn } from "@packages/ui/lib/utils";
-import { INSIGHT_PERIODS, type HomeInsights } from "@packages/shared/home";
+import { FORECAST_PERIODS, INSIGHT_PERIODS, type HomeInsights } from "@packages/shared/home";
 import type { Wallet } from "@packages/shared/wallets";
 import { useResource } from "./api";
 import { useLocale, useTranslations } from "./i18n";
@@ -20,10 +21,14 @@ import { todayIso, useMoney } from "./money";
  */
 
 type Period = `${(typeof INSIGHT_PERIODS)[number]}`;
+type Ahead = `${(typeof FORECAST_PERIODS)[number]}`;
+/** Months of history and months ahead a chart shows; each chart keeps its own, not saved. */
+type Range = { period: Period; ahead: Ahead };
+const DEFAULT_RANGE: Range = { period: "6", ahead: "3" };
 
-function useInsights(walletId: string, period: Period) {
+function useInsights(walletId: string, range: Range) {
   const month = todayIso().slice(0, 7);
-  const resource = useResource<HomeInsights>(`/api/wallets/${walletId}/home/insights?month=${month}&months=${period}`);
+  const resource = useResource<HomeInsights>(`/api/wallets/${walletId}/home/insights?month=${month}&months=${range.period}&ahead=${range.ahead}`);
   return { ...resource, month };
 }
 
@@ -40,33 +45,46 @@ function useMonthLabel() {
 function ChartFrame({
   title,
   description,
-  period,
-  onPeriod,
+  range,
+  onRange,
   aside,
   children,
 }: {
   title: string;
   description: string;
-  period: Period;
-  onPeriod: (period: Period) => void;
+  range: Range;
+  onRange: (range: Range) => void;
   aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const t = useTranslations("app.home.charts");
   return (
     <section className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card px-4 py-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold">{title}</h2>
-          <p className="text-[12px] text-muted-foreground">{description}</p>
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-[15px] font-semibold">{title}</h2>
+        <p className="text-[12px] text-muted-foreground">{description}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span aria-hidden>{t("history")}</span>
+          <SegmentedControl
+            size="sm"
+            aria-label={t("history")}
+            value={range.period}
+            onValueChange={(period) => onRange({ ...range, period })}
+            options={INSIGHT_PERIODS.map((months) => ({ value: `${months}` as Period, label: t("months", { count: months }) }))}
+          />
         </div>
-        <SegmentedControl
-          size="sm"
-          aria-label={t("period")}
-          value={period}
-          onValueChange={onPeriod}
-          options={INSIGHT_PERIODS.map((months) => ({ value: `${months}` as Period, label: t("months", { count: months }) }))}
-        />
+        <div className="flex items-center gap-2">
+          <span aria-hidden>{t("ahead")}</span>
+          <SegmentedControl
+            size="sm"
+            aria-label={t("ahead")}
+            value={range.ahead}
+            onValueChange={(ahead) => onRange({ ...range, ahead })}
+            options={FORECAST_PERIODS.map((months) => ({ value: `${months}` as Ahead, label: t("months", { count: months }) }))}
+          />
+        </div>
       </div>
       {aside}
       {children}
@@ -101,9 +119,10 @@ const balanceConfig = {
 export function BalanceChart({ wallet }: { wallet: Wallet }) {
   const t = useTranslations("app.home.charts");
   const money = useMoney(wallet.currencyCode);
+  const animate = !useReducedMotion();
   const label = useMonthLabel();
-  const [period, setPeriod] = React.useState<Period>("6");
-  const { state, reload, month } = useInsights(wallet.id, period);
+  const [range, setRange] = React.useState<Range>(DEFAULT_RANGE);
+  const { state, reload, month } = useInsights(wallet.id, range);
   const config = React.useMemo(
     () => ({ balance: { ...balanceConfig.balance, label: t("balance.actual") }, projected: { ...balanceConfig.projected, label: t("balance.projected") } }),
     [t],
@@ -125,8 +144,8 @@ export function BalanceChart({ wallet }: { wallet: Wallet }) {
     <ChartFrame
       title={t("balance.title")}
       description={t("balance.description")}
-      period={period}
-      onPeriod={setPeriod}
+      range={range}
+      onRange={setRange}
       aside={
         last && (
           <p className="text-[12px] text-muted-foreground">
@@ -151,7 +170,7 @@ export function BalanceChart({ wallet }: { wallet: Wallet }) {
             </defs>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={label.short} minTickGap={8} />
-            <YAxis tickLine={false} axisLine={false} width={64} tickFormatter={money.compact} />
+            <YAxis tickLine={false} axisLine={false} width={76} tickFormatter={money.compact} />
             {negative && <ReferenceLine y={0} stroke="var(--border)" />}
             <ChartTooltip
               content={
@@ -163,9 +182,9 @@ export function BalanceChart({ wallet }: { wallet: Wallet }) {
                 />
               }
             />
-            <Area dataKey="balance" type="monotone" stroke="var(--color-balance)" strokeWidth={2} fill="url(#balance-fill)" connectNulls={false} />
-            <Line dataKey="projected" type="monotone" stroke="var(--color-projected)" strokeWidth={2} strokeDasharray="5 4" dot={false} />
-            <ChartLegend content={<ChartLegendContent />} />
+            <Area dataKey="balance" type="monotone" stroke="var(--color-balance)" strokeWidth={2} fill="url(#balance-fill)" isAnimationActive={animate} />
+            <Line dataKey="projected" type="monotone" stroke="var(--color-projected)" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={animate} />
+            <ChartLegend content={<ChartLegendContent />} itemSorter={null} />
           </ComposedChart>
         </ChartContainer>
       )}
@@ -173,13 +192,14 @@ export function BalanceChart({ wallet }: { wallet: Wallet }) {
   );
 }
 
-/** Income and expense of each month up to this one, side by side. */
+/** Income and expense of each month side by side; the projected months after this one are lighter. */
 export function CashflowChart({ wallet }: { wallet: Wallet }) {
   const t = useTranslations("app.home.charts");
   const money = useMoney(wallet.currencyCode);
+  const animate = !useReducedMotion();
   const label = useMonthLabel();
-  const [period, setPeriod] = React.useState<Period>("6");
-  const { state, reload, month } = useInsights(wallet.id, period);
+  const [range, setRange] = React.useState<Range>(DEFAULT_RANGE);
+  const { state, reload, month } = useInsights(wallet.id, range);
   const config = React.useMemo(
     () =>
       ({
@@ -189,22 +209,34 @@ export function CashflowChart({ wallet }: { wallet: Wallet }) {
     [t],
   );
 
+  // Months after this one are projected: what is paid, what is pending and the simulated recurrences.
   const rows = React.useMemo(
     () =>
       state.status === "ready"
-        ? state.value.months.filter((item) => item.month <= month).map((item) => ({ month: item.month, income: item.incomeMinor, expense: item.expenseMinor }))
+        ? state.value.months.map((item) =>
+            item.month <= month
+              ? { month: item.month, projected: false, income: item.incomeMinor, expense: item.expenseMinor }
+              : {
+                  month: item.month,
+                  projected: true,
+                  income: item.incomeMinor + item.pendingIncomeMinor + item.forecastIncomeMinor,
+                  expense: item.expenseMinor + item.pendingExpenseMinor + item.forecastExpenseMinor,
+                },
+          )
         : [],
     [state, month],
   );
-  const result = rows.reduce((sum, row) => sum + row.income - row.expense, 0);
+  const result = rows.filter((row) => !row.projected).reduce((sum, row) => sum + row.income - row.expense, 0);
   const empty = rows.every((row) => row.income === 0 && row.expense === 0);
+  const cells = (key: "income" | "expense") =>
+    rows.map((row) => <Cell key={row.month} fill={`var(--color-${key})`} fillOpacity={row.projected ? 0.4 : 1} />);
 
   return (
     <ChartFrame
       title={t("cashflow.title")}
       description={t("cashflow.description")}
-      period={period}
-      onPeriod={setPeriod}
+      range={range}
+      onRange={setRange}
       aside={
         state.status === "ready" &&
         !empty && (
@@ -226,21 +258,28 @@ export function CashflowChart({ wallet }: { wallet: Wallet }) {
           <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} barGap={2}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={label.short} minTickGap={4} />
-            <YAxis tickLine={false} axisLine={false} width={64} tickFormatter={money.compact} />
+            <YAxis tickLine={false} axisLine={false} width={76} tickFormatter={money.compact} />
             <ChartTooltip
               cursor={false}
               content={
                 <ChartTooltipContent
-                  labelFormatter={(_, payload) => label.long(String(payload?.[0]?.payload?.month ?? ""))}
+                  labelFormatter={(_, payload) => {
+                    const row = payload?.[0]?.payload as (typeof rows)[number] | undefined;
+                    return row ? (row.projected ? t("cashflow.projectedMonth", { month: label.long(row.month) }) : label.long(row.month)) : "";
+                  }}
                   formatter={(value, name) => (
                     <TooltipRow name={config[name as keyof typeof config]?.label} value={money.format(Number(value))} color={`var(--color-${name})`} />
                   )}
                 />
               }
             />
-            <Bar dataKey="income" fill="var(--color-income)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-            <Bar dataKey="expense" fill="var(--color-expense)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-            <ChartLegend content={<ChartLegendContent />} />
+            <Bar dataKey="income" fill="var(--color-income)" radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={animate}>
+              {cells("income")}
+            </Bar>
+            <Bar dataKey="expense" fill="var(--color-expense)" radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={animate}>
+              {cells("expense")}
+            </Bar>
+            <ChartLegend content={<ChartLegendContent />} itemSorter={null} />
           </BarChart>
         </ChartContainer>
       )}

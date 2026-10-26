@@ -1,6 +1,8 @@
 # Painéis e widgets
 
-> Última atualização: 2026-10-25
+> Última atualização: 2026-10-26
+
+O finfy faz diferente: veja [0019 — Início personalizável](../decisoes/0019-inicio-personalizavel.md).
 
 O Início é o painel "Padrão", feito de widgets fixos. O usuário também pode criar painéis próprios, onde componentes viram janelas livres posicionadas na tela.
 

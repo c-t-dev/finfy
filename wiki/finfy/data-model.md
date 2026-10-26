@@ -355,6 +355,7 @@ erDiagram
 | `wallet_ownership_transfers` | `id`, `wallet_id`, `from_user_id`, `to_user_id`, `previous_owner_action` (`STAY_ADMIN`, `LEAVE`), `token_hash`, `expires_at`, `accepted_at`, `declined_at`, `canceled_at`, `created_at` | One pending transfer per wallet |
 | `email_outbox` | `id`, `to_email`, `template`, `locale`, `payload` (jsonb), `status`, `attempts`, `sent_at`, `error`, `created_at` | Invites, transfers, security alerts |
 | `notifications` | `id`, `user_id`, `wallet_id` (nullable), `type`, `payload` (jsonb), `read_at`, `created_at` | In-app notifications (invoice due, budget exceeded, invite, transfer...). No stored `title`/`body`: `type` is a translation key rendered in the reader's language with `payload` ([0011](../decisoes/0011-traducoes.md)) |
+| `home_layouts` | `id`, `user_id`, `wallet_id`, `widgets` (jsonb `[{ key, size }]`), `created_at`, `updated_at` | Each member's Home layout per wallet ([0019](../decisoes/0019-inicio-personalizavel.md)). Personal preference: not synced yet, not audited, never shown to other members. Unique (`user_id`, `wallet_id`); ID `deterministicId("home_layout", userId, walletId)` |
 
 ### Financial core — all **synced**
 
@@ -435,6 +436,7 @@ audit_logs          (entity, entity_id)
 sync_mutations      (wallet_id, received_at)
 user_sessions       (token_hash) unique
 notifications       (user_id, read_at)
+home_layouts        (user_id, wallet_id) unique
 ```
 
 ## Changes from Wallefy
