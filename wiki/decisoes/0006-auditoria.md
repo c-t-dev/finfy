@@ -92,6 +92,16 @@ Decidido em 2026-10-25: **todos os membros veem tudo.**
 | GET | `/api/wallets/:id/audit/export` | OWNER, ADMIN (CSV) |
 | GET | `/api/:entity/:id/history` | Quem pode ver o item |
 
+## O que já está implementado (2026-10-26)
+
+| Implementado | Ainda não |
+| --- | --- |
+| Registro de toda escrita, com diferença por campo, autor, aparelho e cadeia de hash por wallet | Verificação periódica automática da cadeia |
+| Feed "Atividade" da wallet (Configurações → Atividade), visível para todos os membros | Filtros por pessoa, tipo e período; histórico de cada item; exportação em CSV |
+| Verificação da cadeia sob demanda, para OWNER e ADMIN | "Restaurar" a partir de um registro |
+
+Detalhes em [codebase.md → Activity](../finfy/codebase.md#activity).
+
 ## Diferenças
 
 - **Wallefy:** só `CREATE`/`UPDATE`, antes e depois inteiros, sem origem, sem eventos de acesso, sem proteção contra alteração.

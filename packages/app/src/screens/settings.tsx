@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArchiveIcon, ChevronRightIcon, TagsIcon } from "lucide-react";
+import { ArchiveIcon, ChevronRightIcon, HistoryIcon, TagsIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@packages/ui/components/card";
 import {
@@ -22,6 +22,7 @@ import { WALLET_NAME_MAX } from "@packages/shared/wallets";
 import { useTranslations } from "../i18n";
 import { AccountCard } from "../account-ui";
 import { MembersCard } from "../members-ui";
+import { ACTIVITY_PATH } from "./activity";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
 import { CurrencySelect, useWalletRequest, WalletErrorMessage } from "../wallet-ui";
 import { useWallets } from "../wallets";
@@ -38,6 +39,7 @@ export function SettingsScreen() {
           <WalletSettings wallet={current} />
           <MembersCard wallet={current} />
           <CategoriesLink />
+          <ActivityLink />
           {can(current.role, "archiveWallet") && <ArchiveWallet wallet={current} />}
         </React.Fragment>
       ) : (
@@ -66,6 +68,29 @@ function CategoriesLink() {
         >
           <TagsIcon className="size-4" aria-hidden />
           {t("manage")}
+          <ChevronRightIcon className="size-4 opacity-60" aria-hidden />
+        </Link>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActivityLink() {
+  const t = useTranslations("app.activity");
+  const { Link } = useAppNavigation();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("title")}</CardTitle>
+        <CardDescription>{t("settingsBody")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Link
+          href={ACTIVITY_PATH}
+          className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-card px-3 text-[13px] font-medium shadow-[0_1px_1px_rgb(0_0_0/0.06)] outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/40 dark:bg-white/10"
+        >
+          <HistoryIcon className="size-4" aria-hidden />
+          {t("open")}
           <ChevronRightIcon className="size-4 opacity-60" aria-hidden />
         </Link>
       </CardContent>

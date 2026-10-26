@@ -208,6 +208,14 @@ Server: `apps/web/lib/server/members.ts`. Client: `packages/app/src/members-ui.t
 - `/app` pages without a session go to sign-in with `?next=` (only `/app/...` paths accepted, `lib/next-path.ts`); the proxy passes the path to the layout in a header.
 - Audit actions: `INVITE_SENT`, `INVITE_RESENT`, `INVITE_REVOKED`, `INVITE_ACCEPTED`, `INVITE_DECLINED`, `MEMBER_JOINED`, `MEMBER_ROLE_CHANGED`, `MEMBER_REMOVED`, `MEMBER_LEFT`.
 
+## Activity
+
+Server: `apps/web/lib/server/activity.ts`. Client: `packages/app/src/screens/activity.tsx` (Settings → Activity, `/app/settings/activity`).
+
+- `GET /api/wallets/:id/activity[?before=]`: the audit log, newest first, 50 per page, for any member (decision 0006). The screen shows action and entity labels, who and when, and each changed field with old → new; money fields are formatted, roles translated, ID fields hidden.
+- `GET /api/wallets/:id/activity/verify` (OWNER, ADMIN): recomputes the hash chain with `auditHash` and answers `valid`, `entries` and `brokenAt`. Checked on 2026-10-26: 72 entries valid. The scheduled check job still does not exist.
+- Paging uses `recorded_at < before`; entries that share the exact same millisecond across a page boundary could be skipped (unlikely, since `recorded_at` comes from the database clock per entry).
+
 ## API transport on the client
 
 `packages/app/src/api.tsx`: the host passes one `request(method, path, body)` (`ApiProvider`); screens call the HTTP API paths directly and load lists with `useResource(path)`. New resources use this; `WalletClient` and `AccountClient` predate it.

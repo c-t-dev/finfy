@@ -72,6 +72,7 @@ import {
   memberActionInput,
   membersSchema,
 } from "@packages/shared/members";
+import { activityPageSchema, chainCheckSchema } from "@packages/shared/activity";
 import {
   archiveWalletInput,
   createWalletInput,
@@ -155,6 +156,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         description:
           "Who has access to a wallet. Without e-mail, an invite is a private link (token shown once, valid 7 days); accepting needs the link and the account with the invited e-mail",
       },
+      { name: "activity", description: "The wallet's audit log (wiki/decisoes/0006): every member sees everything" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -194,6 +196,8 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         GoalList: json(goalListSchema),
         GoalDetail: json(goalDetailSchema),
         Members: json(membersSchema),
+        ActivityPage: json(activityPageSchema),
+        ChainCheck: json(chainCheckSchema),
         InviteLink: json(inviteLinkSchema),
         InvitePreview: json(invitePreviewSchema),
         AcceptedInvite: json(acceptedInviteSchema),
@@ -567,6 +571,26 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       ...cardPaths(),
       ...planningPaths(),
       ...memberPaths(),
+      "/api/wallets/{id}/activity": {
+        get: {
+          tags: ["activity"],
+          summary: "The wallet's activity",
+          description: "Any member. Newest first, 50 per page, with field-level changes. Pass `nextBefore` as `before` for older entries.",
+          security: [{ session: [] }],
+          parameters: [walletIdParam, { name: "before", in: "query", required: false, schema: { type: "string", format: "date-time" } }],
+          responses: { 200: response("A page of entries.", ref("ActivityPage")), ...walletErrors("invalidInput", "notFound") },
+        },
+      },
+      "/api/wallets/{id}/activity/verify": {
+        get: {
+          tags: ["activity"],
+          summary: "Check the audit hash chain",
+          description: "OWNER, ADMIN. Recomputes every hash, oldest first; `brokenAt` is the first entry that does not match.",
+          security: [{ session: [] }],
+          parameters: [walletIdParam],
+          responses: { 200: response("The result.", ref("ChainCheck")), ...walletErrors("forbidden", "notFound") },
+        },
+      },
     },
   };
 }
