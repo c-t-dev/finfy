@@ -117,6 +117,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
   const [editing, setEditing] = React.useState<EntryEditing>(null);
   const { layout, save, failed } = useHomeLayout(wallet.id);
   const [customizing, setCustomizing] = React.useState(false);
+  const [chartsKey, setChartsKey] = React.useState(0);
 
   const balance = accounts?.reduce((sum, account) => sum + account.balanceMinor, 0) ?? null;
   const summary = month.state.status === "ready" ? month.state.value.summary : null;
@@ -199,9 +200,9 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
           </div>
         );
       case "balanceChart":
-        return <BalanceChart wallet={wallet} />;
+        return <BalanceChart wallet={wallet} refreshKey={chartsKey} />;
       case "cashflowChart":
-        return <CashflowChart wallet={wallet} />;
+        return <CashflowChart wallet={wallet} refreshKey={chartsKey} />;
       case "topExpenses":
         return (
           <section className="flex flex-col gap-2">
@@ -324,6 +325,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
             setEditing(null);
             month.reload();
             reloadAccounts();
+            setChartsKey((key) => key + 1);
           }}
         />
       )}

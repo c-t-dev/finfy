@@ -338,26 +338,6 @@ function EntryForm({
     if (ok) onSaved();
   };
 
-  if (confirmingDelete && existing) {
-    return (
-      <div className="flex flex-col gap-4">
-        <DialogHeader>
-          <DialogTitle>{t("delete.title")}</DialogTitle>
-          <DialogDescription>{kind === "TRANSFER" ? t("delete.transferBody") : t("delete.body")}</DialogDescription>
-        </DialogHeader>
-        <WalletErrorMessage failure={failure} />
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
-            {t("delete.cancel")}
-          </Button>
-          <Button variant="destructive" disabled={pending} onClick={() => void remove()}>
-            {pending ? <Spinner label={common("loading")} /> : t("delete.confirm")}
-          </Button>
-        </DialogFooter>
-      </div>
-    );
-  }
-
   const title = existing ? (kind === "TRANSFER" ? t("form.editTransferTitle") : t("form.editTitle")) : t("form.createTitle");
   const needsCategory = kind !== "TRANSFER" && !categoryId;
 
@@ -381,6 +361,28 @@ function EntryForm({
     setSuggestedBy(ruleList.find((rule) => rule.id === result.ruleIds[0])?.name ?? null);
     if (result.tagIds.length) setTagIds((current) => [...new Set([...current, ...result.tagIds])]);
   }, [existing, kind, categoryByHand, ruleList, description, amount, accountId, money]);
+
+  // After every hook: returning earlier changes the hook count when this screen opens (React error).
+  if (confirmingDelete && existing) {
+    return (
+      <div className="flex flex-col gap-4">
+        <DialogHeader>
+          <DialogTitle>{t("delete.title")}</DialogTitle>
+          <DialogDescription>{kind === "TRANSFER" ? t("delete.transferBody") : t("delete.body")}</DialogDescription>
+        </DialogHeader>
+        <WalletErrorMessage failure={failure} />
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
+            {t("delete.cancel")}
+          </Button>
+          <Button variant="destructive" disabled={pending} onClick={() => void remove()}>
+            {pending ? <Spinner label={common("loading")} /> : t("delete.confirm")}
+          </Button>
+        </DialogFooter>
+      </div>
+    );
+  }
+
   // A card purchase has installments instead of a paid/pending switch.
   const onCard = !existing && kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX) && repeat === NEVER;
   const canRepeat =

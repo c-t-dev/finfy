@@ -26,9 +26,16 @@ type Ahead = `${(typeof FORECAST_PERIODS)[number]}`;
 type Range = { period: Period; ahead: Ahead };
 const DEFAULT_RANGE: Range = { period: "6", ahead: "3" };
 
-function useInsights(walletId: string, range: Range) {
+/** `refreshKey` changes when the Home saves or deletes an entry, so the chart reloads in place. */
+function useInsights(walletId: string, range: Range, refreshKey: number) {
   const month = todayIso().slice(0, 7);
   const resource = useResource<HomeInsights>(`/api/wallets/${walletId}/home/insights?month=${month}&months=${range.period}&ahead=${range.ahead}`);
+  const { reload } = resource;
+  const first = React.useRef(true);
+  React.useEffect(() => {
+    if (first.current) first.current = false;
+    else reload();
+  }, [refreshKey, reload]);
   return { ...resource, month };
 }
 
@@ -116,13 +123,13 @@ const balanceConfig = {
 } satisfies ChartConfig;
 
 /** Month-end balance of the accounts: solid up to this month, dashed for the projection. */
-export function BalanceChart({ wallet }: { wallet: Wallet }) {
+export function BalanceChart({ wallet, refreshKey }: { wallet: Wallet; refreshKey: number }) {
   const t = useTranslations("app.home.charts");
   const money = useMoney(wallet.currencyCode);
   const animate = !useReducedMotion();
   const label = useMonthLabel();
   const [range, setRange] = React.useState<Range>(DEFAULT_RANGE);
-  const { state, reload, month } = useInsights(wallet.id, range);
+  const { state, reload, month } = useInsights(wallet.id, range, refreshKey);
   const config = React.useMemo(
     () => ({ balance: { ...balanceConfig.balance, label: t("balance.actual") }, projected: { ...balanceConfig.projected, label: t("balance.projected") } }),
     [t],
@@ -193,13 +200,13 @@ export function BalanceChart({ wallet }: { wallet: Wallet }) {
 }
 
 /** Income and expense of each month side by side; the projected months after this one are lighter. */
-export function CashflowChart({ wallet }: { wallet: Wallet }) {
+export function CashflowChart({ wallet, refreshKey }: { wallet: Wallet; refreshKey: number }) {
   const t = useTranslations("app.home.charts");
   const money = useMoney(wallet.currencyCode);
   const animate = !useReducedMotion();
   const label = useMonthLabel();
   const [range, setRange] = React.useState<Range>(DEFAULT_RANGE);
-  const { state, reload, month } = useInsights(wallet.id, range);
+  const { state, reload, month } = useInsights(wallet.id, range, refreshKey);
   const config = React.useMemo(
     () =>
       ({
