@@ -20,6 +20,7 @@ import { can } from "@packages/shared/roles";
 import type { Wallet } from "@packages/shared/wallets";
 import { WALLET_NAME_MAX } from "@packages/shared/wallets";
 import { useTranslations } from "../i18n";
+import { AccountCard } from "../account-ui";
 import { MembersCard } from "../members-ui";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
 import { CurrencySelect, useWalletRequest, WalletErrorMessage } from "../wallet-ui";
@@ -42,6 +43,7 @@ export function SettingsScreen() {
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("settings.wallet.none")}</p>
       )}
+      <AccountCard />
     </div>
   );
 }

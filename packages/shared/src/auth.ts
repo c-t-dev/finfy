@@ -85,3 +85,13 @@ export const currentUserSchema = z.object({
 export type CurrentUser = z.infer<typeof currentUserSchema>;
 
 export const languageInput = z.object({ language: z.enum(LOCALES) });
+
+export const profileInput = z.object({ name: z.string().trim().min(1).max(100) });
+export type ProfileInput = z.infer<typeof profileInput>;
+
+/** Changing the password asks for the current one; the other sessions end (wiki/decisoes/0004). */
+export const changePasswordInput = z.object({
+  currentPassword: z.string().min(1).max(PASSWORD_MAX * 4),
+  newPassword: z.string().max(PASSWORD_MAX * 4),
+});
+export type ChangePasswordInput = z.infer<typeof changePasswordInput>;

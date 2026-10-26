@@ -4,6 +4,7 @@ import * as React from "react";
 import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
+import { UserProvider } from "@packages/app/account-ui";
 import { AccountClientProvider } from "@packages/app/accounts";
 import { ApiProvider } from "@packages/app/api";
 import { AccountPanel, AppShell, WindowWidthToggle } from "@packages/app/app-shell";
@@ -54,6 +55,8 @@ export function AppHost({
       : `${CURRENT_WALLET_COOKIE}=; path=/; max-age=0; samesite=lax`;
   }, []);
 
+  const refreshUser = React.useCallback(() => router.refresh(), [router]);
+
   const handleSignOut = async () => {
     setSigningOut(true);
     await signOut();
@@ -64,30 +67,32 @@ export function AppHost({
   return (
     <AppNavigationProvider Link={Link} pathname={pathname}>
       <ApiProvider request={webApiRequest}>
-        <WalletProvider
-          client={webWalletClient}
-          initialWallets={wallets}
-          initialCurrentId={currentWalletId}
-          onCurrentChange={rememberWallet}
-        >
-          <AccountClientProvider client={webAccountClient}>
-            <AppShell
-              wide={wide}
-              account={
-                <AccountPanel name={user.name} email={user.email} pending={signingOut} onSignOut={() => void handleSignOut()} />
-              }
-              trailing={
-                <div className="flex items-center gap-2">
-                  <WindowWidthToggle wide={wide} onWideChange={changeWide} />
-                  <AppLanguageSwitcher />
-                  <ThemeToggle />
-                </div>
-              }
-            >
-              {children}
-            </AppShell>
-          </AccountClientProvider>
-        </WalletProvider>
+        <UserProvider user={user} onChanged={refreshUser}>
+          <WalletProvider
+            client={webWalletClient}
+            initialWallets={wallets}
+            initialCurrentId={currentWalletId}
+            onCurrentChange={rememberWallet}
+          >
+            <AccountClientProvider client={webAccountClient}>
+              <AppShell
+                wide={wide}
+                account={
+                  <AccountPanel name={user.name} email={user.email} pending={signingOut} onSignOut={() => void handleSignOut()} />
+                }
+                trailing={
+                  <div className="flex items-center gap-2">
+                    <WindowWidthToggle wide={wide} onWideChange={changeWide} />
+                    <AppLanguageSwitcher />
+                    <ThemeToggle />
+                  </div>
+                }
+              >
+                {children}
+              </AppShell>
+            </AccountClientProvider>
+          </WalletProvider>
+        </UserProvider>
       </ApiProvider>
     </AppNavigationProvider>
   );

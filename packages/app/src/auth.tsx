@@ -47,7 +47,7 @@ export function toAuthResponse(body: unknown): AuthResponse {
   return { error: AUTH_ERRORS.includes(error as AuthError) ? (error as AuthError) : "unavailable", retryAfterSeconds };
 }
 
-function ErrorMessage({ failure }: { failure: AuthFailure | null }) {
+export function ErrorMessage({ failure }: { failure: AuthFailure | null }) {
   const t = useTranslations("errors.auth");
   if (!failure) return null;
   const text =

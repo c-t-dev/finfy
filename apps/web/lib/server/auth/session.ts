@@ -154,3 +154,20 @@ export const getSession = cache(async function getSession(): Promise<SessionInfo
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   return (await getSession())?.user ?? null;
 }
+
+/** Ends every session of the user except the current one (after a password change). */
+export async function revokeOtherSessions(userId: string): Promise<number> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const revoked = await getDb()
+    .update(userSessions)
+    .set({ revokedAt: sql`now()` })
+    .where(
+      and(
+        eq(userSessions.userId, userId),
+        isNull(userSessions.revokedAt),
+        token ? sql`${userSessions.tokenHash} <> ${tokenHash(token)}` : undefined,
+      ),
+    )
+    .returning({ id: userSessions.id });
+  return revoked.length;
+}

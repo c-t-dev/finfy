@@ -223,7 +223,8 @@ Implements part of [0004](../decisoes/0004-seguranca-da-conta.md). Server code i
 1. `/[locale]/sign-up` → `POST /api/auth/sign-up`. Creates the account and starts a session (`{ next: "app" }`). An e-mail that already has an account gets `409 emailTaken`. `email_verified_at` stays empty.
 2. `/[locale]/sign-in` → `POST /api/auth/sign-in` → session (`{ next: "app" }`), verified or not.
 3. `POST /api/auth/verify-email` and `POST /api/auth/resend-code` answer `404 unavailable`.
-4. `POST /api/auth/sign-out`, `GET /api/auth/me`, `POST /api/account/language` (saves `users.language`).
+4. `POST /api/auth/sign-out`, `GET /api/auth/me`, `POST /api/account/language` (saves `users.language`), `POST /api/account/profile` (name).
+5. **Password change** (Settings → Account): `POST /api/account/password` asks for the current password (same 5 / 15 min limit as other step-ups), applies the sign-up rules, re-hashes with the current pepper and ends every other session (`PASSWORD_CHANGED` with `otherSessionsEnded`, or `PASSWORD_CHANGE_FAILED`). The e-mail notice waits for an e-mail provider. The e-mail itself cannot be changed yet.
 
 **Flow (e-mail on, later)**
 
@@ -287,4 +288,4 @@ From `packages/shared/drizzle/0001_seed_currencies_audit_and_publication.sql`:
 
 The migrations were checked on 2026-10-25 against an embedded Postgres (PGlite). The checks were: one active owner per wallet, lowercase e-mail, the role check and the append-only audit log. The same day they were applied to the Docker database (Postgres 17, `wal_level=logical`, no warnings), and sign-up, e-mail verification and `/app` were tested on it.
 
-If Docker Desktop crashes on start with `sailor-ingest.sock ... The file cannot be accessed by the system`, quit it, run `wsl --shutdown`, delete the `sailor-ingest.sock*` files in `%LOCALAPPDATA%\Docker\run`, and open it again. Do not use "Reset to factory defaults": it erases every image and volume.
+If Docker Desktop crashes on start with `sailor-ingest.sock ... The file cannot be accessed by the system` (or the same with `docker-secrets-engine\engine.sock`), stop every Docker process and run `wsl --shutdown`. Those leftover Unix-socket files often cannot be deleted, so **rename the folder that holds them** (`%LOCALAPPDATA%\Docker\run`, `%LOCALAPPDATA%\docker-secrets-engine`) to `*.old-<date>`; Docker creates fresh ones. Then open Docker again and `docker start finfy-db-1`. Do not use "Reset to factory defaults": it erases every image and volume. Fixed this way on 2026-10-26.

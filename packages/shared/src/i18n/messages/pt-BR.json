@@ -562,6 +562,24 @@
       "open": "Abrir a wallet",
       "declined": "Convite recusado.",
       "back": "Ir para o app"
+    },
+    "account": {
+      "title": "Conta",
+      "body": "Seu nome, e-mail e senha.",
+      "name": "Nome",
+      "save": "Salvar",
+      "saved": "Salvo.",
+      "email": "E-mail",
+      "emailNote": "Por enquanto o e-mail não pode ser trocado.",
+      "password": {
+        "title": "Trocar senha",
+        "current": "Senha atual",
+        "new": "Nova senha",
+        "confirm": "Repita a nova senha",
+        "mismatch": "As duas senhas novas estão diferentes.",
+        "save": "Trocar senha",
+        "done": "Senha trocada. As outras sessões foram encerradas."
+      }
     }
   },
   "errors": {

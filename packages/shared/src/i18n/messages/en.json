@@ -562,6 +562,24 @@
       "open": "Open the wallet",
       "declined": "Invite declined.",
       "back": "Go to the app"
+    },
+    "account": {
+      "title": "Account",
+      "body": "Your name, e-mail and password.",
+      "name": "Name",
+      "save": "Save",
+      "saved": "Saved.",
+      "email": "E-mail",
+      "emailNote": "The e-mail cannot be changed yet.",
+      "password": {
+        "title": "Change password",
+        "current": "Current password",
+        "new": "New password",
+        "confirm": "Repeat the new password",
+        "mismatch": "The two new passwords are different.",
+        "save": "Change password",
+        "done": "Password changed. Your other sessions were signed out."
+      }
     }
   },
   "errors": {
