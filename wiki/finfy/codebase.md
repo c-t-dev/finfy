@@ -208,6 +208,16 @@ Server: `apps/web/lib/server/members.ts`. Client: `packages/app/src/members-ui.t
 - `/app` pages without a session go to sign-in with `?next=` (only `/app/...` paths accepted, `lib/next-path.ts`); the proxy passes the path to the layout in a header.
 - Audit actions: `INVITE_SENT`, `INVITE_RESENT`, `INVITE_REVOKED`, `INVITE_ACCEPTED`, `INVITE_DECLINED`, `MEMBER_JOINED`, `MEMBER_ROLE_CHANGED`, `MEMBER_REMOVED`, `MEMBER_LEFT`.
 
+## Tags
+
+Server: `apps/web/lib/server/tags.ts`. Client: `packages/app/src/tags-ui.tsx` (`useTags`, `TagPicker`, `TagChip`, `TagsManager` in Settings → Categories → Tags).
+
+- Unique per wallet ignoring case among active tags. Creating an existing name answers the existing tag (two offline devices typing "food" end with one tag). Renaming or restoring onto a taken name is refused.
+- **On entries:** `transaction_tags` rows with ID `deterministicId("transaction_tag", transactionId, tagId)`; removing archives the row, adding again restores it. `applyTags` is called inside the entry and purchase commands, so tags chosen in the create form are saved in the same write (the Minhas Economias bug). Later changes go through `POST /api/wallets/:id/transactions/:entryId/tags` (replace the set; all installments of a card purchase). Transfers have no tags in the form.
+- Archived tags disappear from entries, pickers and filters; restoring brings them back on the same entries.
+- The Statement filters by tag (`tagId`). Rows show tag chips.
+- Checked on 2026-10-26: case-insensitive reuse, foreign tag refused, set/remove/re-add, purchase with 3 installments tagged, filter across months, archive and restore.
+
 ## Activity
 
 Server: `apps/web/lib/server/activity.ts`. Client: `packages/app/src/screens/activity.tsx` (Settings → Activity, `/app/settings/activity`).

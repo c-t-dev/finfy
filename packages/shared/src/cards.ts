@@ -62,6 +62,8 @@ export const createPurchaseInput = z.object({
   amountMinor: z.number().int().positive().max(AMOUNT_MAX),
   transactionDate: isoDate,
   installments: z.number().int().min(1).max(INSTALLMENTS_MAX),
+  /** Applied to every installment, in the same write. */
+  tagIds: z.array(z.uuid()).max(10).optional(),
   notes: z.string().trim().max(NOTES_MAX).nullable().optional(),
 });
 export type CreatePurchaseInput = z.infer<typeof createPurchaseInput>;

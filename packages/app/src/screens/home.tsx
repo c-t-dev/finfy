@@ -10,6 +10,7 @@ import type { Wallet } from "@packages/shared/wallets";
 import { useResource } from "../api";
 import { CategoryBadge, useCategories, useCategoryLabel } from "../categories";
 import { EntryDialog, type EntryEditing } from "../entry-form";
+import { useTags } from "../tags-ui";
 import { useTranslations } from "../i18n";
 import { todayIso, useMoney } from "../money";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
@@ -54,6 +55,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
   const canEdit = can(wallet.role, "editEntries");
   const { accounts, cards, names, reload: reloadAccounts } = useWalletAccounts(wallet.id);
   const { tree } = useCategories(wallet.id);
+  const tags = useTags(wallet.id);
   const { from, to } = monthRange(todayIso().slice(0, 7));
   const month = useResource<EntryList>(`/api/wallets/${wallet.id}/transactions?from=${from}&to=${to}`);
   const [editing, setEditing] = React.useState<EntryEditing>(null);
@@ -159,6 +161,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
                 wallet={wallet}
                 tree={tree}
                 accountNames={names}
+                tagMap={tags.byId}
                 onOpen={canEdit && isEditable(entry) ? () => setEditing({ mode: "edit", entry }) : undefined}
               />
             ))}
@@ -172,6 +175,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
           accounts={accounts}
           cards={cards}
           tree={tree}
+          tags={tags}
           editing={editing}
           onClose={() => setEditing(null)}
           onSaved={() => {

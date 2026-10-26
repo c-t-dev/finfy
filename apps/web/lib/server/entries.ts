@@ -1,6 +1,6 @@
 import "server-only";
 import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
-import { accounts, categories, transactionLinks, transactions } from "@packages/shared/db/schema";
+import { accounts, categories, transactionLinks, transactionTags, transactions } from "@packages/shared/db/schema";
 import { deterministicId } from "@packages/shared/ids";
 import type {
   CreateEntryInput,
@@ -13,6 +13,7 @@ import type {
 } from "@packages/shared/transactions";
 import { lockCurrency } from "@/lib/server/accounts";
 import { usableCategory } from "@/lib/server/categories";
+import { applyTags, tagsByEntry } from "@/lib/server/tags";
 import { CommandError, requireRole, runCommand, type CommandResult } from "@/lib/server/commands";
 import { diff, findApplied, recordMutation, type Actor, type Change, type FieldChanges, type Tx } from "@/lib/server/write";
 
@@ -52,6 +53,7 @@ async function toEntries(tx: Tx, rows: Row[]): Promise<Entry[]> {
     ? await tx.select({ id: transactions.id, accountId: transactions.accountId }).from(transactions).where(inArray(transactions.id, otherIds))
     : [];
   const otherAccount = new Map(others.map((other) => [other.id, other.accountId]));
+  const entryTags = await tagsByEntry(tx, ids);
 
   return rows.map((row) => {
     const linkedId = linked.get(row.id) ?? null;
@@ -71,6 +73,7 @@ async function toEntries(tx: Tx, rows: Row[]): Promise<Entry[]> {
       counterpartAccountId: linkedId ? (otherAccount.get(linkedId) ?? null) : null,
       installmentNumber: row.installmentNumber,
       installmentTotal: row.installmentTotal,
+      tagIds: entryTags.get(row.id) ?? [],
       version: row.version,
     };
   });
@@ -103,6 +106,14 @@ function filterWhere(walletId: string, filter: EntryFilter): SQL {
           transactions.categoryId,
           sql`(select ${categories.id} from ${categories} where ${categories.parentId} = ${filter.categoryId})`,
         ),
+      ),
+    );
+  }
+  if (filter.tagId) {
+    conditions.push(
+      inArray(
+        transactions.id,
+        sql`(select ${transactionTags.transactionId} from ${transactionTags} where ${transactionTags.tagId} = ${filter.tagId} and ${transactionTags.archivedAt} is null)`,
       ),
     );
   }
@@ -194,7 +205,10 @@ export async function createEntry(actor: Actor, walletId: string, input: CreateE
       createdBy: actor.userId,
       updatedBy: actor.userId,
     });
-    const extra = await lockCurrency(tx, actor, walletId);
+    const extra = [
+      ...(await applyTags(tx, actor, walletId, [input.id], input.tagIds ?? [])),
+      ...(await lockCurrency(tx, actor, walletId)),
+    ];
     await recordMutation(
       tx,
       actor,

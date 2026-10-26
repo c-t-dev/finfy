@@ -25,6 +25,8 @@ import { DESCRIPTION_MAX, NOTES_MAX, type Entry, type EntryKind } from "@package
 import type { Wallet } from "@packages/shared/wallets";
 import { useApi } from "./api";
 import { InstallmentsSelect } from "./cards-ui";
+import { saveEntryTags, TagPicker } from "./tags-ui";
+import type { Tag } from "@packages/shared/tags";
 import { CategoryPicker, type CategoryTree } from "./categories";
 import { useTranslations } from "./i18n";
 import { todayIso, useMoney } from "./money";
@@ -44,6 +46,7 @@ export function EntryDialog({
   accounts,
   cards = [],
   tree,
+  tags,
   editing,
   onClose,
   onSaved,
@@ -53,6 +56,8 @@ export function EntryDialog({
   /** Cards an expense can be charged to (new entries only). */
   cards?: Card[];
   tree: CategoryTree | null;
+  /** The wallet's tags, and how to remember one created from the form. */
+  tags: { tags: Tag[]; add: (tag: Tag) => void };
   editing: EntryEditing;
   onClose: () => void;
   onSaved: () => void;
@@ -68,6 +73,7 @@ export function EntryDialog({
             accounts={accounts}
             cards={cards}
             tree={tree}
+            tags={tags}
             editing={editing}
             onCancel={onClose}
             onSaved={onSaved}
@@ -123,6 +129,7 @@ function EntryForm({
   accounts,
   cards,
   tree,
+  tags,
   editing,
   onCancel,
   onSaved,
@@ -131,6 +138,7 @@ function EntryForm({
   accounts: Account[];
   cards: Card[];
   tree: CategoryTree | null;
+  tags: { tags: Tag[]; add: (tag: Tag) => void };
   editing: NonNullable<EntryEditing>;
   onCancel: () => void;
   onSaved: () => void;
@@ -160,6 +168,7 @@ function EntryForm({
   const [paid, setPaid] = React.useState(existing ? existing.status === "PAID" : true);
   const [notes, setNotes] = React.useState(existing?.notes ?? "");
   const [installments, setInstallments] = React.useState(1);
+  const [tagIds, setTagIds] = React.useState<string[]>(existing?.tagIds ?? []);
   const [amountInvalid, setAmountInvalid] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const { pending, failure, setFailure, run } = useWalletRequest();
@@ -186,6 +195,7 @@ function EntryForm({
           transactionDate: date,
           installments,
           notes: trimmedNotes,
+          tagIds,
         }),
       );
       if (ok) onSaved();
@@ -195,10 +205,8 @@ function EntryForm({
     if (existing) {
       // Only what changed goes up; on a transfer the server mirrors shared fields to the other leg.
       const legAccount = kind === "TRANSFER" ? (isIncomingLeg ? toAccountId : accountId) : accountId;
-      const ok = await run(() =>
-        request("PATCH", `${base}/${existing.id}`, {
-          mutationId: newId(),
-          baseVersion: existing.version,
+      const patch = Object.fromEntries(
+        Object.entries({
           description: description.trim() !== existing.description ? description.trim() : undefined,
           amountMinor: amountMinor !== existing.amountMinor ? amountMinor : undefined,
           transactionDate: date !== existing.transactionDate ? date : undefined,
@@ -206,8 +214,16 @@ function EntryForm({
           categoryId: kind !== "TRANSFER" && categoryId && categoryId !== existing.categoryId ? categoryId : undefined,
           status: status !== existing.status ? status : undefined,
           notes: trimmedNotes !== existing.notes ? trimmedNotes : undefined,
-        }),
+        }).filter(([, value]) => value !== undefined),
       );
+      // Fields and tags are two writes; tags go second so a refused edit keeps both as they were.
+      const ok = await run(async () => {
+        if (Object.keys(patch).length) {
+          const response = await request("PATCH", `${base}/${existing.id}`, { mutationId: newId(), baseVersion: existing.version, ...patch });
+          if (!response.ok) return response;
+        }
+        return saveEntryTags(request, wallet.id, existing.id, existing.tagIds, tagIds);
+      });
       if (ok) onSaved();
       return;
     }
@@ -236,6 +252,7 @@ function EntryForm({
             transactionDate: date,
             status,
             notes: trimmedNotes,
+            tagIds,
           }),
     );
     if (ok) onSaved();
@@ -388,6 +405,9 @@ function EntryForm({
             <p className="text-[11px] text-muted-foreground">{t("form.paidHint")}</p>
           </div>
         </div>
+      )}
+      {kind !== "TRANSFER" && (
+        <TagPicker wallet={wallet} tags={tags.tags} value={tagIds} onChange={setTagIds} onCreated={tags.add} />
       )}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="entry-notes">{t("form.notes")}</Label>

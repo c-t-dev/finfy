@@ -33,6 +33,8 @@ export const createEntryInput = z.object({
   transactionDate: isoDate,
   status,
   notes: notes.optional(),
+  /** Saved in the same write as the entry. */
+  tagIds: z.array(z.uuid()).max(10).optional(),
 });
 export type CreateEntryInput = z.infer<typeof createEntryInput>;
 
@@ -86,6 +88,7 @@ export const entryFilter = z.object({
   accountId: z.uuid().optional(),
   categoryId: z.uuid().optional(),
   q: z.string().trim().max(DESCRIPTION_MAX).optional(),
+  tagId: z.uuid().optional(),
 });
 export type EntryFilter = z.infer<typeof entryFilter>;
 
@@ -116,6 +119,7 @@ export const entrySchema = z.object({
   counterpartAccountId: z.uuid().nullable(),
   installmentNumber: z.number().int().nullable(),
   installmentTotal: z.number().int().nullable(),
+  tagIds: z.array(z.uuid()),
   version: z.number().int(),
 });
 export type Entry = z.infer<typeof entrySchema>;

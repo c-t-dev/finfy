@@ -45,11 +45,13 @@ import { useApi, useResource } from "../api";
 import { CATEGORY_ICON_COMPONENTS, CategoryBadge, COLOR_BG, useCategories, useCategoryLabel } from "../categories";
 import { useTranslations } from "../i18n";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
+import { TagsManager } from "../tags-ui";
 import { useWalletRequest, WalletErrorMessage } from "../wallet-ui";
 import { useWallets } from "../wallets";
 
 const SETTINGS_PATH = APP_ROUTES.find((route) => route.key === "settings")!.path;
 type Kind = "EXPENSE" | "INCOME";
+type Tab = Kind | "TAGS";
 
 export function CategoriesScreen() {
   const t = useTranslations("app.categories");
@@ -83,7 +85,8 @@ function WalletCategories({ wallet }: { wallet: Wallet }) {
   const request = useApi();
   const label = useCategoryLabel();
   const canEdit = can(wallet.role, "editEntries");
-  const [kind, setKind] = React.useState<Kind>("EXPENSE");
+  const [tab, setTab] = React.useState<Tab>("EXPENSE");
+  const kind: Kind = tab === "INCOME" ? "INCOME" : "EXPENSE";
   const [showArchived, setShowArchived] = React.useState(false);
   const { state, tree, reload } = useCategories(wallet.id);
   const archived = useResource<{ categories: Category[] }>(
@@ -109,75 +112,82 @@ function WalletCategories({ wallet }: { wallet: Wallet }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SegmentedControl
           aria-label={t("title")}
-          value={kind}
-          onValueChange={setKind}
+          value={tab}
+          onValueChange={setTab}
           options={[
             { value: "EXPENSE", label: t("tabs.EXPENSE") },
             { value: "INCOME", label: t("tabs.INCOME") },
+            { value: "TAGS", label: t("tabs.TAGS") },
           ]}
         />
-        {canEdit && (
+        {canEdit && tab !== "TAGS" && (
           <Button onClick={() => setEditing({ mode: "create", kind, parent: null })}>
             <PlusIcon />
             {t("actions.new")}
           </Button>
         )}
       </div>
-      {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
+      {tab === "TAGS" ? (
+        <TagsManager wallet={wallet} />
+      ) : (
+        <>
+          {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
 
-      {state.status === "loading" && <Spinner label={t("title")} />}
-      {state.status === "error" && (
-        <div className="flex items-center gap-3 text-[13px] text-destructive">
-          {t("loadError")}
-          <Button variant="secondary" size="sm" onClick={reload}>
-            {t("retry")}
+          {state.status === "loading" && <Spinner label={t("title")} />}
+          {state.status === "error" && (
+            <div className="flex items-center gap-3 text-[13px] text-destructive">
+              {t("loadError")}
+              <Button variant="secondary" size="sm" onClick={reload}>
+                {t("retry")}
+              </Button>
+            </div>
+          )}
+          {tree && (
+            <ul className="flex flex-col gap-3">
+              {tree.groups(kind, { includeHidden: true }).map(({ parent, children }) => (
+                <li key={parent.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                  <CategoryRow
+                    category={parent}
+                    canEdit={canEdit}
+                    onEdit={() => setEditing({ mode: "edit", category: parent })}
+                    onAddChild={() => setEditing({ mode: "create", kind, parent })}
+                    onHide={(hidden) => void setHidden(parent, hidden)}
+                    onArchive={() => setArchiving(parent)}
+                  />
+                  {children.length > 0 && (
+                    <ul className="divide-y divide-border/50 border-t border-border/60">
+                      {children.map((child) => (
+                        <CategoryRow
+                          key={child.id}
+                          category={child}
+                          parent={parent}
+                          canEdit={canEdit}
+                          onEdit={() => setEditing({ mode: "edit", category: child })}
+                          onHide={(hidden) => void setHidden(child, hidden)}
+                          onArchive={() => setArchiving(child)}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <Button variant="link" size="sm" className="self-start px-0" onClick={() => setShowArchived((show) => !show)}>
+            {showArchived ? t("archived.hide") : t("archived.show")}
           </Button>
-        </div>
-      )}
-      {tree && (
-        <ul className="flex flex-col gap-3">
-          {tree.groups(kind, { includeHidden: true }).map(({ parent, children }) => (
-            <li key={parent.id} className="overflow-hidden rounded-xl border border-border bg-card">
-              <CategoryRow
-                category={parent}
-                canEdit={canEdit}
-                onEdit={() => setEditing({ mode: "edit", category: parent })}
-                onAddChild={() => setEditing({ mode: "create", kind, parent })}
-                onHide={(hidden) => void setHidden(parent, hidden)}
-                onArchive={() => setArchiving(parent)}
-              />
-              {children.length > 0 && (
-                <ul className="divide-y divide-border/50 border-t border-border/60">
-                  {children.map((child) => (
-                    <CategoryRow
-                      key={child.id}
-                      category={child}
-                      parent={parent}
-                      canEdit={canEdit}
-                      onEdit={() => setEditing({ mode: "edit", category: child })}
-                      onHide={(hidden) => void setHidden(child, hidden)}
-                      onArchive={() => setArchiving(child)}
-                    />
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <Button variant="link" size="sm" className="self-start px-0" onClick={() => setShowArchived((show) => !show)}>
-        {showArchived ? t("archived.hide") : t("archived.show")}
-      </Button>
-      {showArchived && archived.state.status === "ready" && (
-        <ArchivedList
-          categories={archived.state.value.categories.filter((category) => category.kind === kind)}
-          canEdit={canEdit}
-          onRestore={(category) =>
-            void act(`${base}/${category.id}/restore`, { mutationId: newId(), baseVersion: category.version })
-          }
-          label={label}
-        />
+          {showArchived && archived.state.status === "ready" && (
+            <ArchivedList
+              categories={archived.state.value.categories.filter((category) => category.kind === kind)}
+              canEdit={canEdit}
+              onRestore={(category) =>
+                void act(`${base}/${category.id}/restore`, { mutationId: newId(), baseVersion: category.version })
+              }
+              label={label}
+            />
+          )}
+        </>
       )}
 
       <CategoryFormDialog

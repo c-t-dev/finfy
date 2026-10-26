@@ -34,6 +34,8 @@ import { CategoryPicker, COLOR_BG, type CategoryTree } from "./categories";
 import { useFormatter, useTranslations } from "./i18n";
 import { todayIso, useMoney } from "./money";
 import { APP_ROUTES, useAppNavigation } from "./navigation";
+import { saveEntryTags, TagPicker } from "./tags-ui";
+import type { Tag } from "@packages/shared/tags";
 import { useWalletRequest, WalletErrorMessage } from "./wallet-ui";
 import type { WalletFailure } from "./wallets";
 
@@ -469,6 +471,7 @@ export function PurchaseDialog({
   wallet,
   card,
   tree,
+  tags,
   editing,
   onClose,
   onSaved,
@@ -476,6 +479,7 @@ export function PurchaseDialog({
   wallet: Wallet;
   card: Pick<Card, "id" | "name">;
   tree: CategoryTree | null;
+  tags: { tags: Tag[]; add: (tag: Tag) => void };
   editing: PurchaseEditing;
   onClose: () => void;
   onSaved: () => void;
@@ -490,6 +494,7 @@ export function PurchaseDialog({
             wallet={wallet}
             card={card}
             tree={tree}
+            tags={tags}
             entry={editing.mode === "edit" ? editing.entry : null}
             onCancel={onClose}
             onSaved={onSaved}
@@ -504,6 +509,7 @@ function PurchaseForm({
   wallet,
   card,
   tree,
+  tags,
   entry,
   onCancel,
   onSaved,
@@ -511,6 +517,7 @@ function PurchaseForm({
   wallet: Wallet;
   card: Pick<Card, "id" | "name">;
   tree: CategoryTree | null;
+  tags: { tags: Tag[]; add: (tag: Tag) => void };
   entry: Entry | null;
   onCancel: () => void;
   onSaved: () => void;
@@ -526,6 +533,7 @@ function PurchaseForm({
   const [installments, setInstallments] = React.useState(1);
   const [categoryId, setCategoryId] = React.useState<string | null>(entry?.categoryId ?? null);
   const [notes, setNotes] = React.useState(entry?.notes ?? "");
+  const [tagIds, setTagIds] = React.useState<string[]>(entry?.tagIds ?? []);
   const [amountInvalid, setAmountInvalid] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const { pending, failure, run } = useWalletRequest();
@@ -565,14 +573,20 @@ function PurchaseForm({
         event.preventDefault();
         const trimmedNotes = notes.trim() || null;
         if (entry) {
-          const ok = await run(() =>
-            request("PATCH", `${base}/${entry.id}`, {
-              mutationId: newId(),
+          const patch = Object.fromEntries(
+            Object.entries({
               description: description.trim() !== entry.description ? description.trim() : undefined,
               categoryId: categoryId && categoryId !== entry.categoryId ? categoryId : undefined,
               notes: trimmedNotes !== entry.notes ? trimmedNotes : undefined,
-            }),
+            }).filter(([, value]) => value !== undefined),
           );
+          const ok = await run(async () => {
+            if (Object.keys(patch).length) {
+              const response = await request("PATCH", `${base}/${entry.id}`, { mutationId: newId(), ...patch });
+              if (!response.ok) return response;
+            }
+            return saveEntryTags(request, wallet.id, entry.id, entry.tagIds, tagIds);
+          });
           if (ok) onSaved();
           return;
         }
@@ -588,6 +602,7 @@ function PurchaseForm({
             transactionDate: date,
             installments,
             notes: trimmedNotes,
+            tagIds,
           }),
         );
         if (ok) onSaved();
@@ -624,6 +639,7 @@ function PurchaseForm({
         <Label htmlFor="purchase-category">{entries("form.category")}</Label>
         <CategoryPicker id="purchase-category" tree={tree} kind="EXPENSE" value={categoryId} onValueChange={setCategoryId} />
       </div>
+      <TagPicker wallet={wallet} tags={tags.tags} value={tagIds} onChange={setTagIds} onCreated={tags.add} />
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="purchase-notes">{entries("form.notes")}</Label>
         <textarea

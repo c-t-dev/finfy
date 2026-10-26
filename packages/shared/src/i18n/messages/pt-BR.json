@@ -210,7 +210,8 @@
       "manage": "Gerenciar categorias",
       "tabs": {
         "EXPENSE": "Despesas",
-        "INCOME": "Receitas"
+        "INCOME": "Receitas",
+        "TAGS": "Tags"
       },
       "hidden": "Oculta",
       "own": "Sua",
@@ -679,6 +680,35 @@
         "accepted": "Aceito",
         "declined": "Recusado",
         "link": "Link"
+      }
+    },
+    "tags": {
+      "title": "Tags",
+      "label": "Tags",
+      "empty": "Nenhuma tag ainda.",
+      "emptyHint": "Tags agrupam lançamentos de categorias diferentes, como uma viagem ou um projeto.",
+      "newPlaceholder": "Nova tag",
+      "add": "Adicionar",
+      "allTags": "Todas as tags",
+      "actions": {
+        "menu": "Ações de {name}",
+        "edit": "Editar",
+        "archive": "Arquivar",
+        "restore": "Restaurar"
+      },
+      "form": {
+        "createTitle": "Nova tag",
+        "editTitle": "Editar tag",
+        "name": "Nome",
+        "color": "Cor",
+        "save": "Salvar",
+        "create": "Criar",
+        "cancel": "Cancelar"
+      },
+      "archived": {
+        "show": "Mostrar tags arquivadas",
+        "hide": "Ocultar tags arquivadas",
+        "empty": "Nenhuma tag arquivada."
       }
     }
   },

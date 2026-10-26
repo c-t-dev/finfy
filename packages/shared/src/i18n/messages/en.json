@@ -210,7 +210,8 @@
       "manage": "Manage categories",
       "tabs": {
         "EXPENSE": "Expenses",
-        "INCOME": "Income"
+        "INCOME": "Income",
+        "TAGS": "Tags"
       },
       "hidden": "Hidden",
       "own": "Yours",
@@ -679,6 +680,35 @@
         "accepted": "Accepted",
         "declined": "Declined",
         "link": "Link"
+      }
+    },
+    "tags": {
+      "title": "Tags",
+      "label": "Tags",
+      "empty": "No tags yet.",
+      "emptyHint": "Tags group entries across categories, like a trip or a project.",
+      "newPlaceholder": "New tag",
+      "add": "Add",
+      "allTags": "All tags",
+      "actions": {
+        "menu": "Actions for {name}",
+        "edit": "Edit",
+        "archive": "Archive",
+        "restore": "Restore"
+      },
+      "form": {
+        "createTitle": "New tag",
+        "editTitle": "Edit tag",
+        "name": "Name",
+        "color": "Color",
+        "save": "Save",
+        "create": "Create",
+        "cancel": "Cancel"
+      },
+      "archived": {
+        "show": "Show archived tags",
+        "hide": "Hide archived tags",
+        "empty": "No archived tags."
       }
     }
   },

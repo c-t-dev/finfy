@@ -73,6 +73,7 @@ import {
   membersSchema,
 } from "@packages/shared/members";
 import { activityPageSchema, chainCheckSchema } from "@packages/shared/activity";
+import { createTagInput, setEntryTagsInput, tagListSchema, tagSchema, tagStateInput, updateTagInput } from "@packages/shared/tags";
 import {
   archiveWalletInput,
   createWalletInput,
@@ -157,6 +158,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           "Who has access to a wallet. Without e-mail, an invite is a private link (token shown once, valid 7 days); accepting needs the link and the account with the invited e-mail",
       },
       { name: "activity", description: "The wallet's audit log (wiki/decisoes/0006): every member sees everything" },
+      { name: "tags", description: "Tags of a wallet, unique by name ignoring case; entries reference them by ID" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -198,6 +200,8 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         Members: json(membersSchema),
         ActivityPage: json(activityPageSchema),
         ChainCheck: json(chainCheckSchema),
+        Tag: json(tagSchema),
+        TagList: json(tagListSchema),
         InviteLink: json(inviteLinkSchema),
         InvitePreview: json(invitePreviewSchema),
         AcceptedInvite: json(acceptedInviteSchema),
@@ -571,6 +575,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       ...cardPaths(),
       ...planningPaths(),
       ...memberPaths(),
+      ...tagPaths(),
       "/api/wallets/{id}/activity": {
         get: {
           tags: ["activity"],
@@ -683,6 +688,41 @@ function cardPaths() {
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+  };
+}
+
+function tagPaths() {
+  const tagIdParam = { name: "tagId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const write = (summary: string, description: string, parameters: unknown[], input: z.ZodType, ok: Record<number, unknown>, errors: string[]) => ({
+    ...cardWrite(summary, `OWNER, ADMIN, EDITOR. ${description}`, parameters, input, ok, errors),
+    tags: ["tags"],
+  });
+  const tag = [walletIdParam, tagIdParam];
+  const tagOk = { 200: response("The tag.", ref("Tag")) };
+  return {
+    "/api/wallets/{id}/tags": {
+      get: {
+        tags: ["tags"],
+        summary: "The wallet's tags",
+        description: "Any member. By name; `?archived=1` lists the archived ones.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam, { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } }],
+        responses: { 200: response("The tags.", ref("TagList")), ...walletErrors("notFound") },
+      },
+      post: write("Create a tag", "A name that already exists (ignoring case) answers the existing tag.", [walletIdParam], createTagInput, { 201: response("The tag.", ref("Tag")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/tags/{tagId}": {
+      patch: write("Rename or recolor a tag", "Another active tag's name is refused.", tag, updateTagInput, tagOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/tags/{tagId}/archive": {
+      post: write("Archive a tag", "It disappears from entries and pickers.", tag, tagStateInput, tagOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/tags/{tagId}/restore": {
+      post: write("Restore a tag", "Refused while another active tag has its name.", tag, tagStateInput, tagOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/transactions/{entryId}/tags": {
+      post: write("Set an entry's tags", "Replaces the set; a card purchase's installments all get it. Entries can also get tags when created (`tagIds`).", [walletIdParam, entryIdParam], setEntryTagsInput, { 200: response("The entry's tags.", { type: "object", properties: { tagIds: { type: "array", items: { type: "string", format: "uuid" } } } }) }, ["invalidInput", "forbidden", "notFound"]),
     },
   };
 }

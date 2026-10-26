@@ -24,6 +24,7 @@ import type { Wallet } from "@packages/shared/wallets";
 import { useApi, useResource } from "../api";
 import { ConfirmDialog, InvoiceStateBadge, PurchaseDialog, useShortDate, type PurchaseEditing } from "../cards-ui";
 import { useCategories } from "../categories";
+import { useTags } from "../tags-ui";
 import { useFormatter, useTranslations } from "../i18n";
 import { todayIso, useMoney } from "../money";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
@@ -69,6 +70,7 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
   const detail = useResource<InvoiceDetail>(`/api/wallets/${wallet.id}/cards/${card.id}/invoices/${month}`);
   const accounts = useResource<{ accounts: Account[] }>(`/api/wallets/${wallet.id}/accounts`);
   const { tree } = useCategories(wallet.id);
+  const tags = useTags(wallet.id);
   const [editing, setEditing] = React.useState<PurchaseEditing>(null);
   const [paying, setPaying] = React.useState(false);
   const [reopening, setReopening] = React.useState(false);
@@ -158,6 +160,7 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
                 wallet={wallet}
                 tree={tree}
                 accountNames={names}
+                tagMap={tags.byId}
                 onOpen={canEdit && !paid ? () => setEditing({ mode: "edit", entry }) : undefined}
               />
             ))}
@@ -168,6 +171,7 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
         wallet={wallet}
         card={card}
         tree={tree}
+        tags={tags}
         editing={editing}
         onClose={() => setEditing(null)}
         onSaved={() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeftRightIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { ArrowLeftRightIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CreditCardIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { Input } from "@packages/ui/components/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
@@ -16,6 +16,8 @@ import type { Wallet } from "@packages/shared/wallets";
 import { useApi, useResource } from "../api";
 import { CategoryBadge, useCategories, useCategoryLabel, type CategoryTree } from "../categories";
 import { EntryDialog, type EntryEditing } from "../entry-form";
+import { TagChip, useTags } from "../tags-ui";
+import type { Tag } from "@packages/shared/tags";
 import { useFormatter, useTranslations } from "../i18n";
 import { todayIso, useMoney } from "../money";
 import { useWallets } from "../wallets";
@@ -71,6 +73,7 @@ export function useWalletAccounts(walletId: string) {
 
 function WalletStatement({ wallet }: { wallet: Wallet }) {
   const t = useTranslations("app.entries");
+  const tagsT = useTranslations("app.tags");
   const format = useFormatter();
   const money = useMoney(wallet.currencyCode);
   const request = useApi();
@@ -78,6 +81,8 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
   const [month, setMonth] = React.useState(() => todayIso().slice(0, 7));
   const [accountFilter, setAccountFilter] = React.useState(ALL);
   const [categoryFilter, setCategoryFilter] = React.useState(ALL);
+  const [tagFilter, setTagFilter] = React.useState(ALL);
+  const tags = useTags(wallet.id);
   const [search, setSearch] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [editing, setEditing] = React.useState<EntryEditing>(null);
@@ -94,6 +99,7 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
   const params = new URLSearchParams({ from, to });
   if (accountFilter !== ALL) params.set("accountId", accountFilter);
   if (categoryFilter !== ALL) params.set("categoryId", categoryFilter);
+  if (tagFilter !== ALL) params.set("tagId", tagFilter);
   if (query) params.set("q", query);
   const list = useResource<EntryList>(`/api/wallets/${wallet.id}/transactions?${params}`);
 
@@ -157,7 +163,7 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
         </div>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className={cn("grid gap-2", tags.tags.length ? "sm:grid-cols-4" : "sm:grid-cols-3")}>
         <div className="relative">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("search")} aria-label={t("search")} className="pl-8" />
@@ -176,6 +182,21 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
           </SelectContent>
         </Select>
         <CategoryFilter tree={tree} value={categoryFilter} onValueChange={setCategoryFilter} />
+        {tags.tags.length > 0 && (
+          <Select value={tagFilter} onValueChange={setTagFilter}>
+            <SelectTrigger aria-label={tagsT("allTags")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{tagsT("allTags")}</SelectItem>
+              {tags.tags.map((tag) => (
+                <SelectItem key={tag.id} value={tag.id}>
+                  {tag.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
@@ -209,6 +230,7 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
                 wallet={wallet}
                 tree={tree}
                 accountNames={names}
+                tagMap={tags.byId}
                 onOpen={canEdit && isEditable(entry) ? () => setEditing({ mode: "edit", entry }) : undefined}
                 onMarkPaid={canEdit && entry.status === "PENDING" && isEditable(entry) ? () => void markPaid(entry) : undefined}
               />
@@ -223,6 +245,7 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
           accounts={accounts}
           cards={cards}
           tree={tree}
+          tags={tags}
           editing={editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
@@ -289,6 +312,7 @@ export function EntryRow({
   wallet,
   tree,
   accountNames,
+  tagMap,
   onOpen,
   onMarkPaid,
 }: {
@@ -296,6 +320,7 @@ export function EntryRow({
   wallet: Wallet;
   tree: CategoryTree | null;
   accountNames: Map<string, string>;
+  tagMap?: Map<string, Tag>;
   onOpen?: () => void;
   onMarkPaid?: () => void;
 }) {
@@ -319,9 +344,9 @@ export function EntryRow({
 
   const content = (
     <>
-      {isTransfer ? (
+      {isTransfer || entry.type === "CREDIT_CARD_PAYMENT" ? (
         <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-foreground/70" aria-hidden>
-          <ArrowLeftRightIcon className="size-3.5" />
+          {isTransfer ? <ArrowLeftRightIcon className="size-3.5" /> : <CreditCardIcon className="size-3.5" />}
         </span>
       ) : (
         <CategoryBadge category={category ?? null} parent={parent ?? null} />
@@ -341,6 +366,13 @@ export function EntryRow({
           )}
         </div>
         <div className="truncate text-[12px] text-muted-foreground">{subtitle}</div>
+        {tagMap && entry.tagIds.some((id) => tagMap.has(id)) && (
+          <div className="mt-0.5 flex flex-wrap gap-1">
+            {entry.tagIds.map((id) => tagMap.get(id)).filter((tag): tag is Tag => Boolean(tag)).map((tag) => (
+              <TagChip key={tag.id} tag={tag} />
+            ))}
+          </div>
+        )}
       </div>
       <span
         className={cn(

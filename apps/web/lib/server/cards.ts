@@ -26,6 +26,7 @@ import { deterministicId } from "@packages/shared/ids";
 import type { Entry } from "@packages/shared/transactions";
 import { lockCurrency } from "@/lib/server/accounts";
 import { usableCategory } from "@/lib/server/categories";
+import { applyTags, tagsByEntry } from "@/lib/server/tags";
 import { CommandError, requireRole, runCommand, type CommandResult } from "@/lib/server/commands";
 import { getDb } from "@/lib/server/db";
 import { diff, findApplied, recordMutation, type Actor, type Change, type Tx } from "@/lib/server/write";
@@ -362,6 +363,7 @@ async function purchasesOf(tx: Tx, invoiceIdValue: string): Promise<Entry[]> {
     .from(transactions)
     .where(and(eq(transactions.invoiceId, invoiceIdValue), isNull(transactions.archivedAt)))
     .orderBy(asc(transactions.transactionDate), asc(transactions.createdAt));
+  const entryTags = await tagsByEntry(tx, rows.map((row) => row.id));
   return rows.map((row) => ({
     id: row.id,
     type: row.type,
@@ -378,6 +380,7 @@ async function purchasesOf(tx: Tx, invoiceIdValue: string): Promise<Entry[]> {
     counterpartAccountId: null,
     installmentNumber: row.installmentNumber,
     installmentTotal: row.installmentTotal,
+    tagIds: entryTags.get(row.id) ?? [],
     version: row.version,
   }));
 }
@@ -476,6 +479,7 @@ export async function createPurchase(
         ),
       });
     }
+    extra.push(...(await applyTags(tx, actor, walletId, ids, input.tagIds ?? [])));
     extra.push(...(await lockCurrency(tx, actor, walletId)));
     const [first, ...rest] = created;
     await recordMutation(tx, actor, { mutationId: input.mutationId }, first, [...rest, ...extra]);
