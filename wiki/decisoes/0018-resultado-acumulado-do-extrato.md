@@ -27,3 +27,7 @@ Sem mudança de tabelas nem migração. `GET /api/wallets/{id}/transactions` ret
 ## Referências e perguntas
 
 Regra própria do finfy, aprovada pelo usuário. As regras de status, sinais e contas arquivadas seguem o saldo já implementado. Sem perguntas em aberto neste escopo.
+
+## Validação da consulta
+
+A versão v0.2.2 revelou uma regressão de SQL: na seleção de uma tabela, o Drizzle removia a qualificação das colunas de subconsultas, causando referência ambígua a `id` (PostgreSQL `42702`). A correção mantém identificadores de tabela e coluna explícitos. As consultas completas de lista e totais são compartilhadas com testes em PostgreSQL descartável (PGlite), com todas as migrações reais. As regras de cálculo desta decisão permanecem.

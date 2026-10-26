@@ -1,8 +1,7 @@
 import "server-only";
-import { accumulatedBalance, accumulatedPendingBalance } from "./account-balance";
-import { statementDate } from "./entry-dates";
-import { and, desc, eq, getTableColumns, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
-import { accounts, categories, creditCardInvoices, creditCards, transactionLinks, transactionTags, transactions } from "@packages/shared/db/schema";
+import { selectStatementRows, selectStatementTotals } from "./entry-queries";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { accounts, creditCardInvoices, creditCards, transactionLinks, transactions } from "@packages/shared/db/schema";
 import { deterministicId } from "@packages/shared/ids";
 import type {
   CreateEntryInput,
@@ -27,7 +26,6 @@ import { diff, findApplied, recordMutation, type Actor, type Change, type FieldC
  */
 
 type Row = typeof transactions.$inferSelect;
-const LIST_LIMIT = 2000;
 
 /** Paid → `paid_at` now; pending → empty. */
 const paidAt = (status: "PAID" | "PENDING") => (status === "PAID" ? sql`now()` : null);
@@ -102,57 +100,11 @@ async function entryById(tx: Tx, walletId: string, entryId: string): Promise<Ent
   return (await toEntries(tx, [row]))[0];
 }
 
-function filterWhere(walletId: string, filter: EntryFilter): SQL {
-  const conditions: (SQL | undefined)[] = [
-    eq(transactions.walletId, walletId),
-    isNull(transactions.archivedAt),
-    gte(statementDate, filter.from),
-    lte(statementDate, filter.to),
-  ];
-  if (filter.accountId) conditions.push(eq(transactions.accountId, filter.accountId));
-  if (filter.categoryId) {
-    // A category also matches its subcategories.
-    conditions.push(
-      or(
-        eq(transactions.categoryId, filter.categoryId),
-        inArray(
-          transactions.categoryId,
-          sql`(select ${categories.id} from ${categories} where ${categories.parentId} = ${filter.categoryId})`,
-        ),
-      ),
-    );
-  }
-  if (filter.tagId) {
-    conditions.push(
-      inArray(
-        transactions.id,
-        sql`(select ${transactionTags.transactionId} from ${transactionTags} where ${transactionTags.tagId} = ${filter.tagId} and ${transactionTags.archivedAt} is null)`,
-      ),
-    );
-  }
-  if (filter.q) conditions.push(ilike(transactions.description, `%${filter.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`));
-  return and(...conditions)!;
-}
-
-/** Income and expense of the period. Card purchases count on their linked invoice due date; payments never count twice. */
-const summaryColumns = {
-  incomeMinor: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.type} = 'INCOME' and ${transactions.status} = 'PAID'), 0)`,
-  expenseMinor: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.type} in ('EXPENSE', 'CREDIT_CARD_PURCHASE') and ${transactions.status} <> 'CANCELED' and (${transactions.status} = 'PAID' or ${transactions.type} = 'CREDIT_CARD_PURCHASE')), 0)`,
-  pendingIncomeMinor: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.type} = 'INCOME' and ${transactions.status} = 'PENDING'), 0)`,
-  pendingExpenseMinor: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.type} = 'EXPENSE' and ${transactions.status} = 'PENDING'), 0)`,
-};
-
 export async function listEntries(userId: string, walletId: string, filter: EntryFilter): Promise<CommandResult<EntryList>> {
   return runCommand(async (tx) => {
     await requireRole(tx, walletId, userId, "view");
-    const where = filterWhere(walletId, filter);
-    const rows = await tx
-      .select({ ...getTableColumns(transactions), statementDate })
-      .from(transactions)
-      .where(where)
-      .orderBy(desc(statementDate), desc(transactions.createdAt))
-      .limit(LIST_LIMIT);
-    const [totals] = await tx.select({ ...summaryColumns, confirmedBalanceMinor: accumulatedBalance(walletId, filter.to, filter.accountId), accumulatedPendingMinor: accumulatedPendingBalance(walletId, filter.to, filter.accountId) }).from(transactions).where(where);
+    const rows = await selectStatementRows(tx, walletId, filter);
+    const [totals] = await selectStatementTotals(tx, walletId, filter);
     return {
       entries: await toEntries(tx, rows),
       summary: {

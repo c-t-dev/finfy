@@ -69,3 +69,9 @@ Teste SQL isolado em SQLite em memória, sem dados reais: saldo inicial, histór
 Teste SQL isolado em memória: entradas e saídas pendentes, transferência entre contas e filtro de uma conta, ajuste negativo, reembolso, meses passados/futuros, exclusões/cancelamentos, isolamento de wallet e contas arquivadas. Compra pendente entra no vencimento; pagamento antecipado em outra conta substitui a projeção; reabertura restaura a pendência. Sem banco externo ou dados reais.
 
 Validação desta alteração: `pnpm.cmd typecheck`, `pnpm.cmd test` (18 testes), `pnpm.cmd check:messages` e `pnpm.cmd check:openapi` passaram. Publicação autorizada após a validação.
+
+## 2026-10-26 — finfy: regressão PostgreSQL no extrato
+
+Logs de produção consultados apenas para diagnóstico: `column reference id is ambiguous`, SQLSTATE `42702`. A consulta completa reproduziu a falha em PGlite antes da correção, com todas as sete migrações reais aplicadas sem alterações. A versão corrigida executa os mesmos builders usados pela API: lista mensal, totais, carteira vazia, saldo inicial e anterior, filtro de conta, categoria/tag/busca sem resultados, mês futuro vazio, cartão no vencimento, quitação antecipada por outra conta e reabertura. Validação do resumo pelo schema compartilhado. Sem banco externo ou dados reais; não foi feito teste autenticado no site de produção. Publicação autorizada após a validação.
+
+Validação final: 19 testes passaram; `pnpm.cmd typecheck`, `pnpm.cmd check:messages` e `pnpm.cmd check:openapi` passaram.

@@ -88,7 +88,7 @@ Animações React: [0012 — Motion](decisoes/0012-motion.md) (aceita; entrada e
 | Página | Conteúdo |
 | --- | --- |
 | [problemas-encontrados.md](problemas-encontrados.md) | Bugs, inconsistências e riscos |
-| [testes/historico-de-testes.md](testes/historico-de-testes.md) | O que foi testado, quando e como |
+| [testes/historico-de-testes.md](testes/historico-de-testes.md) | O que foi testado, quando e como; regressão do extrato validada em PostgreSQL descartável |
 | [testes/dados-de-teste.md](testes/dados-de-teste.md) | Itens [TESTE] que existem na conta de teste |
 | [pendencias.md](pendencias.md) | O que ainda não foi testado ou documentado |
 

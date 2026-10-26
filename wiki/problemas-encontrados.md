@@ -1,6 +1,6 @@
 # Problemas encontrados
 
-> Última atualização: 2026-10-25
+> Última atualização: 2026-10-26
 
 Bugs, inconsistências e riscos observados nos testes. Úteis como lista do que **não** repetir no finfy.
 
@@ -44,3 +44,7 @@ Bugs, inconsistências e riscos observados nos testes. Úteis como lista do que 
 - Português e inglês misturados nos nomes (`dataDeCriacao`, `nameBr`).
 - CDN de produção servindo de um caminho `cdn-dev.../dev/`.
 - A hora enviada é ignorada: o servidor grava 12:00.
+
+## finfy — regressão do extrato (2026-10-26)
+
+Após v0.2.2, abrir o extrato falhava com "Não foi possível carregar os lançamentos". Logs confirmaram PostgreSQL `42702`, referência ambígua a `id`. A seleção de tabela única do Drizzle removia nomes de tabelas dentro do SQL de saldo, afetando os joins da projeção e a correlação por conta. Testes anteriores compilavam expressões isoladas em SQLite e não exerciam essa transformação. Correção: identificadores explicitamente qualificados; teste das consultas completas de produção em PostgreSQL em memória, com esquema migrado e dados sintéticos. Sem conexão ao banco real.
