@@ -20,6 +20,7 @@
     "./rules": "./src/rules.ts",
     "./rule-match": "./src/rule-match.ts",
     "./patrimony": "./src/patrimony.ts",
+    "./notifications": "./src/notifications.ts",
     "./system-categories": "./src/system-categories.ts",
     "./ids": "./src/ids.ts",
     "./i18n": "./src/i18n/locales.ts",

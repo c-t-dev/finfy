@@ -877,6 +877,19 @@
         "empty": "Nothing archived.",
         "restore": "Restore"
       }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "open": "Notifications",
+      "empty": "Nothing new.",
+      "unread": "{count, plural, one {# new notification} other {# new notifications}}",
+      "types": {
+        "BUDGET_NEAR": "{category} is near its limit: {spent} of {limit}.",
+        "BUDGET_OVER": "{category} went over its limit: {spent} of {limit}.",
+        "INVOICE_DUE": "The {card} invoice ({amount}) is due on {date}.",
+        "INVOICE_OVERDUE": "The {card} invoice ({amount}) was due on {date} and is not paid.",
+        "PENDING_DUE": "{count, plural, one {# pending entry} other {# pending entries}} dated today or earlier."
+      }
     }
   },
   "errors": {

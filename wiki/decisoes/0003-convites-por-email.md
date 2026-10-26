@@ -64,6 +64,12 @@ Envio de e-mail por uma fila (`email_outbox`: `id`, `to`, `template`, `payload`,
 
 Todos com o idioma do destinatário (pt-BR ou en, conforme a conta; sem conta, o idioma de quem convidou). Ver [0011](0011-traducoes.md).
 
+## O que já está implementado (2026-10-26)
+
+Sem provedor de e-mail, o convite virou um **link privado**: quem convida cria o convite e manda o link por fora (WhatsApp, por exemplo). Para aceitar, a pessoa precisa do link **e** de estar logada com o e-mail convidado. O link vale 7 dias, só o hash do token fica guardado, e gerar um novo link invalida o anterior. Detalhes em [codebase.md → Sharing](../finfy/codebase.md#sharing-members-and-invites).
+
+Quando houver provedor de e-mail, o mesmo convite passa a ser enviado por e-mail com esse link.
+
 ## Perguntas em aberto
 
 - [ ] Qual provedor de e-mail (Resend, Amazon SES, SMTP próprio)? E qual domínio remetente? Até isso ser decidido, o finfy não envia e-mail nenhum (2026-10-25): convites por e-mail esperam, e a conta funciona sem verificação do e-mail ([0004](0004-seguranca-da-conta.md#o-que-já-está-implementado-2026-10-25)).

@@ -94,6 +94,7 @@ import {
   updateRuleInput,
 } from "@packages/shared/rules";
 import { assetListSchema, assetSchema, assetStateInput, createAssetInput, netWorthSchema, updateAssetInput } from "@packages/shared/patrimony";
+import { markReadInput, notificationListSchema } from "@packages/shared/notifications";
 import {
   archiveWalletInput,
   createWalletInput,
@@ -186,6 +187,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       },
       { name: "rules", description: "Categorization rules: AND conditions, actions set the category and add tags; never on transfers, payments or adjustments" },
       { name: "patrimony", description: "Assets and debts by ownership share, and the net worth" },
+      { name: "notifications", description: "In-app notifications across the user's wallets, computed on each read" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -239,6 +241,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         Asset: json(assetSchema),
         AssetList: json(assetListSchema),
         NetWorth: json(netWorthSchema),
+        NotificationList: json(notificationListSchema),
         InviteLink: json(inviteLinkSchema),
         InvitePreview: json(invitePreviewSchema),
         AcceptedInvite: json(acceptedInviteSchema),
@@ -375,6 +378,30 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
             401: err("Wrong current password, or no session.", "invalidCredentials", "unauthenticated"),
             403: err("Wrong origin.", "forbiddenOrigin"),
             429: { description: "Too many attempts.", content: errorBody(["rateLimited"]) },
+          },
+        },
+      },
+      "/api/notifications": {
+        get: {
+          tags: ["notifications"],
+          summary: "The user's notifications",
+          description: "Budget limits near or over this month, unpaid invoices due within 5 days or overdue, and pending entries dated today or earlier, across every wallet. Computed now; only `read` is stored.",
+          security: [{ session: [] }],
+          responses: { 200: response("The notifications.", ref("NotificationList")), 401: err("No valid session.", "unauthenticated") },
+        },
+      },
+      "/api/notifications/read": {
+        post: {
+          tags: ["notifications"],
+          summary: "Mark notifications read",
+          description: `Keys that are not the user's current notifications are ignored. ${originNote}`,
+          security: [{ session: [] }],
+          requestBody: body(markReadInput),
+          responses: {
+            204: response("Marked."),
+            400: err("Invalid input.", "invalidInput"),
+            401: err("No valid session.", "unauthenticated"),
+            403: err("Wrong origin.", "forbiddenOrigin"),
           },
         },
       },

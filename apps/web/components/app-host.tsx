@@ -9,6 +9,7 @@ import { AccountClientProvider } from "@packages/app/accounts";
 import { ApiProvider } from "@packages/app/api";
 import { AccountPanel, AppShell, WindowWidthToggle } from "@packages/app/app-shell";
 import { AppNavigationProvider, type AppLinkProps } from "@packages/app/navigation";
+import { NotificationBell } from "@packages/app/notifications-ui";
 import { WalletProvider } from "@packages/app/wallets";
 import { LOCALE_PREFIXES } from "@packages/shared/i18n";
 import type { Wallet } from "@packages/shared/wallets";
@@ -82,6 +83,7 @@ export function AppHost({
                 }
                 trailing={
                   <div className="flex items-center gap-2">
+                    <NotificationBell />
                     <WindowWidthToggle wide={wide} onWideChange={changeWide} />
                     <AppLanguageSwitcher />
                     <ThemeToggle />

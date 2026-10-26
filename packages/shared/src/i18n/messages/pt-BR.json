@@ -877,6 +877,19 @@
         "empty": "Nada arquivado.",
         "restore": "Restaurar"
       }
+    },
+    "notifications": {
+      "title": "Notificações",
+      "open": "Notificações",
+      "empty": "Nada de novo.",
+      "unread": "{count, plural, one {# notificação nova} other {# notificações novas}}",
+      "types": {
+        "BUDGET_NEAR": "{category} está perto do limite: {spent} de {limit}.",
+        "BUDGET_OVER": "{category} passou do limite: {spent} de {limit}.",
+        "INVOICE_DUE": "A fatura do {card} ({amount}) vence em {date}.",
+        "INVOICE_OVERDUE": "A fatura do {card} ({amount}) venceu em {date} e não foi paga.",
+        "PENDING_DUE": "{count, plural, one {# lançamento pendente} other {# lançamentos pendentes}} com data até hoje."
+      }
     }
   },
   "errors": {

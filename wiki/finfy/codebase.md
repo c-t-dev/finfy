@@ -6,21 +6,26 @@ How the code is organized and how to run it. The reasons behind each choice are 
 
 ## Status
 
-Milestones 1 (foundation), 2 (e-mail and password authentication), 3 (wallets) and 4 (accounts) are in place, plus every database table of the approved data model:
+The web version is complete for daily use (2026-10-26). Everything below runs on the approved data model:
 
 | Done | Not yet |
 | --- | --- |
-| pnpm monorepo, shared configs | MFA (TOTP, recovery codes), step-up, password reset and change, "connected devices" screen, Google/Apple sign-in |
-| Sign-up, sign-in, sign-out, sessions, account lockout, rate limits, `/app` protected (see [Authentication](#authentication)). No e-mail step for now | Wallet members, invites, roles and ownership transfer |
+| pnpm monorepo, shared configs | MFA (TOTP, recovery codes), password reset (needs e-mail), "connected devices" screen, Google/Apple sign-in |
+| Account settings: name, password change ending other sessions | Changing the e-mail |
+| Sign-up, sign-in, sign-out, sessions, account lockout, rate limits, `/app` protected (see [Authentication](#authentication)). No e-mail step for now | Ownership transfer |
+| Sharing: members, roles, invites by private link (see [Sharing](#sharing-members-and-invites)) | Invites by e-mail |
 | `packages/ui` copied from image-resizer | Security e-mails (new device, password changed) |
-| Drizzle schema + migrations for the whole [data model](data-model.md): identity, wallets and sharing, financial core, planning and patrimony, sync and audit | API and screens for the financial tables; the system category list |
+| Drizzle schema + migrations for the whole [data model](data-model.md): identity, wallets and sharing, financial core, planning and patrimony, sync and audit | Review of the system category list (proposal) |
 | Money, IDs, roles and permission matrix, locales | `POST /api/sync/push`, conflict records (`sync_conflicts`), audit chain check job |
-| Wallets: create, list, switch (remembered per browser), rename, change currency before the first entry, archive with the password (see [Wallets](#wallets)) | Activity feed and item history screens |
+| Wallets: create, list, switch (remembered per browser), rename, change currency before the first entry, archive with the password (see [Wallets](#wallets)) | |
+| Activity feed and hash-chain check (see [Activity](#activity)) | Item history, filters, CSV export |
 | One write path: idempotent mutations and a hash-chained audit log (see [Write path](#write-path)) | |
 | Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | |
 | Credit cards: cards, purchases with installments, invoices by month, pay and reopen (see [Credit cards](#credit-cards)) | Partial invoice payments, card refunds |
-| Planning (menu "Planejamento", `/app/goals`): monthly budget per category, goals with deposits (see [Planning](#planning)) | Budget alerts as notifications, goal return rate |
-| Transactions: income, expense, transfers, pending/paid, Statement by month with filters and search, Home summary (see [Transactions](#transactions)) | Tags, attachments, recurrences, installments outside cards |
+| Planning (menu "Planejamento", `/app/goals`): monthly budget per category, goals with deposits (see [Planning](#planning)) | Goal return rate |
+| Tags, recurrences, categorization rules, patrimony and net worth (see their sections) | Attachments, household members, linking an asset to its financing |
+| In-app notifications (see [Notifications](#notifications)) | Push and e-mail notifications |
+| Transactions: income, expense, transfers, pending/paid, Statement by month with filters and search, Home summary (see [Transactions](#transactions)) | Installments outside cards, CSV import |
 | Categories: 72 system categories (proposal), hide per wallet, own categories and subcategories (see [Categories](#categories)) | |
 | Public home page in `en` and `pt-BR`, with hreflang | Other public pages (pricing, help...) |
 | Signed-in app shell (`/app`): sidebar, bottom bar on phones, language and theme switchers, window width lock/unlock (cookie `finfy-window-wide`, desktop only) | E-mail sending (provider not chosen), cron jobs |
@@ -207,6 +212,14 @@ Server: `apps/web/lib/server/members.ts`. Client: `packages/app/src/members-ui.t
 - Who may invite, change roles and remove follows the 0002 matrix (`canInvite`, `canChangeRole`, `canRemoveMember` in `@packages/shared/roles`, tested). The owner cannot leave.
 - `/app` pages without a session go to sign-in with `?next=` (only `/app/...` paths accepted, `lib/next-path.ts`); the proxy passes the path to the layout in a header.
 - Audit actions: `INVITE_SENT`, `INVITE_RESENT`, `INVITE_REVOKED`, `INVITE_ACCEPTED`, `INVITE_DECLINED`, `MEMBER_JOINED`, `MEMBER_ROLE_CHANGED`, `MEMBER_REMOVED`, `MEMBER_LEFT`.
+
+## Notifications
+
+Server: `apps/web/lib/server/notifications.ts`. Client: `packages/app/src/notifications-ui.tsx` (bell in the title bar, refreshed every 5 minutes).
+
+- Computed on each read across the user's wallets: budget limits near (`alert_percentage`) or over this month, unpaid invoices due within 5 days or overdue, pending income/expenses dated today or earlier (key per day, so it comes back daily while they wait).
+- Only "read" is stored: a `notifications` row per user and key, ID `deterministicId("notification", userId, key)`. Opening the bell marks the unread ones read. Texts are message keys (`app.notifications.types.*`) filled with the payload, in the reader's language.
+- Not yet: push and e-mail, invite and transfer notifications.
 
 ## Patrimony
 
