@@ -939,6 +939,14 @@
         "hide": "Ocultar arquivados",
         "empty": "Nada arquivado.",
         "restore": "Restaurar"
+      },
+      "links": {
+        "assets": "Bens associados",
+        "liabilities": "Dívidas associadas",
+        "hint": "Marque ou desmarque as associações. Cada valor entra uma vez no patrimônio. Pagamentos não reduzem a dívida automaticamente.",
+        "archived": "Arquivado",
+        "noAssets": "Cadastre um bem para associá-lo.",
+        "noLiabilities": "Cadastre uma dívida para associá-la."
       }
     },
     "notifications": {

@@ -939,6 +939,14 @@
         "hide": "Hide archived",
         "empty": "Nothing archived.",
         "restore": "Restore"
+      },
+      "links": {
+        "assets": "Associated assets",
+        "liabilities": "Associated debts",
+        "hint": "Select or clear associations. Each value is counted once in net worth. Payments do not automatically reduce the debt.",
+        "archived": "Archived",
+        "noAssets": "Create an asset first to associate it.",
+        "noLiabilities": "Create a debt first to associate it."
       }
     },
     "notifications": {

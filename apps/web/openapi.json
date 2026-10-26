@@ -3486,6 +3486,51 @@
               "null"
             ]
           },
+          "linkedIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "linkedAssets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "currentValueMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "ownershipBps": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "archived": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "currentValueMinor",
+                "ownershipBps",
+                "archived"
+              ],
+              "additionalProperties": false
+            }
+          },
           "archived": {
             "type": "boolean"
           },
@@ -3505,6 +3550,8 @@
           "purchaseDate",
           "ownershipBps",
           "notes",
+          "linkedIds",
+          "linkedAssets",
           "archived",
           "version"
         ],
@@ -3588,6 +3635,51 @@
                     "null"
                   ]
                 },
+                "linkedIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "linkedAssets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "currentValueMinor": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "ownershipBps": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "archived": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "currentValueMinor",
+                      "ownershipBps",
+                      "archived"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
                 "archived": {
                   "type": "boolean"
                 },
@@ -3607,6 +3699,8 @@
                 "purchaseDate",
                 "ownershipBps",
                 "notes",
+                "linkedIds",
+                "linkedAssets",
                 "archived",
                 "version"
               ],
@@ -17888,7 +17982,7 @@
           "patrimony"
         ],
         "summary": "Add an asset or debt",
-        "description": "OWNER, ADMIN, EDITOR. The type must fit the kind (debts: loan, financing, other). The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "description": "OWNER, ADMIN, EDITOR. The type must fit the kind (debts: loan, financing, other). Optional linkedIds associates opposite-kind entries in the same wallet. Associations never change net worth. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
         "security": [
           {
             "session": []
@@ -17928,6 +18022,14 @@
                       "ASSET",
                       "LIABILITY"
                     ]
+                  },
+                  "linkedIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
                   },
                   "name": {
                     "type": "string",
@@ -18122,7 +18224,7 @@
           "patrimony"
         ],
         "summary": "Edit an asset or debt",
-        "description": "OWNER, ADMIN, EDITOR. Values are estimates: the last write wins. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "description": "OWNER, ADMIN, EDITOR. Values are estimates: the last write wins. linkedIds replaces associations and requires the latest baseVersion; [] removes all. Existing associations to archived entries may be retained or removed. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
         "security": [
           {
             "session": []
@@ -18164,6 +18266,14 @@
                     "type": "integer",
                     "exclusiveMinimum": 0,
                     "maximum": 9007199254740991
+                  },
+                  "linkedIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
                   },
                   "name": {
                     "type": "string",
@@ -18316,6 +18426,24 @@
                       "type": "string",
                       "enum": [
                         "notFound"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The row changed since `baseVersion`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "versionConflict"
                       ]
                     }
                   }

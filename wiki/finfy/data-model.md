@@ -11,7 +11,7 @@ This is the data model of **finfy** itself. It consolidates the decisions in [`.
 | Sync and audit | Proposed (sync technology decided) | [0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0006](../decisoes/0006-auditoria.md) |
 | Financial core, planning, patrimony | Approved on 2026-10-25 | Adapted from Wallefy (`my-fin/docs/data-model.md`), see [`../referencias/wallefy.md`](../referencias/wallefy.md) |
 
-**In code:** every table below is in `packages/shared/src/db/schema` (`identity`, `wallets`, `finance`, `planning`, `sync`), with migrations in `packages/shared/drizzle` ([codebase.md](codebase.md)). The value lists (account types, transaction types...) are in `@packages/shared/finance`. Tables exist; the API and screens that use the financial ones do not yet. `currencies` is not synced (no `id` column): clients ship the same list in `@packages/shared/money`.
+**In code:** every table below is in `packages/shared/src/db/schema` (`identity`, `wallets`, `finance`, `planning`, `sync`), with migrations in `packages/shared/drizzle` ([codebase.md](codebase.md)). The value lists (account types, transaction types...) are in `@packages/shared/finance`. The financial API and screens are implemented as described in [codebase.md](codebase.md). `currencies` is not synced (no `id` column): clients ship the same list in `@packages/shared/money`.
 
 ## Conventions
 
@@ -47,6 +47,7 @@ The web ships first and does not sync, but the schema must already work with Pow
 1. Every synced table has a single-column primary key named `id` (uuid). No composite primary keys: link tables get their own `id` plus a unique constraint on the pair.
 2. Rows that two offline devices could create independently use a **deterministic UUIDv5** (`deterministicId`), the same trick as recurrence occurrences:
    - `transaction_tags`: from `transaction_id` + `tag_id`;
+   - `asset_liabilities`: from `asset_id` + `liability_id`;
    - `hidden_categories`: from `wallet_id` + `category_id`;
    - `credit_card_invoices`: from `credit_card_id` + year + month;
    - `budget_items`: from `budget_id` + `category_id` + year + month.
@@ -406,7 +407,7 @@ Enforced by the database (`CHECK` and keys in `finance.ts`):
 | `goals` | `name`, `template` (`EMERGENCY_FUND`, `RETIREMENT`, `TRAVEL`, `HOUSE`, `CAR`, `EDUCATION`, `DEBT_PAYOFF`, `OTHER`), `target_minor`, `initial_minor`, `deadline`, `expected_annual_return_bps` (nullable), `achieved_at` | Saved amount is derived from deposits; if a return rate is set, it is actually used (fixes the ignored 7.45% rate in Minhas Economias) |
 | `goal_deposits` | `goal_id`, `amount_minor`, `deposit_date`, `notes`, `transaction_id` (nullable) | Positive adds, negative withdraws (never 0). Optionally linked to the transaction that funded it |
 | `assets` | `kind` (`ASSET`, `LIABILITY`), `type` (`REAL_ESTATE`, `VEHICLE`, `ELECTRONICS`, `BUSINESS`, `COLLECTIBLE`, `RIGHTS`, `INVESTMENT`, `LOAN`, `FINANCING`, `OTHER`), `name`, `current_value_minor`, `purchase_value_minor`, `purchase_date`, `ownership_bps`, `notes` | Net worth = account balances + assets − liabilities − unpaid card purchases |
-| `asset_liabilities` | `asset_id`, `liability_id` | Links an asset to the loan that financed it |
+| `asset_liabilities` | `asset_id`, `liability_id` | Informational many-to-many association between opposite-kind entries in the same wallet; unique pair. IDs are deterministic; unlink archives, relink restores. Never changes net worth. See [0017](../decisoes/0017-bens-e-financiamentos.md) |
 
 ### Sync and audit ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0006](../decisoes/0006-auditoria.md))
 

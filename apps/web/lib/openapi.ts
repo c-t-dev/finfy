@@ -830,10 +830,10 @@ function patrimonyPaths() {
         parameters: [walletIdParam, { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } }],
         responses: { 200: response("The list.", ref("AssetList")), ...walletErrors("notFound") },
       },
-      post: write("Add an asset or debt", "The type must fit the kind (debts: loan, financing, other).", [walletIdParam], createAssetInput, { 201: response("Created.", ref("Asset")) }, ["invalidInput", "forbidden", "notFound"]),
+      post: write("Add an asset or debt", "The type must fit the kind (debts: loan, financing, other). Optional linkedIds associates opposite-kind entries in the same wallet. Associations never change net worth.", [walletIdParam], createAssetInput, { 201: response("Created.", ref("Asset")) }, ["invalidInput", "forbidden", "notFound"]),
     },
     "/api/wallets/{id}/assets/{assetId}": {
-      patch: write("Edit an asset or debt", "Values are estimates: the last write wins.", one, updateAssetInput, ok, ["invalidInput", "forbidden", "notFound"]),
+      patch: write("Edit an asset or debt", "Values are estimates: the last write wins. linkedIds replaces associations and requires the latest baseVersion; [] removes all. Existing associations to archived entries may be retained or removed.", one, updateAssetInput, ok, ["invalidInput", "forbidden", "notFound", "versionConflict"]),
     },
     "/api/wallets/{id}/assets/{assetId}/archive": {
       post: write("Archive", "It leaves the net worth.", one, assetStateInput, ok, ["invalidInput", "forbidden", "notFound"]),

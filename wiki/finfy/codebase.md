@@ -23,7 +23,7 @@ The web version is complete for daily use (2026-10-26). Everything below runs on
 | Accounts: create, edit, main account, archive and restore, balance computed from transactions (see [Accounts](#accounts)) | |
 | Credit cards: cards, purchases with installments, invoices by month, pay and reopen (see [Credit cards](#credit-cards)) | Partial invoice payments, card refunds |
 | Planning (menu "Planejamento", `/app/goals`): monthly budget per category, goals with deposits (see [Planning](#planning)) | Goal return rate |
-| Tags, recurrences, categorization rules, patrimony and net worth (see their sections) | Attachments, household members, linking an asset to its financing |
+| Tags, recurrences, categorization rules, patrimony and net worth (see their sections) | Attachments, household members |
 | In-app notifications (see [Notifications](#notifications)) | Push and e-mail notifications |
 | Transactions: income, expense, transfers, pending/paid, Statement by month with filters and search, Home summary (see [Transactions](#transactions)) | Installments outside cards, CSV import |
 | Categories: 72 system categories (proposal), hide per wallet, own categories and subcategories (see [Categories](#categories)) | |
@@ -235,7 +235,11 @@ Server: `apps/web/lib/server/patrimony.ts`. Shared: `@packages/shared/patrimony`
 
 - Assets (`REAL_ESTATE`, `VEHICLE`, `ELECTRONICS`, `BUSINESS`, `COLLECTIBLE`, `RIGHTS`, `INVESTMENT`, `OTHER`) and debts (`LOAN`, `FINANCING`, `OTHER`), with value today, purchase value and date, ownership share (basis points) and notes. Values are estimates: last write wins.
 - **Net worth** (`GET /api/wallets/:id/net-worth`) = active account balances + assets − debts, each by its share (`ownedPart`), − purchases on invoices still open. Checked on 2026-10-26 against the accounts screen and by hand.
-- Not yet: linking an asset to the debt that financed it (`asset_liabilities`), value history, investments.
+- **Financing associations** ([0017](../decisoes/0017-bens-e-financiamentos.md)): create/edit either kind with optional `linkedIds`; omitted preserves, a list replaces, `[]` removes all. Only opposite-kind entries in the same wallet. Both forms offer checkboxes and the list shows associated names, owned values and archived status to every member. Archived endpoints retain their links but cannot receive new ones.
+- Relationship replacement requires the current `baseVersion` (otherwise `versionConflict`); changing a link bumps both endpoints. Writes and archive operations serialize per wallet. Link rows use deterministic pair IDs, soft archive/restore and field-level audit in the same idempotent mutation as the entry. No schema migration: the table and PowerSync publication already exist. Net worth never joins link rows and counts each entry once. Recurring payments do not amortize these estimates.
+- Responses include `linkedIds` and `linkedAssets` (id, name, current value, ownership and archived flag), batched for list reads.
+- Integration test: from `apps/web`, with the local Docker Postgres running, set `$env:FINFY_TEST_LOCAL_POSTGRES='1'` and run `node --conditions=react-server --import=tsx --test test/patrimony.integration.ts`. It creates, migrates and drops only a disposable `finfy_test_patrimony_*` database using the compose development credentials. Never point it at a real database.
+- Not yet: value history, investments.
 
 ## Categorization rules
 

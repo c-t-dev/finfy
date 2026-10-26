@@ -4,6 +4,10 @@
 
 Registro cronológico de testes locais e no app real. Mais recente primeiro.
 
+## 2026-10-26 — finfy: vínculo entre bens e dívidas
+
+Teste de integração dos comandos com Postgres local e banco descartável `finfy_test_patrimony_*`, criado, migrado e removido pelo teste. Cobre criação vinculada, edição pelos dois lados, múltiplos vínculos, remoção/restauração da mesma linha, bloqueio de VIEWER e de usuário externo, referências a outra wallet, autorreferência, idempotência, conflito de versão, arquivamento e patrimônio sem duplicação. Teste de contrato cobre lista omitida, substituição, remoção e IDs repetidos/inválidos. Nenhum dado de produção ou do banco de desenvolvimento alterado. Checagem de tipos, 16 testes da suíte padrão, paridade das 883 mensagens e OpenAPI passaram. O teste de integração passou também com edições simultâneas e recomputação de toda a cadeia de hashes da auditoria. Sem teste visual no navegador nesta tarefa.
+
 ## 2026-10-26 — finfy: competência das faturas
 
 Regressão automatizada com tabelas sintéticas em SQLite em memória: SQL de competência, fechamento e vencimento no mesmo mês e em meses diferentes, virada de ano, compra em 6/out alocada em novembro, três parcelas de 26/out alocadas de dezembro a fevereiro e pagamento antecipado sem duplicar gasto. Data original preservada. Os 15 testes passaram; typecheck, check:messages e check:openapi passaram. OpenAPI regenerado para o campo opcional statementDate. Revisão das telas: título pelo vencimento salvo, navegação pelos ciclos existentes, lista de cartões pelo ciclo atual, Home pelo mesmo endpoint, planejamento e alertas pelo mesmo SQL. Sem teste visual nesta tarefa e sem acesso a banco real.

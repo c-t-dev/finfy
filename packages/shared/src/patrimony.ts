@@ -19,6 +19,8 @@ export const TYPES_BY_KIND = {
 
 const value = z.number().int().min(0).max(AMOUNT_MAX);
 
+const linkedIds = z.array(z.uuid()).refine((ids) => new Set(ids).size === ids.length, { message: "duplicate link" });
+
 const fields = {
   name: z.string().trim().min(1).max(ASSET_NAME_MAX),
   type: z.enum(ASSET_TYPES),
@@ -31,7 +33,7 @@ const fields = {
 };
 
 export const createAssetInput = z
-  .object({ id: z.uuid(), mutationId: z.uuid(), kind: z.enum(["ASSET", "LIABILITY"]), ...fields })
+  .object({ id: z.uuid(), mutationId: z.uuid(), kind: z.enum(["ASSET", "LIABILITY"]), linkedIds: linkedIds.optional(), ...fields })
   .refine((input) => (TYPES_BY_KIND[input.kind] as readonly string[]).includes(input.type), { message: "type does not fit the kind" });
 export type CreateAssetInput = z.infer<typeof createAssetInput>;
 
@@ -39,6 +41,7 @@ export const updateAssetInput = z
   .object({
     mutationId: z.uuid(),
     baseVersion: z.number().int().positive(),
+    linkedIds: linkedIds.optional(),
     name: fields.name.optional(),
     type: fields.type.optional(),
     currentValueMinor: value.optional(),
@@ -63,6 +66,8 @@ export const assetSchema = z.object({
   purchaseDate: isoDate.nullable(),
   ownershipBps: z.number().int(),
   notes: z.string().nullable(),
+  linkedIds: z.array(z.uuid()),
+  linkedAssets: z.array(z.object({ id: z.uuid(), name: z.string(), currentValueMinor: z.number().int(), ownershipBps: z.number().int(), archived: z.boolean() })),
   archived: z.boolean(),
   version: z.number().int(),
 });

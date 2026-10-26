@@ -19,6 +19,7 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0011](0011-traducoes.md) | Traduções em pt-BR e en (pt-PT depois), mensagens ICU, API devolve códigos | Aceita (padrão: en; biblioteca em aberto) |
 | [0014](0014-prestacoes-por-recorrencia.md) | Valor da prestação, primeiro vencimento e término por data ou quantidade usando recorrências | Aceita |
 | [0016](0016-competencia-das-faturas.md) | Faturas e compras no extrato pelo mês de vencimento | Aceita |
+| [0017](0017-bens-e-financiamentos.md) | Associação entre bens e dívidas, sem duplicação no patrimônio | Aceita |
 
 ## Status
 

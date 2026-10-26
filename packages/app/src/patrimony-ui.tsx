@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ArchiveRestoreIcon, PlusIcon } from "lucide-react";
+import { Checkbox } from "@packages/ui/components/checkbox";
 import { Button } from "@packages/ui/components/button";
 import {
   Dialog,
@@ -117,6 +118,9 @@ export function AssetsSection({ wallet, onChanged }: { wallet: Wallet; onChanged
                     {t(`kinds.${asset.kind}`)} · {t(`types.${asset.type}`)}
                     {asset.ownershipBps < FULL_BPS && ` · ${t("share", { percent: asset.ownershipBps / 100 })}`}
                   </div>
+                  {asset.linkedAssets.length > 0 && <div className="text-[12px] text-muted-foreground">
+                    {asset.kind === "ASSET" ? t("links.liabilities") : t("links.assets")}: {asset.linkedAssets.map((peer) => `${peer.name}: ${money.format(ownedPart(peer.currentValueMinor, peer.ownershipBps))}${peer.archived ? ` (${t("links.archived")})` : ""}`).join(" · ")}
+                  </div>}
                 </div>
                 <span className={cn("shrink-0 text-[13px] font-medium tabular-nums", asset.kind === "LIABILITY" && "text-destructive")}>
                   {asset.kind === "LIABILITY" ? "−" : ""}
@@ -169,6 +173,7 @@ export function AssetsSection({ wallet, onChanged }: { wallet: Wallet; onChanged
         ))}
       <AssetDialog
         wallet={wallet}
+        items={items}
         editing={editing}
         onClose={() => setEditing(null)}
         onSaved={() => {
@@ -181,11 +186,13 @@ export function AssetsSection({ wallet, onChanged }: { wallet: Wallet; onChanged
 }
 
 function AssetDialog({
+  items,
   wallet,
   editing,
   onClose,
   onSaved,
 }: {
+  items: Asset[];
   wallet: Wallet;
   editing: { kind: "ASSET" | "LIABILITY"; asset: Asset | null } | null;
   onClose: () => void;
@@ -194,20 +201,22 @@ function AssetDialog({
   const common = useTranslations("common");
   return (
     <Dialog open={editing !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={common("close")} className="max-w-md">
-        {editing && <AssetForm key={editing.asset?.id ?? editing.kind} wallet={wallet} kind={editing.kind} asset={editing.asset} onCancel={onClose} onSaved={onSaved} />}
+      <DialogContent closeLabel={common("close")} className="max-h-[90dvh] max-w-md overflow-y-auto">
+        {editing && <AssetForm key={editing.asset?.id ?? editing.kind} items={items} wallet={wallet} kind={editing.kind} asset={editing.asset} onCancel={onClose} onSaved={onSaved} />}
       </DialogContent>
     </Dialog>
   );
 }
 
 function AssetForm({
+  items,
   wallet,
   kind,
   asset,
   onCancel,
   onSaved,
 }: {
+  items: Asset[];
   wallet: Wallet;
   kind: "ASSET" | "LIABILITY";
   asset: Asset | null;
@@ -224,6 +233,7 @@ function AssetForm({
   const [purchase, setPurchase] = React.useState(asset?.purchaseValueMinor != null ? money.toInput(asset.purchaseValueMinor) : "");
   const [purchaseDate, setPurchaseDate] = React.useState(asset?.purchaseDate ?? "");
   const [share, setShare] = React.useState(String((asset?.ownershipBps ?? FULL_BPS) / 100));
+  const [linkedIds, setLinkedIds] = React.useState(asset?.linkedIds ?? []);
   const [notes, setNotes] = React.useState(asset?.notes ?? "");
   const [invalid, setInvalid] = React.useState(false);
   const [archiving, setArchiving] = React.useState(false);
@@ -257,7 +267,8 @@ function AssetForm({
           return setInvalid(true);
         }
         setInvalid(false);
-        const values = { name: name.trim(), type, currentValueMinor, purchaseValueMinor, purchaseDate: purchaseDate || null, ownershipBps, notes: notes.trim() || null };
+        const values = { ...(JSON.stringify([...linkedIds].sort()) !== JSON.stringify([...(asset?.linkedIds ?? [])].sort()) ? { linkedIds } : {}), name: name.trim(), type, currentValueMinor, purchaseValueMinor, purchaseDate: purchaseDate || null, ownershipBps, notes: notes.trim() || null };
+        if (asset && Object.entries(values).every(([key, value]) => asset[key as keyof Asset] === value)) return onSaved();
         const ok = await run(() =>
           asset
             ? request("PATCH", `/api/wallets/${wallet.id}/assets/${asset.id}`, {
@@ -323,6 +334,19 @@ function AssetForm({
         <Label htmlFor="asset-notes">{t("form.notes")}</Label>
         <Input id="asset-notes" value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={NOTES_MAX} />
       </div>
+      <fieldset className="flex flex-col gap-2" disabled={pending}>
+        <legend className="mb-1 text-[13px] font-medium">{debt ? t("links.assets") : t("links.liabilities")}</legend>
+        <p className="text-[12px] text-muted-foreground">{t("links.hint")}</p>
+        <div className="max-h-36 overflow-y-auto">
+          {[...items.filter((item) => item.kind !== kind), ...(asset?.linkedAssets.filter((peer) => !items.some((item) => item.id === peer.id)) ?? [])].map((peer) => (
+            <label key={peer.id} className="flex items-center gap-2 py-1 text-[13px]">
+              <Checkbox checked={linkedIds.includes(peer.id)} onCheckedChange={(checked) => setLinkedIds((ids) => checked === true ? [...ids, peer.id] : ids.filter((id) => id !== peer.id))} />
+              <span>{peer.name} · {money.format(ownedPart(peer.currentValueMinor, peer.ownershipBps))}{peer.archived ? ` (${t("links.archived")})` : ""}</span>
+            </label>
+          ))}
+        </div>
+        {items.every((item) => item.kind === kind) && !asset?.linkedIds.length && <p className="text-[12px] text-muted-foreground">{debt ? t("links.noAssets") : t("links.noLiabilities")}</p>}
+      </fieldset>
       <DialogFooter className={cn(asset && "sm:justify-between")}>
         {asset && (
           <Button type="button" variant="ghost" className="text-destructive" onClick={() => setArchiving(true)}>
