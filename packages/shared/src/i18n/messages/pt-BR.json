@@ -102,13 +102,18 @@
       "emptyTitle": "Crie sua primeira wallet",
       "emptyBody": "Uma wallet reúne contas, cartões e lançamentos numa moeda. Você pode compartilhá-la depois.",
       "createWallet": "Criar wallet",
-      "ready": "{name} está pronta. Contas e lançamentos vêm a seguir.",
       "balance": "Saldo nas contas",
       "month": "Este mês",
       "recent": "Últimos lançamentos",
       "seeAll": "Ver extrato",
       "topExpenses": "Para onde foi o dinheiro",
-      "noExpenses": "Nenhuma despesa neste mês ainda."
+      "noExpenses": "Nenhuma despesa neste mês ainda.",
+      "firstAccount": {
+        "title": "{name} está pronta",
+        "body": "Para lançar receitas e despesas, crie primeiro uma conta: conta corrente, poupança ou o dinheiro da carteira. Todo lançamento sai de uma conta ou entra nela.",
+        "readOnly": "Esta wallet ainda não tem contas. Quem pode editar precisa criar a primeira.",
+        "create": "Criar primeira conta"
+      }
     },
     "window": {
       "widen": "Desbloquear largura da janela",
@@ -308,6 +313,12 @@
         "body": "O histórico guarda o registro.",
         "confirm": "Apagar",
         "cancel": "Cancelar"
+      },
+      "noAccountsDialog": {
+        "title": "Primeiro, crie uma conta",
+        "body": "Todo lançamento sai de uma conta ou entra nela: conta corrente, poupança, dinheiro na carteira. Crie a primeira em Contas e cartões e volte aqui.",
+        "create": "Criar conta",
+        "later": "Agora não"
       }
     },
     "cards": {

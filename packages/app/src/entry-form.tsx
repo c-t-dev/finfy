@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Trash2Icon } from "lucide-react";
-import { Button } from "@packages/ui/components/button";
+import { Button, buttonVariants } from "@packages/ui/components/button";
 import { Checkbox } from "@packages/ui/components/checkbox";
 import {
   Dialog,
@@ -32,6 +32,7 @@ import { useResource } from "./api";
 import type { Tag } from "@packages/shared/tags";
 import { CategoryPicker, type CategoryTree } from "./categories";
 import { useTranslations } from "./i18n";
+import { APP_ROUTES, useAppNavigation } from "./navigation";
 import { todayIso, useMoney } from "./money";
 import { useWalletRequest, WalletErrorMessage } from "./wallet-ui";
 
@@ -69,7 +70,9 @@ export function EntryDialog({
   return (
     <Dialog open={editing !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent closeLabel={common("close")} className="max-w-md">
-        {editing && (
+        {editing && editing.mode === "create" && accounts.length === 0 ? (
+          <NoAccounts onClose={onClose} />
+        ) : editing && (
           <EntryForm
             key={editing.mode === "edit" ? editing.entry.id : "new"}
             wallet={wallet}
@@ -84,6 +87,30 @@ export function EntryDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+const ACCOUNTS_PATH = APP_ROUTES.find((route) => route.key === "accounts")!.path;
+
+/** Every entry comes out of or goes into an account, so a wallet without one starts there. */
+function NoAccounts({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("app.entries.noAccountsDialog");
+  const { Link } = useAppNavigation();
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t("title")}</DialogTitle>
+        <DialogDescription>{t("body")}</DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button variant="secondary" onClick={onClose}>
+          {t("later")}
+        </Button>
+        <Link href={ACCOUNTS_PATH} className={buttonVariants()}>
+          {t("create")}
+        </Link>
+      </DialogFooter>
+    </>
   );
 }
 

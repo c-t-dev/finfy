@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { PlusIcon, WalletIcon } from "lucide-react";
-import { Button } from "@packages/ui/components/button";
+import { Button, buttonVariants } from "@packages/ui/components/button";
 import { cn } from "@packages/ui/lib/utils";
 import { can } from "@packages/shared/roles";
 import { monthRange, type EntryList } from "@packages/shared/transactions";
@@ -20,6 +20,7 @@ import { useWallets } from "../wallets";
 import { EntryRow, isEditable, useWalletAccounts } from "./statement";
 
 const STATEMENT_PATH = APP_ROUTES.find((route) => route.key === "statement")!.path;
+const ACCOUNTS_PATH = APP_ROUTES.find((route) => route.key === "accounts")!.path;
 
 export function HomeScreen() {
   const t = useTranslations("app.home");
@@ -85,8 +86,23 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
   }, [entries, tree]);
   const topMax = topExpenses[0]?.amount ?? 0;
 
+  // A new wallet starts with its first account: every entry needs one.
   if (accounts && accounts.length === 0) {
-    return <p className="text-[13px] text-muted-foreground">{t("ready", { name: wallet.name })}</p>;
+    return (
+      <div className="flex max-w-md flex-col items-start gap-3 rounded-xl border border-border bg-card px-5 py-4">
+        <WalletIcon className="size-6 text-primary" aria-hidden />
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[15px] font-semibold">{t("firstAccount.title", { name: wallet.name })}</h2>
+          <p className="text-[13px] text-muted-foreground">{canEdit ? t("firstAccount.body") : t("firstAccount.readOnly")}</p>
+        </div>
+        {canEdit && (
+          <Link href={ACCOUNTS_PATH} className={buttonVariants({ size: "sm" })}>
+            <PlusIcon />
+            {t("firstAccount.create")}
+          </Link>
+        )}
+      </div>
+    );
   }
 
   return (

@@ -102,13 +102,18 @@
       "emptyTitle": "Create your first wallet",
       "emptyBody": "A wallet holds accounts, cards and entries in one currency. You can share it later.",
       "createWallet": "Create wallet",
-      "ready": "{name} is ready. Accounts and entries come next.",
       "balance": "Balance in accounts",
       "month": "This month",
       "recent": "Latest entries",
       "seeAll": "See statement",
       "topExpenses": "Where the money went",
-      "noExpenses": "No expenses this month yet."
+      "noExpenses": "No expenses this month yet.",
+      "firstAccount": {
+        "title": "{name} is ready",
+        "body": "To record income and expenses, first create an account: checking, savings or the cash in your wallet. Every entry comes out of or goes into an account.",
+        "readOnly": "This wallet has no accounts yet. Someone who can edit needs to create the first one.",
+        "create": "Create first account"
+      }
     },
     "window": {
       "widen": "Unlock window width",
@@ -308,6 +313,12 @@
         "body": "The history keeps a record of it.",
         "confirm": "Delete",
         "cancel": "Cancel"
+      },
+      "noAccountsDialog": {
+        "title": "First, create an account",
+        "body": "Every entry comes out of or goes into an account: checking, savings, cash in your wallet. Create the first one in Accounts and cards, then come back.",
+        "create": "Create account",
+        "later": "Not now"
       }
     },
     "cards": {
