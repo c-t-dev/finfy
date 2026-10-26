@@ -332,6 +332,27 @@ Both routes answer 404 in production builds (Vercel previews included): the docu
 
 Swagger UI loads `swagger-ui-dist@5.17.14` from jsDelivr.
 
+## Deploy (Vercel)
+
+Live since 2026-10-26, for personal use: `https://finfy-tau.vercel.app`.
+
+| What | Value |
+| --- | --- |
+| Vercel project | `finfy` in the team `tc` (Hobby plan), linked to GitHub `c-t-dev/finfy`: `main` deploys to production, other branches to previews |
+| Build | Root directory `apps/web`, files outside it included, Next.js preset, Node 24, pnpm from `packageManager` via `ENABLE_EXPERIMENTAL_COREPACK=1` |
+| Functions region | `lhr1` (London) |
+| Database | Neon Postgres (free plan) from the Vercel Marketplace, resource `finfy-db`, AWS `eu-west-2` (London). The integration sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` in every environment. Previews use the same database as production |
+| Other variables | `PASSWORD_PEPPER_V1` (Secret, production and preview; a copy kept by the owner outside the repository; losing it locks every account), `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_APP_NAME` |
+
+Migrations do not run in the build. After merging a schema change, run them against Neon with the unpooled URL before (or right after) the deploy:
+
+```bash
+vercel env pull <file outside the repo> --environment production
+DATABASE_URL=<DATABASE_URL_UNPOOLED from that file> pnpm db:migrate
+```
+
+The publication migrations print a `wal_level` warning on Neon: logical replication is off until PowerSync is needed ([0010](../decisoes/0010-nextjs-na-vercel.md)). Sign-up is open to anyone with the address.
+
 ## Local database without Docker
 
 If Docker is not available, an embedded Postgres works for development. It was used to test milestone 2:

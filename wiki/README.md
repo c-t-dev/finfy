@@ -3,7 +3,7 @@
 Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (portal web, versão 7.18.1) funciona: telas, fluxos, regras de negócio, API e problemas encontrados. Ela é a base de contexto do projeto **finfy** e é lida por agentes diferentes (Claude Code, Codex, IA local), então precisa ficar completa e atualizada.
 
 - **Fonte:** inspeção manual do portal `portal.minhaseconomias.com.br` com uma conta de teste, interceptando as chamadas de rede no navegador.
-- **Última atualização:** 2026-10-25.
+- **Última atualização:** 2026-10-26.
 - **Regras para editar esta wiki:** veja [MANUTENCAO.md](MANUTENCAO.md).
 
 ## Índice
