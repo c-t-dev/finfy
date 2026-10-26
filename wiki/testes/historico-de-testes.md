@@ -63,3 +63,9 @@ Todas as telas e formulários abertos sem salvar; cerca de 40 endpoints de leitu
 ## finfy — Resultado acumulado (2026-10-26)
 
 Teste SQL isolado em SQLite em memória, sem dados reais: saldo inicial, histórico e mês vazio, meses passados/futuros, pendências/cancelamentos/exclusões, ajustes negativos, reembolso, transferências e filtro de conta, isolamento de wallet, contas arquivadas, pagamento antecipado de cartão e reabertura. Teste de competência de cartão continua passando. `pnpm.cmd test`, `pnpm.cmd typecheck`, `pnpm.cmd check:messages` e `pnpm.cmd check:openapi` passaram.
+
+## 2026-10-26 — finfy: pendências no Resultado acumulado
+
+Teste SQL isolado em memória: entradas e saídas pendentes, transferência entre contas e filtro de uma conta, ajuste negativo, reembolso, meses passados/futuros, exclusões/cancelamentos, isolamento de wallet e contas arquivadas. Compra pendente entra no vencimento; pagamento antecipado em outra conta substitui a projeção; reabertura restaura a pendência. Sem banco externo ou dados reais.
+
+Validação desta alteração: `pnpm.cmd typecheck`, `pnpm.cmd test` (18 testes), `pnpm.cmd check:messages` e `pnpm.cmd check:openapi` passaram. Publicação autorizada após a validação.

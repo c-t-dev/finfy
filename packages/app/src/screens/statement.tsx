@@ -175,8 +175,8 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
           <SummaryCard label={t("expense")} value={money.format(summary.expenseMinor)} tone="negative"
             hint={summary.pendingExpenseMinor ? t("pending", { amount: money.format(summary.pendingExpenseMinor) }) : undefined} />
           <SummaryCard label={t("accumulatedResult")} value={money.format(summary.accumulatedBalanceMinor)}
-            hint={t("accumulatedResultHint")}
-            tone={summary.accumulatedBalanceMinor < 0 ? "negative" : "neutral"} />
+            hint={t("accumulatedResultHint", { amount: money.format(summary.accumulatedPendingMinor) })}
+            tone={summary.accumulatedBalanceMinor < 0 ? "negative" : "positive"} />
         </div>
       )}
 

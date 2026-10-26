@@ -5,24 +5,24 @@
 
 ## Contexto
 
-O usuário confirmou que o Resultado deve considerar o saldo acumulado das contas até o mês selecionado. Receitas menos despesas do mês não inclui o saldo inicial nem os movimentos anteriores. Confirmou também que categoria, tag e busca não restringem esse saldo.
+O usuário confirmou que o Resultado deve considerar o saldo acumulado das contas até o mês selecionado. Receitas menos despesas do mês não inclui o saldo inicial nem os movimentos anteriores. Confirmou também que categoria, tag e busca não restringem esse saldo. Depois da primeira publicação, pediu valor positivo em verde, aviso do pendente abaixo e inclusão das pendências no acumulado. O resultado passa a representar o saldo previsto.
 
 ## Decisão
 
 - O cartão do extrato passa a se chamar **Resultado acumulado**, com explicação traduzida.
-- Soma os saldos iniciais das contas atualmente ativas e seus movimentos `PAID`, não arquivados, com `transaction_date` até o último dia do mês selecionado. Segue os sinais do saldo de contas (`BALANCE_SIGN`).
+- Soma o saldo confirmado (saldos iniciais das contas atualmente ativas e movimentos `PAID`) ao componente pendente com sinais de entrada e saída. Movimentos de conta usam `transaction_date` até o último dia do mês selecionado, sem registros arquivados. Segue `BALANCE_SIGN`. Valor positivo fica verde; negativo mantém o estilo de saída. O aviso abaixo mostra o efeito líquido pendente, inclusive zero quando entradas e saídas se compensam.
 - Aplica apenas o filtro de conta. Categoria, tag e descrição continuam filtrando a lista e receitas/despesas do mês.
 - Contas arquivadas ficam fora, seguindo a listagem padrão de contas ativas. O resultado histórico usa o estado atual dos registros, não uma reconstrução da auditoria.
 - O saldo inicial não possui data de vigência no modelo. Entra também nos meses anteriores à criação da conta; não se inventa uma data de abertura.
-- Meses futuros incluem somente movimentos já marcados como pagos até o fim daquele mês. Pendências e projeções de recorrência não entram.
+- Meses passados e futuros incluem movimentos pagos e pendentes já registrados até o fim daquele mês, inclusive pendências anteriores. Não se geram ocorrências adicionais de recorrência para preencher a projeção.
 - Transferências se compensam quando ambas as contas estão incluídas. Ao selecionar uma conta, sua perna altera o saldo normalmente.
-- Compras de cartão não alteram saldo de conta. O pagamento da fatura desconta uma vez, na data do movimento; reabrir arquiva o pagamento e restaura o saldo. A competência das despesas continua pelo vencimento, conforme [0016](0016-competencia-das-faturas.md).
-- Bens, dívidas e compras de cartão ainda não pagas não são deduzidos deste resultado. Patrimônio mantém seu cálculo próprio.
+- Compras pendentes de faturas não pagas entram como saída prevista no vencimento salvo da fatura, atribuídas à conta de pagamento configurada no cartão. Não alteram o saldo confirmado. Ao pagar, saem do componente pendente e o pagamento reduz o confirmado na data efetiva, uma única vez. Pagamento por outra conta usa essa conta efetiva. Ao reabrir, o pagamento é arquivado e as compras voltam à projeção no vencimento. A competência das despesas continua conforme [0016](0016-competencia-das-faturas.md).
+- Bens e dívidas não entram neste resultado. Patrimônio e saldo efetivo das contas mantêm seus cálculos próprios.
 - Receitas, despesas e pendências mensais mantêm suas regras. O Resultado mensal da Home permanece receitas menos despesas.
 
 ## Modelo de dados e API
 
-Sem mudança de tabelas nem migração. `GET /api/wallets/{id}/transactions` acrescenta `summary.accumulatedBalanceMinor`, calculado no servidor sem limite de linhas e sem depender da lista paginada. Usa `to` como limite inclusivo; `from` não limita o saldo. OpenAPI atualizado.
+Sem mudança de tabelas nem migração. `GET /api/wallets/{id}/transactions` retorna `summary.accumulatedBalanceMinor` (confirmado + pendente), `summary.confirmedBalanceMinor` e `summary.accumulatedPendingMinor`, calculados no servidor sem limite de linhas e sem depender da lista paginada. Usa `to` como limite inclusivo; `from` não limita o saldo. OpenAPI atualizado.
 
 ## Referências e perguntas
 

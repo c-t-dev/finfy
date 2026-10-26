@@ -92,4 +92,4 @@ Animações React: [0012 — Motion](decisoes/0012-motion.md) (aceita; entrada e
 | [testes/dados-de-teste.md](testes/dados-de-teste.md) | Itens [TESTE] que existem na conta de teste |
 | [pendencias.md](pendencias.md) | O que ainda não foi testado ou documentado |
 
-Resultado do extrato: [0018 — Resultado acumulado](decisoes/0018-resultado-acumulado-do-extrato.md) (aceita; saldo inicial e movimentos pagos até o mês selecionado).
+Resultado do extrato: [0018 — Resultado acumulado](decisoes/0018-resultado-acumulado-do-extrato.md) (aceita; saldo previsto com saldo inicial, movimentos pagos e pendências até o mês selecionado).

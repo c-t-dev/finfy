@@ -272,7 +272,7 @@
       "income": "Income",
       "expense": "Expenses",
       "accumulatedResult": "Accumulated result",
-      "accumulatedResultHint": "Paid account balance through month-end. Only the account filter applies.",
+      "accumulatedResultHint": "Pending: {amount}. Included in the projected month-end balance. Only the account filter applies.",
       "result": "Result",
       "pending": "Pending: {amount}",
       "pendingBadge": "Pending",

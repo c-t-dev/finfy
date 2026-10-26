@@ -272,7 +272,7 @@
       "income": "Receitas",
       "expense": "Despesas",
       "accumulatedResult": "Resultado acumulado",
-      "accumulatedResultHint": "Saldo pago até o fim do mês. Apenas o filtro de conta se aplica.",
+      "accumulatedResultHint": "Pendente: {amount}. Incluído no saldo previsto até o fim do mês. Apenas o filtro de conta se aplica.",
       "result": "Resultado",
       "pending": "Pendente: {amount}",
       "pendingBadge": "Pendente",
