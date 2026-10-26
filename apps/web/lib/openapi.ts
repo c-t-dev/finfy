@@ -84,6 +84,16 @@ import {
   updateRecurrenceInput,
 } from "@packages/shared/recurrences";
 import {
+  createRuleInput,
+  previewRuleInput,
+  ruleActionInput,
+  ruleApplyResultSchema,
+  ruleListSchema,
+  rulePreviewSchema,
+  ruleSchema,
+  updateRuleInput,
+} from "@packages/shared/rules";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -173,6 +183,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         description:
           "Schedules that create pending entries (occurrences) up to 90 days ahead, with deterministic IDs so they never duplicate",
       },
+      { name: "rules", description: "Categorization rules: AND conditions, actions set the category and add tags; never on transfers, payments or adjustments" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -219,6 +230,10 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         Recurrence: json(recurrenceSchema),
         RecurrenceList: json(recurrenceListSchema),
         RefreshResult: json(refreshResultSchema),
+        Rule: json(ruleSchema),
+        RuleList: json(ruleListSchema),
+        RulePreview: json(rulePreviewSchema),
+        RuleApplyResult: json(ruleApplyResultSchema),
         InviteLink: json(inviteLinkSchema),
         InvitePreview: json(invitePreviewSchema),
         AcceptedInvite: json(acceptedInviteSchema),
@@ -594,6 +609,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       ...memberPaths(),
       ...tagPaths(),
       ...recurrencePaths(),
+      ...rulePaths(),
       "/api/wallets/{id}/activity": {
         get: {
           tags: ["activity"],
@@ -706,6 +722,40 @@ function cardPaths() {
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+  };
+}
+
+function rulePaths() {
+  const ruleIdParam = { name: "ruleId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const write = (summary: string, description: string, parameters: unknown[], input: z.ZodType, ok: Record<number, unknown>, errors: string[]) => ({
+    ...cardWrite(summary, description, parameters, input, ok, errors),
+    tags: ["rules"],
+  });
+  const one = [walletIdParam, ruleIdParam];
+  return {
+    "/api/wallets/{id}/rules": {
+      get: {
+        tags: ["rules"],
+        summary: "The wallet's rules",
+        description: "Any member. In priority order (lowest first).",
+        security: [{ session: [] }],
+        parameters: [walletIdParam],
+        responses: { 200: response("The rules.", ref("RuleList")), ...walletErrors("notFound") },
+      },
+      post: write("Create a rule", "OWNER, ADMIN, EDITOR. New rules go last. With `applyToHistory` (and active), it also runs on existing entries; those changes are audited with source RULE.", [walletIdParam], createRuleInput, { 201: response("The rule.", ref("Rule")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/rules/preview": {
+      post: write("Preview conditions", "Any member. Counts the existing entries the conditions match (with up to 5 examples); changes nothing.", [walletIdParam], previewRuleInput, { 200: response("The preview.", ref("RulePreview")) }, ["invalidInput", "notFound"]),
+    },
+    "/api/wallets/{id}/rules/{ruleId}": {
+      patch: write("Edit a rule", "OWNER, ADMIN, EDITOR. With `applyToHistory` on, it runs again on existing entries.", one, updateRuleInput, { 200: response("The rule.", ref("Rule")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/rules/{ruleId}/apply": {
+      post: write("Apply a rule now", "OWNER, ADMIN, EDITOR. Sets the rule's category (when it fits the entry's direction) and adds its tags on every matching existing entry.", one, ruleActionInput, { 200: response("How many entries changed.", ref("RuleApplyResult")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/rules/{ruleId}/archive": {
+      post: write("Delete a rule", "OWNER, ADMIN, EDITOR. Entries it changed keep their values.", one, ruleActionInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound"]),
     },
   };
 }

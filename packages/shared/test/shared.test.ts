@@ -126,3 +126,19 @@ test("recurrence dates keep the day across short months and stop at the end", as
   assert.equal(occurrenceDates("2026-01-01", "DAILY", "2030-01-01", null, 10).length, 10);
   assert.equal(addDays("2026-12-30", 3), "2027-01-02");
 });
+
+test("rules: AND conditions, accents ignored, never transfers, first category wins", async () => {
+  const { ruleMatches, resolveRules } = await import("../src/rule-match.ts");
+  const entry = { type: "EXPENSE", description: "Padaria São João", amountMinor: 1250, accountId: "a", creditCardId: null };
+  assert.equal(ruleMatches(entry, [{ field: "description", op: "contains", value: "sao joao" }]), true);
+  assert.equal(ruleMatches(entry, [{ field: "description", op: "startsWith", value: "padaria" }, { field: "amount", max: 1000 }]), false);
+  assert.equal(ruleMatches({ ...entry, type: "TRANSFER_OUT" }, [{ field: "description", op: "contains", value: "padaria" }]), false);
+  assert.equal(ruleMatches({ ...entry, type: "CREDIT_CARD_PURCHASE", accountId: null }, [{ field: "type", type: "EXPENSE" }]), true);
+  assert.equal(ruleMatches(entry, []), false);
+  const rules = [
+    { id: "late", priority: 2, isActive: true, conditions: [{ field: "type", type: "EXPENSE" }], actions: [{ set: "category", categoryId: "other" }, { set: "tag", tagId: "t2" }] },
+    { id: "early", priority: 1, isActive: true, conditions: [{ field: "description", op: "contains", value: "padaria" }], actions: [{ set: "category", categoryId: "food" }, { set: "tag", tagId: "t1" }] },
+    { id: "off", priority: 0, isActive: false, conditions: [{ field: "type", type: "EXPENSE" }], actions: [{ set: "category", categoryId: "x" }] },
+  ] as Parameters<typeof resolveRules>[1];
+  assert.deepEqual(resolveRules(entry, rules), { categoryId: "food", tagIds: ["t1", "t2"], ruleIds: ["early", "late"] });
+});

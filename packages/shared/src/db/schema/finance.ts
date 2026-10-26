@@ -377,16 +377,8 @@ export const transactionAttachments = pgTable(
   ],
 );
 
-export type RuleCondition =
-  | { field: "description"; op: "contains" | "equals" | "startsWith"; value: string }
-  | { field: "amount"; min?: number; max?: number }
-  | { field: "account"; accountId: string }
-  | { field: "type"; type: (typeof TRANSACTION_TYPES)[number] };
-
-export type RuleAction =
-  | { set: "category"; categoryId: string }
-  | { set: "householdMember"; householdMemberId: string }
-  | { set: "tag"; tagId: string };
+import type { RuleAction, RuleCondition } from "../../rule-match";
+export type { RuleAction, RuleCondition };
 
 /** Never applied to transfers or to system categories. */
 export const categorizationRules = pgTable(

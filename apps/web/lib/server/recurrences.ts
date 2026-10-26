@@ -469,7 +469,7 @@ export async function refreshRecurrences(actor: Actor, walletId: string, mutatio
     const created = changes.filter((change) => change.entity === "transactions").length;
     if (changes.length) {
       const [first, ...rest] = changes;
-      await recordMutation(tx, actor, { mutationId }, first, rest);
+      await recordMutation(tx, actor, { mutationId, source: "RECURRENCE" }, first, rest);
     }
     return { created };
   });

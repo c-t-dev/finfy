@@ -87,7 +87,14 @@ export interface Change {
 export async function recordMutation(
   tx: Tx,
   actor: Actor,
-  mutation: { mutationId: string; baseVersion?: number; occurredAt?: Date },
+  mutation: {
+    mutationId: string;
+    baseVersion?: number;
+    occurredAt?: Date;
+    /** Who caused it when not the person directly: a rule or a recurrence (with its ID). */
+    source?: "APP" | "RULE" | "RECURRENCE";
+    sourceRefId?: string;
+  },
   primary: Change,
   extra: Change[] = [],
 ): Promise<void> {
@@ -119,7 +126,8 @@ export async function recordMutation(
       walletId: change.walletId,
       actorUserId: actor.userId,
       deviceId: actor.deviceId,
-      source: "APP" as const,
+      source: mutation.source ?? "APP",
+      sourceRefId: mutation.sourceRefId ?? null,
       action: change.action,
       entity: change.entity,
       entityId: change.entityId,

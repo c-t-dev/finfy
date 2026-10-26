@@ -17,6 +17,8 @@
     "./activity": "./src/activity.ts",
     "./tags": "./src/tags.ts",
     "./recurrences": "./src/recurrences.ts",
+    "./rules": "./src/rules.ts",
+    "./rule-match": "./src/rule-match.ts",
     "./system-categories": "./src/system-categories.ts",
     "./ids": "./src/ids.ts",
     "./i18n": "./src/i18n/locales.ts",

@@ -27,6 +27,8 @@ import { useApi } from "./api";
 import { InstallmentsSelect } from "./cards-ui";
 import { saveEntryTags, TagPicker } from "./tags-ui";
 import { NEVER, RepeatSelect, type RepeatChoice } from "./recurrences-ui";
+import { resolveRules, type Rule } from "@packages/shared/rules";
+import { useResource } from "./api";
 import type { Tag } from "@packages/shared/tags";
 import { CategoryPicker, type CategoryTree } from "./categories";
 import { useTranslations } from "./i18n";
@@ -146,6 +148,7 @@ function EntryForm({
 }) {
   const t = useTranslations("app.entries");
   const tr = useTranslations("app.recurrences");
+  const tRules = useTranslations("app.rules");
   const common = useTranslations("common");
   const request = useApi();
   const money = useMoney(wallet.currencyCode);
@@ -172,6 +175,9 @@ function EntryForm({
   const [installments, setInstallments] = React.useState(1);
   const [tagIds, setTagIds] = React.useState<string[]>(existing?.tagIds ?? []);
   const [repeat, setRepeat] = React.useState<RepeatChoice>(NEVER);
+  const rules = useResource<{ rules: Rule[] }>(existing ? null : `/api/wallets/${wallet.id}/rules`);
+  const [categoryByHand, setCategoryByHand] = React.useState(false);
+  const [suggestedBy, setSuggestedBy] = React.useState<string | null>(null);
   const [amountInvalid, setAmountInvalid] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const { pending, failure, setFailure, run } = useWalletRequest();
@@ -316,6 +322,27 @@ function EntryForm({
 
   const title = existing ? (kind === "TRANSFER" ? t("form.editTransferTitle") : t("form.editTitle")) : t("form.createTitle");
   const needsCategory = kind !== "TRANSFER" && !categoryId;
+
+  const ruleList = rules.state.status === "ready" ? rules.state.value.rules : null;
+  React.useEffect(() => {
+    if (existing || kind === "TRANSFER" || categoryByHand || !ruleList || !description.trim()) return;
+    const cardSource = accountId.startsWith(CARD_PREFIX);
+    const parsedAmount = money.parse(amount);
+    const result = resolveRules(
+      {
+        type: kind === "INCOME" ? "INCOME" : cardSource ? "CREDIT_CARD_PURCHASE" : "EXPENSE",
+        description,
+        amountMinor: parsedAmount ?? 0,
+        accountId: cardSource ? null : accountId,
+        creditCardId: cardSource ? accountId.slice(CARD_PREFIX.length) : null,
+      },
+      ruleList,
+    );
+    if (!result.categoryId) return;
+    setCategoryId(result.categoryId);
+    setSuggestedBy(ruleList.find((rule) => rule.id === result.ruleIds[0])?.name ?? null);
+    if (result.tagIds.length) setTagIds((current) => [...new Set([...current, ...result.tagIds])]);
+  }, [existing, kind, categoryByHand, ruleList, description, amount, accountId, money]);
   // A card purchase has installments instead of a paid/pending switch.
   const onCard = !existing && kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX) && repeat === NEVER;
   const canRepeat =
@@ -413,7 +440,18 @@ function EntryForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="entry-category">{t("form.category")}</Label>
-            <CategoryPicker id="entry-category" tree={tree} kind={kind} value={categoryId} onValueChange={setCategoryId} />
+            <CategoryPicker
+              id="entry-category"
+              tree={tree}
+              kind={kind}
+              value={categoryId}
+              onValueChange={(value) => {
+                setCategoryId(value);
+                setCategoryByHand(true);
+                setSuggestedBy(null);
+              }}
+            />
+            {suggestedBy && <p className="text-[11px] text-muted-foreground">{tRules("suggested", { name: suggestedBy })}</p>}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="entry-account">{t("form.account")}</Label>

@@ -757,6 +757,67 @@
         "hide": "Hide ended recurrences",
         "empty": "No ended recurrences."
       }
+    },
+    "rules": {
+      "title": "Rules",
+      "settingsBody": "Put entries in the right category automatically, by description, amount or account.",
+      "open": "Manage rules",
+      "back": "Settings",
+      "new": "New rule",
+      "empty": "No rules yet.",
+      "emptyHint": "Example: description contains \"bakery\" → category Cafés and snacks.",
+      "inactive": "Off",
+      "applyNow": "Apply now",
+      "applied": "{count, plural, =0 {Nothing to change.} one {# entry changed.} other {# entries changed.}}",
+      "when": "When",
+      "then": "Then",
+      "suggested": "Category suggested by the rule \"{name}\".",
+      "summary": {
+        "description": "description {op} \"{value}\"",
+        "amount": "amount {range}",
+        "account": "account {name}",
+        "card": "card {name}",
+        "type": "{type}",
+        "category": "category {name}",
+        "tag": "tag {name}"
+      },
+      "ops": {
+        "contains": "contains",
+        "equals": "is",
+        "startsWith": "starts with"
+      },
+      "types": {
+        "EXPENSE": "expenses",
+        "INCOME": "income"
+      },
+      "form": {
+        "createTitle": "New rule",
+        "editTitle": "Edit rule",
+        "name": "Name",
+        "type": "Entries of type",
+        "description": "Description",
+        "descriptionOp": "Match",
+        "descriptionValue": "Text",
+        "min": "Amount from",
+        "max": "Amount up to",
+        "source": "Account or card",
+        "anySource": "Any",
+        "category": "Set category",
+        "tags": "Add tags",
+        "isActive": "Rule on",
+        "applyToHistory": "Also change existing entries",
+        "preview": "{count, plural, =0 {No existing entry matches.} one {# existing entry matches.} other {# existing entries match.}}",
+        "needsCondition": "Fill at least the description or an amount.",
+        "save": "Save",
+        "create": "Create rule",
+        "cancel": "Cancel",
+        "delete": "Delete rule"
+      },
+      "delete": {
+        "title": "Delete {name}?",
+        "body": "Entries it already changed keep their category and tags.",
+        "confirm": "Delete"
+      }
     }
   },
   "errors": {

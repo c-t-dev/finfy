@@ -208,6 +208,18 @@ Server: `apps/web/lib/server/members.ts`. Client: `packages/app/src/members-ui.t
 - `/app` pages without a session go to sign-in with `?next=` (only `/app/...` paths accepted, `lib/next-path.ts`); the proxy passes the path to the layout in a header.
 - Audit actions: `INVITE_SENT`, `INVITE_RESENT`, `INVITE_REVOKED`, `INVITE_ACCEPTED`, `INVITE_DECLINED`, `MEMBER_JOINED`, `MEMBER_ROLE_CHANGED`, `MEMBER_REMOVED`, `MEMBER_LEFT`.
 
+## Categorization rules
+
+Server: `apps/web/lib/server/rules.ts`. Shared: `@packages/shared/rules` (schemas) and `rule-match.ts` (pure, tested: `ruleMatches`, `resolveRules`). Client: `packages/app/src/screens/rules.tsx` (Settings → Rules, `/app/settings/rules`) and the suggestion in the entry form.
+
+- **Conditions** (all must hold): type, description (contains / starts with / equals, ignoring case and accents), amount range, account or card. A rule needs more than the type alone.
+- **Actions:** set the category (only applied when it fits the entry's direction) and add tags.
+- **Order:** priority, lowest first (new rules go last). The first matching rule with a category sets it; tags of every matching rule add up.
+- **Never** on transfers, invoice payments or adjustments (Minhas Economias caught a transfer).
+- **History:** `POST /rules/preview` counts matches before saving. Saving with "also change existing entries", editing with it on (Minhas Economias did not reapply on edit), or "Apply now" changes existing entries; the audit records source `RULE` and the rule's ID (`recordMutation` now takes `source`/`sourceRefId`; recurrence top-ups use `RECURRENCE`).
+- **New entries:** rules do not overwrite what a person typed. The entry form suggests the category (and tags) of the first matching rule while the description is typed, and stops as soon as a category is picked by hand.
+- Checked on 2026-10-26: preview, apply on save, second apply changes nothing, transfers never matched, foreign tag and empty conditions refused, suggestion in the form.
+
 ## Recurrences
 
 Server: `apps/web/lib/server/recurrences.ts`. Shared: `@packages/shared/recurrences` and `schedule.ts` (pure, tested). Client: `packages/app/src/recurrences-ui.tsx` (`RepeatSelect`, `useRecurrenceRefresh`), `screens/recurrences.tsx` (`/app/statement/recurrences`), and "Repeat" in the entry form.

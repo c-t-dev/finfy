@@ -757,6 +757,67 @@
         "hide": "Ocultar recorrências encerradas",
         "empty": "Nenhuma recorrência encerrada."
       }
+    },
+    "rules": {
+      "title": "Regras",
+      "settingsBody": "Coloque lançamentos na categoria certa automaticamente, pela descrição, valor ou conta.",
+      "open": "Gerenciar regras",
+      "back": "Configurações",
+      "new": "Nova regra",
+      "empty": "Nenhuma regra ainda.",
+      "emptyHint": "Exemplo: descrição contém \"padaria\" → categoria Cafeteria e lanchonete.",
+      "inactive": "Desligada",
+      "applyNow": "Aplicar agora",
+      "applied": "{count, plural, =0 {Nada para mudar.} one {# lançamento alterado.} other {# lançamentos alterados.}}",
+      "when": "Quando",
+      "then": "Então",
+      "suggested": "Categoria sugerida pela regra \"{name}\".",
+      "summary": {
+        "description": "descrição {op} \"{value}\"",
+        "amount": "valor {range}",
+        "account": "conta {name}",
+        "card": "cartão {name}",
+        "type": "{type}",
+        "category": "categoria {name}",
+        "tag": "tag {name}"
+      },
+      "ops": {
+        "contains": "contém",
+        "equals": "é",
+        "startsWith": "começa com"
+      },
+      "types": {
+        "EXPENSE": "despesas",
+        "INCOME": "receitas"
+      },
+      "form": {
+        "createTitle": "Nova regra",
+        "editTitle": "Editar regra",
+        "name": "Nome",
+        "type": "Lançamentos do tipo",
+        "description": "Descrição",
+        "descriptionOp": "Comparação",
+        "descriptionValue": "Texto",
+        "min": "Valor a partir de",
+        "max": "Valor até",
+        "source": "Conta ou cartão",
+        "anySource": "Qualquer",
+        "category": "Mudar categoria para",
+        "tags": "Adicionar tags",
+        "isActive": "Regra ligada",
+        "applyToHistory": "Mudar também os lançamentos existentes",
+        "preview": "{count, plural, =0 {Nenhum lançamento existente bate.} one {# lançamento existente bate.} other {# lançamentos existentes batem.}}",
+        "needsCondition": "Preencha pelo menos a descrição ou um valor.",
+        "save": "Salvar",
+        "create": "Criar regra",
+        "cancel": "Cancelar",
+        "delete": "Apagar regra"
+      },
+      "delete": {
+        "title": "Apagar {name}?",
+        "body": "Os lançamentos que ela já mudou ficam com a categoria e as tags.",
+        "confirm": "Apagar"
+      }
     }
   },
   "errors": {
