@@ -120,6 +120,8 @@ export const entrySchema = z.object({
   installmentNumber: z.number().int().nullable(),
   installmentTotal: z.number().int().nullable(),
   tagIds: z.array(z.uuid()),
+  /** Set on occurrences of a recurrence. */
+  recurrenceId: z.uuid().nullable(),
   version: z.number().int(),
 });
 export type Entry = z.infer<typeof entrySchema>;

@@ -11,6 +11,7 @@ import { useResource } from "../api";
 import { CategoryBadge, useCategories, useCategoryLabel } from "../categories";
 import { EntryDialog, type EntryEditing } from "../entry-form";
 import { useTags } from "../tags-ui";
+import { useRecurrenceRefresh } from "../recurrences-ui";
 import { useTranslations } from "../i18n";
 import { todayIso, useMoney } from "../money";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
@@ -58,6 +59,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
   const tags = useTags(wallet.id);
   const { from, to } = monthRange(todayIso().slice(0, 7));
   const month = useResource<EntryList>(`/api/wallets/${wallet.id}/transactions?from=${from}&to=${to}`);
+  useRecurrenceRefresh(wallet.id, month.reload);
   const [editing, setEditing] = React.useState<EntryEditing>(null);
 
   const balance = accounts?.reduce((sum, account) => sum + account.balanceMinor, 0) ?? null;

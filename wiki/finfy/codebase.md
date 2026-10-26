@@ -208,6 +208,19 @@ Server: `apps/web/lib/server/members.ts`. Client: `packages/app/src/members-ui.t
 - `/app` pages without a session go to sign-in with `?next=` (only `/app/...` paths accepted, `lib/next-path.ts`); the proxy passes the path to the layout in a header.
 - Audit actions: `INVITE_SENT`, `INVITE_RESENT`, `INVITE_REVOKED`, `INVITE_ACCEPTED`, `INVITE_DECLINED`, `MEMBER_JOINED`, `MEMBER_ROLE_CHANGED`, `MEMBER_REMOVED`, `MEMBER_LEFT`.
 
+## Recurrences
+
+Server: `apps/web/lib/server/recurrences.ts`. Shared: `@packages/shared/recurrences` and `schedule.ts` (pure, tested). Client: `packages/app/src/recurrences-ui.tsx` (`RepeatSelect`, `useRecurrenceRefresh`), `screens/recurrences.tsx` (`/app/statement/recurrences`), and "Repeat" in the entry form.
+
+- **Occurrences are real entries**, `PENDING`, with ID `deterministicId("occurrence", recurrenceId, date)` and `recurrence_id` + `occurrence_date` (unique). They count in no balance until marked paid. Card recurrences create `CREDIT_CARD_PURCHASE` occurrences on their date's invoice and skip paid invoices.
+- **Dates:** `nthDate` steps days (daily, weekly, biweekly) or months (monthly … yearly) from the start, keeping the start's day clamped to shorter months, so a February never shifts the following months.
+- **Horizon:** 90 days. Created up to it on create and edit; `POST /recurrences/refresh` tops up from today when the Statement or Home opens. An existing row for a date (even one a user deleted) is never recreated.
+- **From an existing entry** (`fromEntryId`, "Repeat this entry" when editing): the entry becomes the first occurrence; no copy is created (Minhas Economias bug 2).
+- **Editing** applies from today: pending occurrences still on the schedule take the new values in place, others are archived, missing dates are created. Past and paid ones stay. Amount, source and frequency need the latest version; description, category and end date are last-write-wins.
+- **Ending** archives the recurrence and its pending occurrences from today.
+- Not yet: matching typed entries to occurrences by the tolerances (`match_day_tolerance`, `match_amount_tolerance_bps`), weekdays and months filters.
+- Checked on 2026-10-26: first paid, refresh no-op, edit from today, deleted occurrence not recreated, end, from-entry without duplicate, form with "Repeat: every month".
+
 ## Tags
 
 Server: `apps/web/lib/server/tags.ts`. Client: `packages/app/src/tags-ui.tsx` (`useTags`, `TagPicker`, `TagChip`, `TagsManager` in Settings → Categories → Tags).

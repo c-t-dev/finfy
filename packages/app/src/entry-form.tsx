@@ -26,6 +26,7 @@ import type { Wallet } from "@packages/shared/wallets";
 import { useApi } from "./api";
 import { InstallmentsSelect } from "./cards-ui";
 import { saveEntryTags, TagPicker } from "./tags-ui";
+import { NEVER, RepeatSelect, type RepeatChoice } from "./recurrences-ui";
 import type { Tag } from "@packages/shared/tags";
 import { CategoryPicker, type CategoryTree } from "./categories";
 import { useTranslations } from "./i18n";
@@ -144,6 +145,7 @@ function EntryForm({
   onSaved: () => void;
 }) {
   const t = useTranslations("app.entries");
+  const tr = useTranslations("app.recurrences");
   const common = useTranslations("common");
   const request = useApi();
   const money = useMoney(wallet.currencyCode);
@@ -169,6 +171,7 @@ function EntryForm({
   const [notes, setNotes] = React.useState(existing?.notes ?? "");
   const [installments, setInstallments] = React.useState(1);
   const [tagIds, setTagIds] = React.useState<string[]>(existing?.tagIds ?? []);
+  const [repeat, setRepeat] = React.useState<RepeatChoice>(NEVER);
   const [amountInvalid, setAmountInvalid] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const { pending, failure, setFailure, run } = useWalletRequest();
@@ -182,8 +185,32 @@ function EntryForm({
     const status = paid ? "PAID" : "PENDING";
     const trimmedNotes = notes.trim() || null;
 
+    const onCardSource = kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX);
+    const recurrenceBody = (fromEntryId?: string) => ({
+      id: newId(),
+      mutationId: newId(),
+      type: kind,
+      description: description.trim(),
+      amountMinor,
+      accountId: onCardSource ? null : accountId,
+      creditCardId: onCardSource ? accountId.slice(CARD_PREFIX.length) : null,
+      categoryId,
+      frequency: repeat,
+      startDate: date,
+      firstPaid: paid,
+      fromEntryId,
+      tagIds,
+    });
+
+    // A repeating entry is a recurrence: the server creates this one and the next ones as pending.
+    if (!existing && kind !== "TRANSFER" && repeat !== NEVER) {
+      const ok = await run(() => request("POST", `/api/wallets/${wallet.id}/recurrences`, recurrenceBody()));
+      if (ok) onSaved();
+      return;
+    }
+
     // An expense charged to a card is a card purchase: it goes to the card's invoice.
-    if (!existing && kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX)) {
+    if (!existing && onCardSource) {
       const cardId = accountId.slice(CARD_PREFIX.length);
       const ok = await run(() =>
         request("POST", `/api/wallets/${wallet.id}/cards/${cardId}/purchases`, {
@@ -222,7 +249,10 @@ function EntryForm({
           const response = await request("PATCH", `${base}/${existing.id}`, { mutationId: newId(), baseVersion: existing.version, ...patch });
           if (!response.ok) return response;
         }
-        return saveEntryTags(request, wallet.id, existing.id, existing.tagIds, tagIds);
+        const tagged = await saveEntryTags(request, wallet.id, existing.id, existing.tagIds, tagIds);
+        if (!tagged.ok || repeat === NEVER) return tagged;
+        // Repeating an existing entry makes it the first occurrence, never a copy next to it.
+        return request("POST", `/api/wallets/${wallet.id}/recurrences`, recurrenceBody(existing.id));
       });
       if (ok) onSaved();
       return;
@@ -287,7 +317,9 @@ function EntryForm({
   const title = existing ? (kind === "TRANSFER" ? t("form.editTransferTitle") : t("form.editTitle")) : t("form.createTitle");
   const needsCategory = kind !== "TRANSFER" && !categoryId;
   // A card purchase has installments instead of a paid/pending switch.
-  const onCard = !existing && kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX);
+  const onCard = !existing && kind === "EXPENSE" && accountId.startsWith(CARD_PREFIX) && repeat === NEVER;
+  const canRepeat =
+    kind !== "TRANSFER" && (!existing || (!existing.recurrenceId && (existing.type === "INCOME" || existing.type === "EXPENSE")));
   const parsed = money.parse(amount);
   const parsedAmount = parsed && parsed > 0 ? parsed : null;
 
@@ -405,6 +437,9 @@ function EntryForm({
             <p className="text-[11px] text-muted-foreground">{t("form.paidHint")}</p>
           </div>
         </div>
+      )}
+      {canRepeat && (
+        <RepeatSelect id="entry-repeat" value={repeat} onValueChange={setRepeat} label={existing ? tr("makeRecurring") : undefined} />
       )}
       {kind !== "TRANSFER" && (
         <TagPicker wallet={wallet} tags={tags.tags} value={tagIds} onChange={setTagIds} onCreated={tags.add} />

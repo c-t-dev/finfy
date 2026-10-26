@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeftRightIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CreditCardIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { ArrowLeftRightIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CreditCardIcon, PlusIcon, RepeatIcon, SearchIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { Input } from "@packages/ui/components/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
@@ -17,12 +17,15 @@ import { useApi, useResource } from "../api";
 import { CategoryBadge, useCategories, useCategoryLabel, type CategoryTree } from "../categories";
 import { EntryDialog, type EntryEditing } from "../entry-form";
 import { TagChip, useTags } from "../tags-ui";
+import { useRecurrenceRefresh } from "../recurrences-ui";
+import { APP_ROUTES, useAppNavigation } from "../navigation";
 import type { Tag } from "@packages/shared/tags";
 import { useFormatter, useTranslations } from "../i18n";
 import { todayIso, useMoney } from "../money";
 import { useWallets } from "../wallets";
 
 const ALL = "all";
+export const RECURRENCES_PATH = `${APP_ROUTES.find((route) => route.key === "statement")!.path}/recurrences`;
 
 export function StatementScreen() {
   const t = useTranslations("app");
@@ -74,6 +77,7 @@ export function useWalletAccounts(walletId: string) {
 function WalletStatement({ wallet }: { wallet: Wallet }) {
   const t = useTranslations("app.entries");
   const tagsT = useTranslations("app.tags");
+  const recurrencesT = useTranslations("app.recurrences");
   const format = useFormatter();
   const money = useMoney(wallet.currencyCode);
   const request = useApi();
@@ -102,6 +106,8 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
   if (tagFilter !== ALL) params.set("tagId", tagFilter);
   if (query) params.set("q", query);
   const list = useResource<EntryList>(`/api/wallets/${wallet.id}/transactions?${params}`);
+  useRecurrenceRefresh(wallet.id, list.reload);
+  const { Link } = useAppNavigation();
 
   const refresh = () => {
     list.reload();
@@ -144,12 +150,21 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
             </Button>
           )}
         </div>
-        {canEdit && accounts && accounts.length > 0 && (
-          <Button onClick={() => setEditing({ mode: "create" })}>
-            <PlusIcon />
-            {t("new")}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <Link
+            href={RECURRENCES_PATH}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[13px] text-foreground/80 outline-none hover:bg-foreground/5 focus-visible:ring-[3px] focus-visible:ring-ring/40"
+          >
+            <RepeatIcon className="size-4" aria-hidden />
+            {recurrencesT("open")}
+          </Link>
+          {canEdit && accounts && accounts.length > 0 && (
+            <Button onClick={() => setEditing({ mode: "create" })}>
+              <PlusIcon />
+              {t("new")}
+            </Button>
+          )}
+        </div>
       </div>
 
       {summary && (
@@ -325,6 +340,7 @@ export function EntryRow({
   onMarkPaid?: () => void;
 }) {
   const t = useTranslations("app.entries");
+  const recurrenceLabel = useTranslations("app.recurrences")("recurringBadge");
   const label = useCategoryLabel();
   const money = useMoney(wallet.currencyCode);
   const category = entry.categoryId ? tree?.byId.get(entry.categoryId) : undefined;
@@ -354,6 +370,7 @@ export function EntryRow({
       <div className="min-w-0 flex-1 text-left">
         <div className="flex items-center gap-2">
           <span className="truncate text-[13px] font-medium">{entry.description}</span>
+          {entry.recurrenceId && <RepeatIcon className="size-3 shrink-0 text-muted-foreground" aria-label={recurrenceLabel} />}
           {entry.installmentNumber && (
             <span className="shrink-0 text-[11px] text-muted-foreground">
               {t("installment", { number: entry.installmentNumber, total: entry.installmentTotal ?? 0 })}

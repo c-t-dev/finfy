@@ -116,3 +116,13 @@ test("members: who may invite and remove whom", async () => {
   assert.equal(canRemoveMember("OWNER", "OWNER", true), false);
   assert.equal(canRemoveMember("EDITOR", "VIEWER", false), false);
 });
+
+test("recurrence dates keep the day across short months and stop at the end", async () => {
+  const { nthDate, occurrenceDates, addDays } = await import("../src/schedule.ts");
+  assert.deepEqual(occurrenceDates("2026-01-31", "MONTHLY", "2026-05-31", null), ["2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31"]);
+  assert.equal(nthDate("2026-10-26", "BIWEEKLY", 2), "2026-11-23");
+  assert.equal(nthDate("2024-02-29", "YEARLY", 1), "2025-02-28");
+  assert.deepEqual(occurrenceDates("2026-10-01", "WEEKLY", "2026-12-31", "2026-10-20"), ["2026-10-01", "2026-10-08", "2026-10-15"]);
+  assert.equal(occurrenceDates("2026-01-01", "DAILY", "2030-01-01", null, 10).length, 10);
+  assert.equal(addDays("2026-12-30", 3), "2027-01-02");
+});

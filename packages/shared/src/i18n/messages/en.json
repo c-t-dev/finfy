@@ -710,6 +710,53 @@
         "hide": "Hide archived tags",
         "empty": "No archived tags."
       }
+    },
+    "recurrences": {
+      "title": "Recurrences",
+      "open": "Recurrences",
+      "back": "Statement",
+      "empty": "No recurrences yet.",
+      "emptyHint": "Choose \"Repeat\" when adding an entry, like rent or salary.",
+      "next": "Next: {date}",
+      "ended": "Ended",
+      "repeat": "Repeat",
+      "never": "Doesn't repeat",
+      "until": "Until (optional)",
+      "makeRecurring": "Repeat this entry",
+      "recurringBadge": "Repeats",
+      "frequencies": {
+        "DAILY": "Every day",
+        "WEEKLY": "Every week",
+        "BIWEEKLY": "Every 2 weeks",
+        "MONTHLY": "Every month",
+        "BIMONTHLY": "Every 2 months",
+        "QUARTERLY": "Every 3 months",
+        "SEMIANNUAL": "Every 6 months",
+        "YEARLY": "Every year"
+      },
+      "horizonNote": "Entries are created up to 90 days ahead, as pending. Mark each one as paid when it happens.",
+      "form": {
+        "editTitle": "Edit recurrence",
+        "editHint": "Changes apply from today: future pending entries are updated, paid and past ones stay.",
+        "description": "Description",
+        "amount": "Amount",
+        "category": "Category",
+        "frequency": "Frequency",
+        "endDate": "Until",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "end": {
+        "action": "End recurrence",
+        "title": "End {name}?",
+        "body": "Pending entries from today are deleted. Past and paid ones stay.",
+        "confirm": "End"
+      },
+      "archived": {
+        "show": "Show ended recurrences",
+        "hide": "Hide ended recurrences",
+        "empty": "No ended recurrences."
+      }
     }
   },
   "errors": {

@@ -75,6 +75,15 @@ import {
 import { activityPageSchema, chainCheckSchema } from "@packages/shared/activity";
 import { createTagInput, setEntryTagsInput, tagListSchema, tagSchema, tagStateInput, updateTagInput } from "@packages/shared/tags";
 import {
+  createRecurrenceInput,
+  recurrenceListSchema,
+  recurrenceSchema,
+  recurrenceStateInput,
+  refreshRecurrencesInput,
+  refreshResultSchema,
+  updateRecurrenceInput,
+} from "@packages/shared/recurrences";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -159,6 +168,11 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       },
       { name: "activity", description: "The wallet's audit log (wiki/decisoes/0006): every member sees everything" },
       { name: "tags", description: "Tags of a wallet, unique by name ignoring case; entries reference them by ID" },
+      {
+        name: "recurrences",
+        description:
+          "Schedules that create pending entries (occurrences) up to 90 days ahead, with deterministic IDs so they never duplicate",
+      },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -202,6 +216,9 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         ChainCheck: json(chainCheckSchema),
         Tag: json(tagSchema),
         TagList: json(tagListSchema),
+        Recurrence: json(recurrenceSchema),
+        RecurrenceList: json(recurrenceListSchema),
+        RefreshResult: json(refreshResultSchema),
         InviteLink: json(inviteLinkSchema),
         InvitePreview: json(invitePreviewSchema),
         AcceptedInvite: json(acceptedInviteSchema),
@@ -576,6 +593,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       ...planningPaths(),
       ...memberPaths(),
       ...tagPaths(),
+      ...recurrencePaths(),
       "/api/wallets/{id}/activity": {
         get: {
           tags: ["activity"],
@@ -688,6 +706,38 @@ function cardPaths() {
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+  };
+}
+
+function recurrencePaths() {
+  const recurrenceIdParam = { name: "recurrenceId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const write = (summary: string, description: string, parameters: unknown[], input: z.ZodType, ok: Record<number, unknown>, errors: string[]) => ({
+    ...cardWrite(summary, description, parameters, input, ok, errors),
+    tags: ["recurrences"],
+  });
+  const one = [walletIdParam, recurrenceIdParam];
+  const ok = { 200: response("The recurrence.", ref("Recurrence")) };
+  return {
+    "/api/wallets/{id}/recurrences": {
+      get: {
+        tags: ["recurrences"],
+        summary: "Recurrences with their next date",
+        description: "Any member. `?archived=1` lists the ended ones.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam, { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } }],
+        responses: { 200: response("The recurrences.", ref("RecurrenceList")), ...walletErrors("notFound") },
+      },
+      post: write("Create a recurrence", "OWNER, ADMIN, EDITOR. Exactly one of `accountId` and `creditCardId`. Creates occurrences from `startDate` to 90 days ahead, as pending (the first one paid with `firstPaid`, accounts only). `fromEntryId` makes an existing entry on `startDate` the first occurrence instead of a copy. Card occurrences go to their date's invoice and skip paid invoices.", [walletIdParam], createRecurrenceInput, { 201: response("The recurrence.", ref("Recurrence")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/recurrences/refresh": {
+      post: write("Top up occurrences", "Any member (the app calls it when the Statement or Home opens). Creates missing occurrences from today to the horizon; deleted ones never come back. A no-op when nothing is missing.", [walletIdParam], refreshRecurrencesInput, { 200: response("How many were created.", ref("RefreshResult")) }, ["invalidInput", "notFound"]),
+    },
+    "/api/wallets/{id}/recurrences/{recurrenceId}": {
+      patch: write("Edit a recurrence", "OWNER, ADMIN, EDITOR. From today on: pending occurrences still on the schedule take the new values, the others are deleted, missing dates are created. Past and paid occurrences stay. Amount, source and frequency need the latest version.", one, updateRecurrenceInput, ok, ["invalidInput", "forbidden", "notFound", "versionConflict"]),
+    },
+    "/api/wallets/{id}/recurrences/{recurrenceId}/archive": {
+      post: write("End a recurrence", "OWNER, ADMIN, EDITOR. Pending occurrences from today are deleted; past ones stay.", one, recurrenceStateInput, ok, ["invalidInput", "forbidden", "notFound"]),
     },
   };
 }

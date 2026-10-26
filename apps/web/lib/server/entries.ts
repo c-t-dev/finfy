@@ -74,6 +74,7 @@ async function toEntries(tx: Tx, rows: Row[]): Promise<Entry[]> {
       installmentNumber: row.installmentNumber,
       installmentTotal: row.installmentTotal,
       tagIds: entryTags.get(row.id) ?? [],
+      recurrenceId: row.recurrenceId,
       version: row.version,
     };
   });

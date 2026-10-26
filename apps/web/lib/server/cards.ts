@@ -316,7 +316,7 @@ export async function setCardArchived(
 // ---------- Invoices ----------
 
 /** The invoice row of a period, created if missing (audited). A paid invoice takes no new purchases. */
-async function ensureInvoice(tx: Tx, actor: Actor, card: CardRow, period: InvoicePeriod, extra: Change[]): Promise<InvoiceRow> {
+export async function ensureInvoice(tx: Tx, actor: Actor, card: CardRow, period: InvoicePeriod, extra: Change[]): Promise<InvoiceRow> {
   const id = invoiceId(card.id, period);
   const [existing] = await tx.select().from(creditCardInvoices).where(eq(creditCardInvoices.id, id)).for("update").limit(1);
   if (existing) {
@@ -381,6 +381,7 @@ async function purchasesOf(tx: Tx, invoiceIdValue: string): Promise<Entry[]> {
     installmentNumber: row.installmentNumber,
     installmentTotal: row.installmentTotal,
     tagIds: entryTags.get(row.id) ?? [],
+    recurrenceId: row.recurrenceId,
     version: row.version,
   }));
 }

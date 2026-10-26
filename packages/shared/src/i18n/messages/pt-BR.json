@@ -710,6 +710,53 @@
         "hide": "Ocultar tags arquivadas",
         "empty": "Nenhuma tag arquivada."
       }
+    },
+    "recurrences": {
+      "title": "Recorrências",
+      "open": "Recorrências",
+      "back": "Extrato",
+      "empty": "Nenhuma recorrência ainda.",
+      "emptyHint": "Escolha \"Repetir\" ao lançar algo, como aluguel ou salário.",
+      "next": "Próxima: {date}",
+      "ended": "Encerrada",
+      "repeat": "Repetir",
+      "never": "Não repete",
+      "until": "Até (opcional)",
+      "makeRecurring": "Repetir este lançamento",
+      "recurringBadge": "Repete",
+      "frequencies": {
+        "DAILY": "Todo dia",
+        "WEEKLY": "Toda semana",
+        "BIWEEKLY": "A cada 2 semanas",
+        "MONTHLY": "Todo mês",
+        "BIMONTHLY": "A cada 2 meses",
+        "QUARTERLY": "A cada 3 meses",
+        "SEMIANNUAL": "A cada 6 meses",
+        "YEARLY": "Todo ano"
+      },
+      "horizonNote": "Os lançamentos são criados até 90 dias à frente, como pendentes. Marque cada um como pago quando acontecer.",
+      "form": {
+        "editTitle": "Editar recorrência",
+        "editHint": "As mudanças valem a partir de hoje: os lançamentos pendentes futuros são atualizados; os pagos e passados ficam.",
+        "description": "Descrição",
+        "amount": "Valor",
+        "category": "Categoria",
+        "frequency": "Frequência",
+        "endDate": "Até",
+        "save": "Salvar",
+        "cancel": "Cancelar"
+      },
+      "end": {
+        "action": "Encerrar recorrência",
+        "title": "Encerrar {name}?",
+        "body": "Os lançamentos pendentes a partir de hoje são apagados. Os passados e pagos ficam.",
+        "confirm": "Encerrar"
+      },
+      "archived": {
+        "show": "Mostrar recorrências encerradas",
+        "hide": "Ocultar recorrências encerradas",
+        "empty": "Nenhuma recorrência encerrada."
+      }
     }
   },
   "errors": {
