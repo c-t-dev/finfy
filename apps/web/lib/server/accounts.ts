@@ -1,4 +1,5 @@
 import "server-only";
+import { signedAmount } from "./account-balance";
 import { and, asc, desc, eq, isNotNull, isNull, ne, sql, type SQL } from "drizzle-orm";
 import type {
   Account,
@@ -8,7 +9,7 @@ import type {
   UpdateAccountInput,
 } from "@packages/shared/accounts";
 import { accounts, transactions, wallets } from "@packages/shared/db/schema";
-import { BALANCE_SIGN, type AccountType } from "@packages/shared/finance";
+import type { AccountType } from "@packages/shared/finance";
 import { CommandError, requireRole, runCommand, type CommandResult } from "@/lib/server/commands";
 import { getDb } from "@/lib/server/db";
 import { diff, findApplied, recordMutation, type Actor, type Change, type Tx } from "@/lib/server/write";
@@ -18,16 +19,6 @@ import { diff, findApplied, recordMutation, type Actor, type Change, type Tx } f
  * in wiki/decisoes/0002: OWNER, ADMIN and EDITOR create, edit and archive;
  * VIEWER only reads. The balance is derived, never stored.
  */
-
-/** Σ amount × BALANCE_SIGN[type] over paid, non-archived transactions of the account. */
-const signedAmount: SQL = sql.join(
-  [
-    sql`case ${transactions.type}`,
-    ...Object.entries(BALANCE_SIGN).map(([type, sign]) => sql` when ${type} then ${transactions.amountMinor} * ${sql.raw(String(sign))}`),
-    sql` else 0 end`,
-  ],
-  sql``,
-);
 
 const movements = {
   accountId: transactions.accountId,

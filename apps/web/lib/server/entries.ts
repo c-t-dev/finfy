@@ -1,4 +1,5 @@
 import "server-only";
+import { accumulatedBalance } from "./account-balance";
 import { statementDate } from "./entry-dates";
 import { and, desc, eq, getTableColumns, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { accounts, categories, creditCardInvoices, creditCards, transactionLinks, transactionTags, transactions } from "@packages/shared/db/schema";
@@ -151,10 +152,11 @@ export async function listEntries(userId: string, walletId: string, filter: Entr
       .where(where)
       .orderBy(desc(statementDate), desc(transactions.createdAt))
       .limit(LIST_LIMIT);
-    const [totals] = await tx.select(summaryColumns).from(transactions).where(where);
+    const [totals] = await tx.select({ ...summaryColumns, accumulatedBalanceMinor: accumulatedBalance(walletId, filter.to, filter.accountId) }).from(transactions).where(where);
     return {
       entries: await toEntries(tx, rows),
       summary: {
+        accumulatedBalanceMinor: Number(totals.accumulatedBalanceMinor),
         incomeMinor: Number(totals.incomeMinor),
         expenseMinor: Number(totals.expenseMinor),
         pendingIncomeMinor: Number(totals.pendingIncomeMinor),

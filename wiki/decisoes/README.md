@@ -38,3 +38,5 @@ A [0012 — Motion para animações React](0012-motion.md) está aceita. Entrada
 3. Modelo de dados e API, quando houver.
 4. Diferenças em relação ao Wallefy e ao Minhas Economias.
 5. Perguntas em aberto.
+
+A [0018 — Resultado acumulado do extrato](0018-resultado-acumulado-do-extrato.md) está aceita: saldo inicial e movimentos pagos até o mês selecionado; apenas o filtro de conta restringe o saldo.

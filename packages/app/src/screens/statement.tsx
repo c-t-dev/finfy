@@ -174,8 +174,9 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
             hint={summary.pendingIncomeMinor ? t("pending", { amount: money.format(summary.pendingIncomeMinor) }) : undefined} />
           <SummaryCard label={t("expense")} value={money.format(summary.expenseMinor)} tone="negative"
             hint={summary.pendingExpenseMinor ? t("pending", { amount: money.format(summary.pendingExpenseMinor) }) : undefined} />
-          <SummaryCard label={t("result")} value={money.format(summary.incomeMinor - summary.expenseMinor)}
-            tone={summary.incomeMinor - summary.expenseMinor < 0 ? "negative" : "neutral"} />
+          <SummaryCard label={t("accumulatedResult")} value={money.format(summary.accumulatedBalanceMinor)}
+            hint={t("accumulatedResultHint")}
+            tone={summary.accumulatedBalanceMinor < 0 ? "negative" : "neutral"} />
         </div>
       )}
 
@@ -292,7 +293,7 @@ function SummaryCard({ label, value, tone, hint }: { label: string; value: strin
       >
         {value}
       </div>
-      {hint && <div className="truncate text-[11px] text-muted-foreground">{hint}</div>}
+      {hint && <div className="text-[11px] text-muted-foreground">{hint}</div>}
     </div>
   );
 }

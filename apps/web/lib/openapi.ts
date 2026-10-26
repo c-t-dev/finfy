@@ -615,7 +615,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           tags: ["transactions"],
           summary: "Entries of a period, with totals",
           description:
-            "Any member. Newest first, up to 2000. `categoryId` also matches its subcategories; `q` searches the description. Totals: paid income, paid expenses plus card purchases, and pending amounts. Transfers count as neither.",
+            "Any member. Newest first, up to 2000. `categoryId` also matches its subcategories; `q` searches the description. Totals: paid income, paid expenses plus card purchases, and pending amounts. Transfers count as neither. accumulatedBalanceMinor is the opening balance plus paid, non-archived movements through to for currently active accounts; only accountId applies, ignoring from, categoryId, tagId and q. Card payments debit cash once; purchases do not. Future periods include only already paid entries, with no pending projection.",
           security: [{ session: [] }],
           parameters: [
             walletIdParam,

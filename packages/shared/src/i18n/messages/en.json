@@ -271,6 +271,8 @@
       "retry": "Try again",
       "income": "Income",
       "expense": "Expenses",
+      "accumulatedResult": "Accumulated result",
+      "accumulatedResultHint": "Paid account balance through month-end. Only the account filter applies.",
       "result": "Result",
       "pending": "Pending: {amount}",
       "pendingBadge": "Pending",

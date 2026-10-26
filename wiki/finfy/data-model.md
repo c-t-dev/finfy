@@ -459,3 +459,7 @@ notifications       (user_id, read_at)
 - [x] Refunds are a separate `REFUND` type, linked to the purchase by `transaction_links` (2026-10-25).
 - [x] No `fx_rates` in v1 (2026-10-25, see [0001](../decisoes/0001-multimoeda.md)).
 - [ ] The list of system categories (names, icons, hierarchy). A proposal of 72 categories is seeded (2026-10-25, `packages/shared/src/system-categories.ts`, inspired by Minhas Economias without the Brazil-only taxes); waiting for review.
+
+## Dated statement account balance
+
+The statement returns `summary.accumulatedBalanceMinor` without a schema change: active accounts' initial balances plus paid, non-archived account movements through `to` (inclusive). Only the account filter applies. Initial balances have no effective date; historical months use current account/archive state, and future months do not project pending entries. Card purchases retain expense competence by invoice due date and never debit this cash balance; invoice payments debit once on their transaction date. See [0018](../decisoes/0018-resultado-acumulado-do-extrato.md).

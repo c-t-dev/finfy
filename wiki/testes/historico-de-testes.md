@@ -59,3 +59,7 @@ Achados: tag perdida no cadastro; recorrência duplica o gasto; gastos e saldo d
 ## 2026-10-25 — leitura completa
 
 Todas as telas e formulários abertos sem salvar; cerca de 40 endpoints de leitura mapeados; catálogo de bancos, migração, Ajuda e Meu Clube inspecionados.
+
+## finfy — Resultado acumulado (2026-10-26)
+
+Teste SQL isolado em SQLite em memória, sem dados reais: saldo inicial, histórico e mês vazio, meses passados/futuros, pendências/cancelamentos/exclusões, ajustes negativos, reembolso, transferências e filtro de conta, isolamento de wallet, contas arquivadas, pagamento antecipado de cartão e reabertura. Teste de competência de cartão continua passando. `pnpm.cmd test`, `pnpm.cmd typecheck`, `pnpm.cmd check:messages` e `pnpm.cmd check:openapi` passaram.

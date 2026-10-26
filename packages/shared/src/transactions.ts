@@ -130,6 +130,7 @@ export type Entry = z.infer<typeof entrySchema>;
 
 /** Paid totals of the filtered period; transfers between the wallet's accounts are not income or expense. */
 export const entrySummarySchema = z.object({
+  accumulatedBalanceMinor: z.number().int().describe("Active account opening balances plus paid, non-archived account movements through to; only accountId filters this balance."),
   incomeMinor: z.number().int(),
   expenseMinor: z.number().int(),
   pendingIncomeMinor: z.number().int(),
