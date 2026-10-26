@@ -163,11 +163,15 @@ Rules:
 - **Status:** `PAID` sets `paid_at`; `PENDING` counts in no balance or total, only in the "pending" figures. "Mark as paid" is a `PATCH` of `status`.
 - **Transfers:** two rows (`TRANSFER_OUT` with the request `id`, `TRANSFER_IN` with `inId`) and a `transaction_links` row (`TRANSFER`, ID `deterministicId("transaction_link", outId, inId, "TRANSFER")`). Editing a leg mirrors amount, date, status, description and notes to the other; `accountId` moves only that leg. Archiving one leg archives both and the link. Transfers are not income or expense.
 - **Conflicts:** description, notes and category, last write wins. Amount, date, account and status need the latest `baseVersion` (`409 versionConflict`).
-- **Totals** (`summary`): paid `INCOME`; paid `EXPENSE` plus `CREDIT_CARD_PURCHASE` (on its own date, whatever the invoice status); pending income and expense apart. The Home "where the money went" uses the same rule, grouped by top-level category.
+- **Totals** (`summary`): paid `INCOME`; paid `EXPENSE` plus `CREDIT_CARD_PURCHASE` (on its linked invoice due date, whatever the invoice status); pending income and expense apart. The Home "where the money went" uses the same rule, grouped by top-level category.
 - The first entry locks the wallet's currency.
 - Checked on 2026-10-25: balances after expense, income, pending, transfer, transfer edit and transfer delete; filters by category (with subcategories) and search; stale edits.
 
 ## Credit cards
+
+Invoice titles and payment labels use the saved due month, including existing payment labels on read. Internal reference months, IDs and API routes still identify closing months. Statement filtering, ordering, grouping and totals use derived optional `statementDate`; card purchases use the linked invoice due date and other entries their transaction date. Original purchase dates remain visible. Home categories, budget spending and budget alerts share this competence. Payments debit accounts on their actual date and never duplicate expenses. The card list still selects the current purchase cycle. See [0016](../decisoes/0016-competencia-das-faturas.md).
+
+Regression SQL is executed against isolated in-memory SQLite tables by `apps/web/test/statement-dates.test.ts`; no account or external database is used.
 
 Server: `apps/web/lib/server/cards.ts`. Shared: `@packages/shared/cards` (schemas) and `invoice-math.ts` (pure, tested). Client: `packages/app/src/cards-ui.tsx` (cards section, card form, purchase dialog, `InstallmentsSelect`, `ConfirmDialog`) and `screens/card.tsx` (`/app/accounts/cards/:cardId`). The "New entry" form also charges an expense to a card.
 
@@ -183,7 +187,7 @@ Rules:
 - **Invoice of a purchase:** the invoice of reference month M closes on the closing day of M (the month's last day when shorter) and is due on the due day, in M when the due day comes after the closing day, otherwise in M+1. A purchase goes to the invoice of its own month when its day is on or before the closing day, otherwise to the next one. Invoice rows are created on demand with ID `deterministicId("invoice", cardId, year, month)`.
 - **States:** `OPEN` and `PAID` are stored; `CLOSED` (after closing) and `OVERDUE` (after due) come from today's date.
 - **Installments:** the total is split in minor units with the leftover on the first; installment k is dated k−1 months after the purchase (day clamped) and lands on that date's invoice. IDs: the first keeps the request `id`, the others `deterministicId("installment", id, k)`; `installment_group_id` is the first ID. Editing changes description, category and notes of every installment; amount and date need a new purchase.
-- **Purchases** are `CREDIT_CARD_PURCHASE` rows, `PENDING` until their invoice is paid. They never touch an account balance and count as expense on their own date.
+- **Purchases** are `CREDIT_CARD_PURCHASE` rows, `PENDING` until their invoice is paid. They never touch an account balance and count as expense on their linked invoice due date.
 - **Paying** creates one `CREDIT_CARD_PAYMENT` (paid) from the chosen account for the whole total, marks the invoice and its purchases `PAID` and stores `payment_transaction_id`. Partial payments are not supported yet (`amountMinor` must equal the total). A paid invoice refuses new purchases and deletions (`409 invoicePaid`). **Reopening** archives the payment and puts invoice and purchases back to open/pending.
 - **Limit used** = purchases of unpaid invoices.
 - **Changing closing or due day** affects only invoices opened afterwards; existing invoices keep their dates.

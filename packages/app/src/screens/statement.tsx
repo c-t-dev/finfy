@@ -127,7 +127,8 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
     if (list.state.status !== "ready") return [];
     const byDate = new Map<string, Entry[]>();
     for (const entry of list.state.value.entries) {
-      byDate.set(entry.transactionDate, [...(byDate.get(entry.transactionDate) ?? []), entry]);
+      const date = entry.statementDate ?? entry.transactionDate;
+      byDate.set(date, [...(byDate.get(date) ?? []), entry]);
     }
     return [...byDate];
   }, [list.state]);
@@ -340,6 +341,7 @@ export function EntryRow({
   onMarkPaid?: () => void;
 }) {
   const t = useTranslations("app.entries");
+  const format = useFormatter();
   const recurrenceLabel = useTranslations("app.recurrences")("recurringBadge");
   const label = useCategoryLabel();
   const money = useMoney(wallet.currencyCode);
@@ -382,7 +384,7 @@ export function EntryRow({
             </span>
           )}
         </div>
-        <div className="truncate text-[12px] text-muted-foreground">{subtitle}</div>
+        <div className="truncate text-[12px] text-muted-foreground">{subtitle}{entry.type === "CREDIT_CARD_PURCHASE" && <> · {t("purchaseDate", { date: format.dateTime(new Date(`${entry.transactionDate}T12:00:00`), { day: "numeric", month: "short", year: "numeric" }) })}</>}</div>
         {tagMap && entry.tagIds.some((id) => tagMap.has(id)) && (
           <div className="mt-0.5 flex flex-wrap gap-1">
             {entry.tagIds.map((id) => tagMap.get(id)).filter((tag): tag is Tag => Boolean(tag)).map((tag) => (

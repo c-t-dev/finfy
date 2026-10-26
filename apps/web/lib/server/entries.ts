@@ -1,6 +1,7 @@
 import "server-only";
-import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
-import { accounts, categories, transactionLinks, transactionTags, transactions } from "@packages/shared/db/schema";
+import { statementDate } from "./entry-dates";
+import { and, desc, eq, getTableColumns, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import { accounts, categories, creditCardInvoices, creditCards, transactionLinks, transactionTags, transactions } from "@packages/shared/db/schema";
 import { deterministicId } from "@packages/shared/ids";
 import type {
   CreateEntryInput,
@@ -30,7 +31,7 @@ const LIST_LIMIT = 2000;
 /** Paid → `paid_at` now; pending → empty. */
 const paidAt = (status: "PAID" | "PENDING") => (status === "PAID" ? sql`now()` : null);
 
-async function toEntries(tx: Tx, rows: Row[]): Promise<Entry[]> {
+async function toEntries(tx: Tx, rows: (Row & { statementDate?: string })[]): Promise<Entry[]> {
   const ids = rows.map((row) => row.id);
   const links = ids.length
     ? await tx
@@ -54,6 +55,15 @@ async function toEntries(tx: Tx, rows: Row[]): Promise<Entry[]> {
     : [];
   const otherAccount = new Map(others.map((other) => [other.id, other.accountId]));
   const entryTags = await tagsByEntry(tx, ids);
+  // Existing payments also get the corrected label, without rewriting their history.
+  const paymentIds = rows.filter((row) => row.type === "CREDIT_CARD_PAYMENT").map((row) => row.id);
+  const payments = paymentIds.length ? await tx
+    .select({ id: creditCardInvoices.paymentTransactionId, dueDate: creditCardInvoices.dueDate, name: creditCards.name })
+    .from(creditCardInvoices)
+    .innerJoin(creditCards, eq(creditCards.id, creditCardInvoices.creditCardId))
+    .where(inArray(creditCardInvoices.paymentTransactionId, paymentIds)) : [];
+  const paymentLabels = new Map(payments.map((payment) => [payment.id,
+    `${payment.name} ${payment.dueDate.slice(5, 7)}/${payment.dueDate.slice(0, 4)}`]));
 
   return rows.map((row) => {
     const linkedId = linked.get(row.id) ?? null;
@@ -65,9 +75,10 @@ async function toEntries(tx: Tx, rows: Row[]): Promise<Entry[]> {
       creditCardId: row.creditCardId,
       invoiceId: row.invoiceId,
       categoryId: row.categoryId,
-      description: row.description,
+      description: paymentLabels.get(row.id) ?? row.description,
       amountMinor: row.amountMinor,
       transactionDate: row.transactionDate,
+      statementDate: row.statementDate ?? row.transactionDate,
       notes: row.notes,
       linkedTransactionId: linkedId,
       counterpartAccountId: linkedId ? (otherAccount.get(linkedId) ?? null) : null,
@@ -94,8 +105,8 @@ function filterWhere(walletId: string, filter: EntryFilter): SQL {
   const conditions: (SQL | undefined)[] = [
     eq(transactions.walletId, walletId),
     isNull(transactions.archivedAt),
-    gte(transactions.transactionDate, filter.from),
-    lte(transactions.transactionDate, filter.to),
+    gte(statementDate, filter.from),
+    lte(statementDate, filter.to),
   ];
   if (filter.accountId) conditions.push(eq(transactions.accountId, filter.accountId));
   if (filter.categoryId) {
@@ -122,7 +133,7 @@ function filterWhere(walletId: string, filter: EntryFilter): SQL {
   return and(...conditions)!;
 }
 
-/** Income and expense of the period. Card purchases count as expense on their own date. */
+/** Income and expense of the period. Card purchases count on their linked invoice due date; payments never count twice. */
 const summaryColumns = {
   incomeMinor: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.type} = 'INCOME' and ${transactions.status} = 'PAID'), 0)`,
   expenseMinor: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.type} in ('EXPENSE', 'CREDIT_CARD_PURCHASE') and ${transactions.status} <> 'CANCELED' and (${transactions.status} = 'PAID' or ${transactions.type} = 'CREDIT_CARD_PURCHASE')), 0)`,
@@ -135,10 +146,10 @@ export async function listEntries(userId: string, walletId: string, filter: Entr
     await requireRole(tx, walletId, userId, "view");
     const where = filterWhere(walletId, filter);
     const rows = await tx
-      .select()
+      .select({ ...getTableColumns(transactions), statementDate })
       .from(transactions)
       .where(where)
-      .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
+      .orderBy(desc(statementDate), desc(transactions.createdAt))
       .limit(LIST_LIMIT);
     const [totals] = await tx.select(summaryColumns).from(transactions).where(where);
     return {

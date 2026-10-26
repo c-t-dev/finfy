@@ -260,6 +260,7 @@
       }
     },
     "entries": {
+      "purchaseDate": "Compra em {date}",
       "new": "Novo lançamento",
       "empty": "Nenhum lançamento neste período.",
       "emptyHint": "Adicione uma despesa, uma receita ou uma transferência.",

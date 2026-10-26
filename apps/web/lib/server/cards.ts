@@ -652,7 +652,7 @@ export async function payInvoice(
       accountId: input.accountId,
       type: "CREDIT_CARD_PAYMENT",
       status: "PAID",
-      description: `${card.name} ${String(row.referenceMonth).padStart(2, "0")}/${row.referenceYear}`,
+      description: `${card.name} ${row.dueDate.slice(5, 7)}/${row.dueDate.slice(0, 4)}`,
       amountMinor: total,
       transactionDate: input.paymentDate,
       paidAt: now,

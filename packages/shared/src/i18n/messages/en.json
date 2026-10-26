@@ -260,6 +260,7 @@
       }
     },
     "entries": {
+      "purchaseDate": "Purchase on {date}",
       "new": "New entry",
       "empty": "No entries in this period.",
       "emptyHint": "Add an expense, an income or a transfer.",

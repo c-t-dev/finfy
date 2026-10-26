@@ -16,7 +16,7 @@ import { Label } from "@packages/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
 import type { Account } from "@packages/shared/accounts";
-import { invoiceForDate, type Card, type Invoice, type InvoiceDetail } from "@packages/shared/cards";
+import { invoiceForDate, invoicePeriod, type Card, type Invoice, type InvoiceDetail } from "@packages/shared/cards";
 import { newId } from "@packages/shared/ids";
 import { can } from "@packages/shared/roles";
 import { addMonths } from "@packages/shared/transactions";
@@ -82,7 +82,9 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
   };
   const invoice = detail.state.status === "ready" ? detail.state.value.invoice : null;
   const purchases = detail.state.status === "ready" ? detail.state.value.purchases : [];
-  const monthLabel = format.dateTime(new Date(`${month}-15T12:00:00`), { month: "long", year: "numeric" });
+  const [year, monthNumber] = month.split("-").map(Number);
+  const dueDate = invoice?.dueDate ?? invoicePeriod(year, monthNumber, card.closingDay, card.dueDay).dueDate;
+  const monthLabel = format.dateTime(new Date(`${dueDate}T12:00:00`), { month: "long", year: "numeric" });
   const paid = invoice?.state === "PAID";
 
   return (

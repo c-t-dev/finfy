@@ -112,6 +112,8 @@ export const entrySchema = z.object({
   description: z.string(),
   amountMinor: z.number().int(),
   transactionDate: isoDate,
+  /** Derived invoice due date for card purchases; transactionDate stays unchanged. */
+  statementDate: isoDate.optional(),
   notes: z.string().nullable(),
   /** The other leg of a transfer (or the linked transaction of an invoice payment). */
   linkedTransactionId: z.uuid().nullable(),

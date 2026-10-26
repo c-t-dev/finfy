@@ -2,7 +2,11 @@
 
 > Última atualização: 2026-10-26
 
-Registro cronológico do que foi testado no app real. Mais recente primeiro.
+Registro cronológico de testes locais e no app real. Mais recente primeiro.
+
+## 2026-10-26 — finfy: competência das faturas
+
+Regressão automatizada com tabelas sintéticas em SQLite em memória: SQL de competência, fechamento e vencimento no mesmo mês e em meses diferentes, virada de ano, compra em 6/out alocada em novembro, três parcelas de 26/out alocadas de dezembro a fevereiro e pagamento antecipado sem duplicar gasto. Data original preservada. Os 15 testes passaram; typecheck, check:messages e check:openapi passaram. OpenAPI regenerado para o campo opcional statementDate. Revisão das telas: título pelo vencimento salvo, navegação pelos ciclos existentes, lista de cartões pelo ciclo atual, Home pelo mesmo endpoint, planejamento e alertas pelo mesmo SQL. Sem teste visual nesta tarefa e sem acesso a banco real.
 
 ## 2026-10-26 — finfy local: prestações por recorrência
 

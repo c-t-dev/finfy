@@ -1,4 +1,5 @@
 import "server-only";
+import { statementDate } from "./entry-dates";
 import { and, asc, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { budgetItems, budgets, categories, goalDeposits, goals, transactions } from "@packages/shared/db/schema";
@@ -66,8 +67,8 @@ async function spendingByTopCategory(tx: Tx, walletId: string, month: string): P
       and(
         eq(transactions.walletId, walletId),
         isNull(transactions.archivedAt),
-        gte(transactions.transactionDate, from),
-        lte(transactions.transactionDate, to),
+        gte(statementDate, from),
+        lte(statementDate, to),
         or(
           and(eq(transactions.type, "EXPENSE"), eq(transactions.status, "PAID")),
           and(eq(transactions.type, "CREDIT_CARD_PURCHASE"), ne(transactions.status, "CANCELED")),

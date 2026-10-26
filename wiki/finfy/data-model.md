@@ -383,6 +383,7 @@ Rules:
 - Account balance = `initial_balance_minor` + Σ(`INCOME`, `TRANSFER_IN`, `REFUND` to account, `ADJUSTMENT`) − Σ(`EXPENSE`, `TRANSFER_OUT`, `CREDIT_CARD_PAYMENT`), over `PAID`, non-archived rows.
 - Reports and the balance use the **same** status filter, so totals never disagree (unlike Minhas Economias, where spending and balance diverged).
 - A transfer is two rows linked by `transaction_links`; archiving one leg archives both. Transfers are only between accounts of the same wallet (cross-currency transfers are out of scope for v1).
+- Invoice reference year/month identify the closing cycle and remain stable. Display titles and payment labels use the saved invoice due month. Card purchases and each installment count in the statement, Home and budgets on the linked invoice due date; their stored transaction date is preserved. Payments affect cash on the payment date and are excluded from expense totals. This is derived on read, with no schema migration. See [0016](../decisoes/0016-competencia-das-faturas.md).
 - Installments share `installment_group_id`; the total is split in minor units with leftover cents on the first installment; card installments go to the invoice of their own date.
 - A recurrence occurrence has `recurrence_id` + `occurrence_date`, and its `id` is UUIDv5 of both. Creating a recurrence from an existing transaction links that transaction instead of creating a duplicate.
 - Tags chosen in the create form are saved in the same write (fixes the Minhas Economias bug where tags were dropped).

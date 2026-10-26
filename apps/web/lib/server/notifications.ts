@@ -1,4 +1,5 @@
 import "server-only";
+import { statementDate } from "./entry-dates";
 import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import {
   budgetItems,
@@ -72,8 +73,8 @@ export async function listNotifications(userId: string): Promise<NotificationLis
         and(
           inArray(transactions.walletId, walletIds),
           isNull(transactions.archivedAt),
-          gte(transactions.transactionDate, from),
-          lte(transactions.transactionDate, to),
+          gte(statementDate, from),
+          lte(statementDate, to),
           or(
             and(eq(transactions.type, "EXPENSE"), eq(transactions.status, "PAID")),
             and(eq(transactions.type, "CREDIT_CARD_PURCHASE"), ne(transactions.status, "CANCELED")),
