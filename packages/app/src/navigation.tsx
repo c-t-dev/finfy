@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { APP_BASE } from "./app-base";
 import { HomeIcon, ListIcon, SettingsIcon, TargetIcon, WalletCardsIcon, type LucideIcon } from "lucide-react";
 
 /**
@@ -32,8 +33,7 @@ export function useAppNavigation(): AppNavigation {
   return value;
 }
 
-/** Base path of the signed-in app; public pages live outside it. */
-export const APP_BASE = "/app";
+export { APP_BASE };
 
 export const APP_ROUTES = [
   { key: "home", path: APP_BASE, icon: HomeIcon },

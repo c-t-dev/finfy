@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { APP_BASE } from "@packages/app/navigation";
+import { APP_BASE } from "@packages/app/app-base";
 import type { Locale } from "@packages/shared/i18n";
 import { AuthFlow } from "@/components/auth-flow";
 import { getCurrentUser } from "@/lib/server/auth/session";

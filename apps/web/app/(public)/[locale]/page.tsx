@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CloudOffIcon, CoinsIcon, HistoryIcon, LanguagesIcon, ShieldCheckIcon, UsersIcon } from "lucide-react";
 import { clientEnv } from "@packages/env/client";
 import { AppIcon } from "@packages/app/app-shell";
-import { APP_BASE } from "@packages/app/navigation";
+import { APP_BASE } from "@packages/app/app-base";
 import { LOCALE_PREFIXES, LOCALES, type Locale } from "@packages/shared/i18n";
 import { buttonVariants } from "@packages/ui/components/button";
 import { PublicLanguageSwitcher } from "@/components/language-switcher";
