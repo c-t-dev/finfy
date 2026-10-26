@@ -115,6 +115,71 @@
         "body": "Para lançar receitas e despesas, crie primeiro uma conta: conta corrente, poupança ou o dinheiro da carteira. Todo lançamento sai de uma conta ou entra nela.",
         "readOnly": "Esta wallet ainda não tem contas. Quem pode editar precisa criar a primeira.",
         "create": "Criar primeira conta"
+      },
+      "customize": {
+        "open": "Personalizar",
+        "done": "Concluir",
+        "reset": "Restaurar padrão",
+        "hint": "Arraste os blocos ou use as setas para mudar a ordem. Só você vê esta disposição; os outros membros mantêm a deles.",
+        "visible": "Blocos no seu Início",
+        "hidden": "Blocos ocultos",
+        "allVisible": "Todos os blocos estão no seu Início.",
+        "add": "Adicionar",
+        "size": "Largura",
+        "half": "Metade",
+        "full": "Inteira",
+        "moveUp": "Mover {name} para cima",
+        "moveDown": "Mover {name} para baixo",
+        "hide": "Ocultar {name}",
+        "emptyHome": "Seu Início está sem blocos. Personalize para adicionar.",
+        "saveError": "Não foi possível salvar a disposição. As mudanças aparecem aqui, mas podem se perder ao recarregar."
+      },
+      "widgets": {
+        "balance": {
+          "title": "Saldo",
+          "description": "Total nas contas e atalho para novo lançamento."
+        },
+        "month": {
+          "title": "Este mês",
+          "description": "Receitas, despesas e resultado do mês atual."
+        },
+        "balanceChart": {
+          "title": "Saldo ao longo do tempo",
+          "description": "Saldo das contas no fim de cada mês, com projeção."
+        },
+        "cashflowChart": {
+          "title": "Receitas x despesas",
+          "description": "Receitas e despesas mês a mês."
+        },
+        "topExpenses": {
+          "title": "Para onde foi o dinheiro",
+          "description": "As maiores categorias de despesa do mês."
+        },
+        "recent": {
+          "title": "Últimos lançamentos",
+          "description": "Os lançamentos mais recentes do mês."
+        }
+      },
+      "charts": {
+        "period": "Período",
+        "months": "{count} meses",
+        "loadError": "Não foi possível carregar o gráfico.",
+        "retry": "Tentar de novo",
+        "balance": {
+          "title": "Saldo ao longo do tempo",
+          "description": "Saldo das contas no fim de cada mês. A linha tracejada soma os lançamentos pendentes e as faturas em aberto.",
+          "actual": "Saldo",
+          "projected": "Previsto",
+          "projection": "Previsto para {month}:"
+        },
+        "cashflow": {
+          "title": "Receitas x despesas",
+          "description": "Receitas e despesas pagas de cada mês; compras no cartão contam no mês de vencimento da fatura.",
+          "income": "Receitas",
+          "expense": "Despesas",
+          "result": "Resultado no período:",
+          "empty": "Nenhuma receita ou despesa neste período."
+        }
       }
     },
     "window": {

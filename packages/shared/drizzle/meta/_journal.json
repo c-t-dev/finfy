@@ -50,6 +50,13 @@
       "when": 1793000416978,
       "tag": "0006_signup_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793044361629,
+      "tag": "0007_home_layouts",
+      "breakpoints": true
     }
   ]
 }

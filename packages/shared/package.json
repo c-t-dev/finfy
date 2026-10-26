@@ -21,6 +21,7 @@
     "./rule-match": "./src/rule-match.ts",
     "./patrimony": "./src/patrimony.ts",
     "./notifications": "./src/notifications.ts",
+    "./home": "./src/home.ts",
     "./signup-invites": "./src/signup-invites.ts",
     "./system-categories": "./src/system-categories.ts",
     "./ids": "./src/ids.ts",

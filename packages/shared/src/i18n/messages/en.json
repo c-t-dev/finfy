@@ -115,6 +115,71 @@
         "body": "To record income and expenses, first create an account: checking, savings or the cash in your wallet. Every entry comes out of or goes into an account.",
         "readOnly": "This wallet has no accounts yet. Someone who can edit needs to create the first one.",
         "create": "Create first account"
+      },
+      "customize": {
+        "open": "Customize",
+        "done": "Done",
+        "reset": "Restore default",
+        "hint": "Drag blocks or use the arrows to reorder them. Only you see this layout; other members keep theirs.",
+        "visible": "Blocks on your Home",
+        "hidden": "Hidden blocks",
+        "allVisible": "Every block is on your Home.",
+        "add": "Add",
+        "size": "Width",
+        "half": "Half",
+        "full": "Full",
+        "moveUp": "Move {name} up",
+        "moveDown": "Move {name} down",
+        "hide": "Hide {name}",
+        "emptyHome": "Your Home has no blocks. Customize it to add some.",
+        "saveError": "Could not save your layout. Your changes show here but may be lost when you reload."
+      },
+      "widgets": {
+        "balance": {
+          "title": "Balance",
+          "description": "Total in your accounts and a shortcut to a new entry."
+        },
+        "month": {
+          "title": "This month",
+          "description": "Income, expenses and result of the current month."
+        },
+        "balanceChart": {
+          "title": "Balance over time",
+          "description": "Month-end balance of your accounts, with a projection."
+        },
+        "cashflowChart": {
+          "title": "Income x expenses",
+          "description": "Income and expenses month by month."
+        },
+        "topExpenses": {
+          "title": "Where the money went",
+          "description": "This month's largest expense categories."
+        },
+        "recent": {
+          "title": "Latest entries",
+          "description": "The most recent entries of the month."
+        }
+      },
+      "charts": {
+        "period": "Period",
+        "months": "{count} months",
+        "loadError": "Could not load the chart.",
+        "retry": "Try again",
+        "balance": {
+          "title": "Balance over time",
+          "description": "Balance of your accounts at the end of each month. The dashed line adds pending entries and unpaid card bills.",
+          "actual": "Balance",
+          "projected": "Projected",
+          "projection": "Projected for {month}:"
+        },
+        "cashflow": {
+          "title": "Income x expenses",
+          "description": "Paid income and expenses of each month; card purchases count in the bill's due month.",
+          "income": "Income",
+          "expense": "Expenses",
+          "result": "Result in the period:",
+          "empty": "No income or expenses in this period."
+        }
       }
     },
     "window": {

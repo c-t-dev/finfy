@@ -161,3 +161,27 @@ export const notifications = pgTable(
   (t) => [index("notifications_user_read_idx").on(t.userId, t.readAt)],
 );
 
+
+/**
+ * Each member's Home layout per wallet (wiki/decisoes/0019): the visible
+ * blocks in order, with their width. A personal preference: not synced yet,
+ * not audited, never shown to other members. ID `deterministicId("home_layout",
+ * userId, walletId)`, so a later sync can create the same row on two devices.
+ */
+export const homeLayouts = pgTable(
+  "home_layouts",
+  {
+    id: idColumn(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    walletId: uuid("wallet_id")
+      .notNull()
+      .references(() => wallets.id),
+    /** `[{ key, size }]`, read with `readHomeLayout` from `@packages/shared/home`. */
+    widgets: jsonb("widgets").$type<unknown[]>().notNull(),
+    createdAt: createdAt(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("home_layouts_user_wallet_idx").on(t.userId, t.walletId)],
+);

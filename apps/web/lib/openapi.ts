@@ -94,6 +94,7 @@ import {
   ruleSchema,
   updateRuleInput,
 } from "@packages/shared/rules";
+import { homeInsightsSchema, homeLayoutSchema, saveHomeLayoutInput } from "@packages/shared/home";
 import { assetListSchema, assetSchema, assetStateInput, createAssetInput, netWorthSchema, updateAssetInput } from "@packages/shared/patrimony";
 import { markReadInput, notificationListSchema } from "@packages/shared/notifications";
 import {
@@ -188,6 +189,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       },
       { name: "rules", description: "Categorization rules: AND conditions, actions set the category and add tags; never on transfers, payments or adjustments" },
       { name: "patrimony", description: "Assets and debts by ownership share, and the net worth" },
+      { name: "home", description: "Each member's own Home layout per wallet (not audited) and the month figures behind its charts" },
       { name: "notifications", description: "In-app notifications across the user's wallets, computed on each read" },
       { name: "system", description: "Health" },
     ],
@@ -244,6 +246,8 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         Asset: json(assetSchema),
         AssetList: json(assetListSchema),
         NetWorth: json(netWorthSchema),
+        HomeLayout: json(homeLayoutSchema),
+        HomeInsights: json(homeInsightsSchema),
         NotificationList: json(notificationListSchema),
         InviteLink: json(inviteLinkSchema),
         InvitePreview: json(invitePreviewSchema),
@@ -686,6 +690,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       ...recurrencePaths(),
       ...rulePaths(),
       ...patrimonyPaths(),
+      ...homePaths(),
       "/api/wallets/{id}/activity": {
         get: {
           tags: ["activity"],
@@ -798,6 +803,46 @@ function cardPaths() {
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+  };
+}
+
+function homePaths() {
+  const ok = { 200: response("The layout in use.", ref("HomeLayout")) };
+  return {
+    "/api/wallets/{id}/home/layout": {
+      get: {
+        tags: ["home"],
+        summary: "My Home layout",
+        description: "Any member. The visible blocks in order, with their width; `customized: false` while the default is in use. Each member has their own per wallet.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam],
+        responses: { ...ok, ...walletErrors("notFound") },
+      },
+      post: {
+        tags: ["home"],
+        summary: "Save my Home layout",
+        description: `Any member, readers included: it changes only their own Home. Replaces the list (last write wins); \`widgets: null\` restores the default. Not audited. ${originNote}`,
+        security: [{ session: [] }],
+        parameters: [walletIdParam],
+        requestBody: body(saveHomeLayoutInput),
+        responses: { ...ok, ...walletErrors("invalidInput", "notFound") },
+      },
+    },
+    "/api/wallets/{id}/home/insights": {
+      get: {
+        tags: ["home"],
+        summary: "Month figures for the Home charts",
+        description:
+          "Any member. `months` months up to `month` (the person's current month), then 3 projected months. Each month uses the Statement totals of that month: income, expense, the confirmed balance at its last day and the projected one (plus pending entries and unpaid card purchases due by then).",
+        security: [{ session: [] }],
+        parameters: [
+          walletIdParam,
+          { name: "month", in: "query", required: true, schema: { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" } },
+          { name: "months", in: "query", required: true, schema: { type: "integer", enum: [6, 12] } },
+        ],
+        responses: { 200: response("The months, oldest first.", ref("HomeInsights")), ...walletErrors("invalidInput", "notFound") },
+      },
     },
   };
 }

@@ -24,10 +24,13 @@ export function useMoney(currencyCode: CurrencyCode) {
   return React.useMemo(() => {
     const currency = CURRENCIES[currencyCode];
     const separator = decimalSeparator(locale);
+    const compact = new Intl.NumberFormat(locale, { style: "currency", currency: currency.code, notation: "compact", maximumFractionDigits: 1 });
     return {
       currency,
       separator,
       format: (minor: number) => formatMoney(minor, currency, locale),
+      /** Short label for chart axes ("R$ 1,2 mil"); display only, never parsed back. */
+      compact: (minor: number) => compact.format(minor / 10 ** currency.minorUnits),
       /** null when the text is not a valid amount. */
       parse: (text: string) => parseMoney(text, currency, separator),
       toInput: (minor: number) => minorToInput(minor, currency, separator),
