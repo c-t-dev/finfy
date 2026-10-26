@@ -64,6 +64,7 @@ function MacTitlebar({
   icon,
   center,
   trailing,
+  trafficLights,
   ...props
 }: Omit<React.ComponentProps<"div">, "title"> & {
   title?: React.ReactNode;
@@ -71,6 +72,7 @@ function MacTitlebar({
   /** Toolbar content in the middle (e.g. a tool switcher). The title then moves next to the traffic lights. */
   center?: React.ReactNode;
   trailing?: React.ReactNode;
+  trafficLights?: Omit<React.ComponentProps<typeof TrafficLights>, "className">;
 }) {
   const heading = (
     <div className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-foreground/85">
@@ -91,14 +93,14 @@ function MacTitlebar({
       {center ? (
         <>
           <div className="flex min-w-0 items-center gap-4">
-            <TrafficLights className="max-sm:hidden" />
+            <TrafficLights className="max-sm:hidden" {...trafficLights} />
             <div className="max-md:hidden">{heading}</div>
           </div>
           <div className="flex items-center justify-center">{center}</div>
         </>
       ) : (
         <>
-          <TrafficLights className="max-sm:hidden" />
+          <TrafficLights className="max-sm:hidden" {...trafficLights} />
           <div className="col-start-1 sm:col-start-2">{heading}</div>
         </>
       )}

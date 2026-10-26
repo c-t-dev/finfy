@@ -8,6 +8,7 @@ import { cn } from "@packages/ui/lib/utils";
 import { useTranslations } from "./i18n";
 import { APP_ROUTES, isActiveRoute, useAppNavigation } from "./navigation";
 import { WalletSwitcher } from "./wallet-ui";
+import { ScreenTransition } from "./screen-transition";
 
 const SETTINGS_PATH = APP_ROUTES.find((route) => route.key === "settings")!.path;
 
@@ -92,7 +93,7 @@ export function AppShell({
               <WalletSwitcher />
             </div>
             {account && isActiveRoute(pathname, SETTINGS_PATH) && <div className="mb-6 md:hidden">{account}</div>}
-            {children}
+            <ScreenTransition transitionKey={pathname}>{children}</ScreenTransition>
           </section>
         </div>
         <BottomNav />

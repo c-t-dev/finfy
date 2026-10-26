@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { MailCheckIcon } from "lucide-react";
 import {
   AUTH_ERRORS,
@@ -17,6 +18,7 @@ import { Label } from "@packages/ui/components/label";
 import { MacTitlebar, MacWindow } from "@packages/ui/components/mac-window";
 import { Spinner } from "@packages/ui/components/spinner";
 import { AppIcon } from "./app-shell";
+import { ScreenTransition } from "./screen-transition";
 import { useLocale, useTranslations } from "./i18n";
 
 /**
@@ -66,18 +68,67 @@ export function ErrorMessage({ failure }: { failure: AuthFailure | null }) {
 }
 
 /** Small macOS window centred on the wallpaper, used by every auth step. */
-export function AuthWindow({ title, children, trailing }: { title: string; children: React.ReactNode; trailing?: React.ReactNode }) {
+export function AuthWindow({ title, children, trailing, overlay = false, minimized = false, onMinimizedChange }: {
+  title: string;
+  children: React.ReactNode;
+  trailing?: React.ReactNode;
+  overlay?: boolean;
+  minimized?: boolean;
+  onMinimizedChange?: (minimized: boolean) => void;
+}) {
   const t = useTranslations("common");
+  const reduceMotion = useReducedMotion();
+  const restoreRef = React.useRef<HTMLButtonElement>(null);
+  const windowRef = React.useRef<HTMLDivElement>(null);
+  const wasMinimized = React.useRef(minimized);
+  React.useEffect(() => {
+    if (wasMinimized.current && !minimized) windowRef.current?.querySelector<HTMLInputElement>("input")?.focus();
+    wasMinimized.current = minimized;
+  }, [minimized]);
+  const minimize = () => {
+    onMinimizedChange?.(true);
+    requestAnimationFrame(() => restoreRef.current?.focus());
+  };
+  const restore = () => {
+    onMinimizedChange?.(false);
+  };
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <MacWindow className="w-full max-w-sm rounded-xl border border-border">
-        <MacTitlebar icon={<AppIcon />} title={t("appName")} trailing={trailing} className="static" />
-        <div className="flex flex-col gap-4 p-6">
-          <h1 className="text-xl font-semibold">{title}</h1>
-          {children}
+    <>
+      {overlay && <motion.div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-30 bg-black/20 backdrop-blur-sm motion-reduce:transition-none"
+        initial={false}
+        animate={{ opacity: minimized ? 0 : 1 }}
+        transition={{ duration: reduceMotion === false ? 0.25 : 0.12 }}
+      />}
+      <div className={overlay ? "pointer-events-none fixed inset-0 z-40 flex items-center justify-center overflow-y-auto p-4" : "flex flex-1 items-center justify-center p-4"}>
+      <motion.div
+        ref={windowRef}
+        inert={minimized}
+        aria-hidden={minimized}
+        className="w-full max-w-sm"
+        style={{ pointerEvents: minimized ? "none" : "auto", transformOrigin: "bottom center" }}
+        animate={{ opacity: minimized ? 0 : 1, y: minimized && reduceMotion === false ? "40vh" : 0, scale: minimized && reduceMotion === false ? 0.15 : 1 }}
+        transition={{ duration: reduceMotion === false ? 0.35 : 0.12, ease: "easeInOut" }}
+      >
+      <ScreenTransition transitionKey={title} emphasis="window" className="w-full max-w-sm">
+        <MacWindow className="w-full rounded-xl border border-border">
+          <MacTitlebar icon={<AppIcon />} title={t("appName")} trailing={trailing} className="static" trafficLights={overlay ? { onMinimize: minimize, labels: { minimize: t("window.minimize") } } : undefined} />
+          <div className="flex flex-col gap-4 p-6">
+            <h1 className="text-xl font-semibold">{title}</h1>
+            {children}
+          </div>
+        </MacWindow>
+      </ScreenTransition>
+      </motion.div>
+      </div>
+      {minimized && <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+        <div className="flex items-center gap-4 rounded-xl border border-border bg-window px-4 py-3 shadow-lg backdrop-blur-2xl">
+          <AppIcon /><span className="text-[13px] font-medium">{title}</span>
+          <button ref={restoreRef} type="button" onClick={restore} aria-label={t("window.restore")} title={t("window.restore")} className="flex size-6 items-center justify-center rounded-full bg-[#28c840] text-black focus-visible:outline-2 focus-visible:outline-ring">+</button>
         </div>
-      </MacWindow>
-    </main>
+      </div>}
+    </>
   );
 }
 

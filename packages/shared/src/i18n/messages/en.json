@@ -17,11 +17,13 @@
     "window": {
       "close": "Close",
       "minimize": "Minimize",
-      "zoom": "Zoom"
+      "zoom": "Zoom",
+      "restore": "Restore window"
     }
   },
   "public": {
     "nav": {
+      "backHome": "Back to Home",
       "features": "Features",
       "openApp": "Open finfy"
     },
@@ -801,6 +803,21 @@
         "show": "Show ended recurrences",
         "hide": "Hide ended recurrences",
         "empty": "No ended recurrences."
+      },
+      "schedule": {
+        "installmentAmount": "Amount per installment",
+        "firstDueDate": "First due date",
+        "dueDayHint": "Due on day {day} each month. Shorter months use their last day.",
+        "end": "End of repetition",
+        "endMode": "Repeat until",
+        "noEnd": "No end date",
+        "byDate": "A date",
+        "byCount": "A number of payments",
+        "lastDueDate": "End date",
+        "installmentCount": "Number of installments",
+        "occurrenceCount": "Number of entries",
+        "countHint": "Includes the first payment. Enter only the payments you still want to record.",
+        "calculatedEnd": "Last payment: {date}"
       }
     },
     "rules": {

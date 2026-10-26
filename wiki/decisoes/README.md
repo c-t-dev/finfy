@@ -17,8 +17,13 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0009](0009-react-tauri-capacitor.md) | React com shadcn e Tailwind; Tauri no desktop, Capacitor no celular | Aceita (prova de conceito pendente) |
 | [0010](0010-nextjs-na-vercel.md) | Web primeiro, em Next.js na Vercel, com páginas públicas e a API dentro | Aceita (ORM: Drizzle; API REST + zod + OpenAPI; banco: Neon) |
 | [0011](0011-traducoes.md) | Traduções em pt-BR e en (pt-PT depois), mensagens ICU, API devolve códigos | Aceita (padrão: en; biblioteca em aberto) |
+| [0014](0014-prestacoes-por-recorrencia.md) | Valor da prestação, primeiro vencimento e término por data ou quantidade usando recorrências | Aceita |
 
 ## Status
+
+A [0013 — Janela de autenticação sobre a Home](0013-janela-de-autenticacao.md) está aceita: rotas paralelas pela Home, página independente no acesso direto; amarelo minimiza e verde restaura, com URL correspondente.
+
+A [0012 — Motion para animações React](0012-motion.md) está aceita. Entrada e troca de telas animadas no contêiner compartilhado, com movimento reduzido respeitado.
 
 - **Proposta:** escrita, aguardando confirmação das perguntas em aberto.
 - **Aceita:** confirmada; o código deve seguir.

@@ -128,6 +128,25 @@ test("recurrence dates keep the day across short months and stop at the end", as
   assert.equal(addDays("2026-12-30", 3), "2027-01-02");
 });
 
+test("finite schedules include the first payment and preserve the due day", async () => {
+  const { endDateForCount, occurrenceDates } = await import("../src/schedule.ts");
+  const end = endDateForCount("2026-01-31", "MONTHLY", 36);
+  assert.equal(end, "2028-12-31");
+  const dates = occurrenceDates("2026-01-31", "MONTHLY", "2030-01-01", end);
+  assert.equal(dates.length, 36);
+  assert.equal(dates[1], "2026-02-28");
+  assert.equal(dates[2], "2026-03-31");
+  assert.equal(endDateForCount("2026-01-31", "MONTHLY", 2), "2026-02-28");
+  assert.equal(endDateForCount("2024-02-29", "YEARLY", 2), "2025-02-28");
+  assert.equal(endDateForCount("2026-12-31", "WEEKLY", 2), "2027-01-07");
+  assert.equal(endDateForCount("2026-10-26", "MONTHLY", 1), "2026-10-26");
+  for (const count of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER]) {
+    assert.equal(endDateForCount("2026-10-26", "MONTHLY", count), null);
+  }
+  assert.equal(endDateForCount("", "MONTHLY", 2), null);
+  assert.equal(endDateForCount("2026-02-30", "MONTHLY", 2), null);
+});
+
 test("rules: AND conditions, accents ignored, never transfers, first category wins", async () => {
   const { ruleMatches, resolveRules } = await import("../src/rule-match.ts");
   const entry = { type: "EXPENSE", description: "Padaria São João", amountMinor: 1250, accountId: "a", creditCardId: null };

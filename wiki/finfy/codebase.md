@@ -72,6 +72,8 @@ Environment variables are in `apps/web/.env.example`. `DATABASE_URL` and `PASSWO
 
 ## Rules for code
 
+- **Animation:** `motion` is installed in `packages/app` (imports from `motion/react`). `AppShell` animates its screen container on mount and pathname changes: 200 ms fade with a 6 px rise; reduced or unknown motion preference uses only a 120 ms fade. The container is not keyed, so animations do not remount children or delay navigation. Existing CSS animations stay intact. See [0012](../decisoes/0012-motion.md). Avoid competing animation owners for the same property on an element and respect reduced motion.
+
 - Server components never import values from `"use client"` modules: they get a client reference, not the value (a `redirect` to it fails with "Invalid character in header content"). Shared constants go in plain modules, like `APP_BASE` in `@packages/app/app-base`.
 
 - **Text:** no fixed text in components, API responses or e-mails. Add the key to both `packages/shared/src/i18n/messages/*.json`. Message keys are typed: a missing key is a compile error. UI components that need a label (`DialogContent closeLabel`, `Spinner label`, `TrafficLights labels`) get the translated text from the caller.
@@ -245,6 +247,8 @@ Server: `apps/web/lib/server/rules.ts`. Shared: `@packages/shared/rules` (schema
 
 ## Recurrences
 
+The entry form exposes the first due date and, for repeating expenses, the amount per installment. The repetition can end never, on a date, or after a positive integer count including the first occurrence. `endDateForCount` in `schedule.ts` converts count to an inclusive `endDate` with the same calendar rules as the server; the calculated last due date is shown in the current locale. Invalid counts and end dates before the first due date cannot be submitted. Switching back to a single entry or a transfer ignores recurrence end controls. The API and schema are unchanged; editing a recurrence continues to use its stored end date. This records payments only, without linking an asset or reducing a patrimony debt. See [0014](../decisoes/0014-prestacoes-por-recorrencia.md).
+
 Server: `apps/web/lib/server/recurrences.ts`. Shared: `@packages/shared/recurrences` and `schedule.ts` (pure, tested). Client: `packages/app/src/recurrences-ui.tsx` (`RepeatSelect`, `useRecurrenceRefresh`), `screens/recurrences.tsx` (`/app/statement/recurrences`), and "Repeat" in the entry form.
 
 - **Occurrences are real entries**, `PENDING`, with ID `deterministicId("occurrence", recurrenceId, date)` and `recurrence_id` + `occurrence_date` (unique). They count in no balance until marked paid. Card recurrences create `CREDIT_CARD_PURCHASE` occurrences on their date's invoice and skip paid invoices.
@@ -279,6 +283,14 @@ Server: `apps/web/lib/server/activity.ts`. Client: `packages/app/src/screens/act
 `packages/app/src/api.tsx`: the host passes one `request(method, path, body)` (`ApiProvider`); screens call the HTTP API paths directly and load lists with `useResource(path)`. New resources use this; `WalletClient` and `AccountClient` predate it.
 
 ## Authentication
+
+Standalone auth pages include a localized Back to Home link and the shared `PublicFooter`, also used by `PublicHome`. Their form fills the space between header and footer; intercepted auth renders only the window over the retained Home.
+
+Public authentication uses Next.js parallel and intercepting routes: the public locale layout renders a named `@auth` slot alongside its page. Home links open `(.)sign-in` over the retained Home; direct navigation or reload renders the standalone sign-in page without Home or backdrop. Sign-up has the same two variants. Both call `AuthPage` for session checks, safe redirect targets and invite handling. Empty slot defaults and a catch-all prevent stale overlays on other routes.
+
+`PublicFrame` owns minimized state and background interactivity. In overlay mode, yellow minimizes, the bottom bar's green button restores, and Home's sign-in links restore the existing window without navigating. Forms remain mounted during minimize/restore. Minimizing uses native history.replaceState to show the locale Home URL while retaining the auth slot; restoring recovers the original auth URL, including query parameters. No extra history entry is added. Refreshing minimized opens Home alone; refreshing restored opens standalone auth. The backdrop uses blur and 20% black tint with a 250 ms fade (120 ms with reduced/unknown motion preference). Standalone pages have no active minimize action. The app package receives generic overlay/minimize props and never imports Next.js. See [0013](../decisoes/0013-janela-de-autenticacao.md).
+
+`AuthWindow` uses the shared `ScreenTransition` around the entire window, including its frame and title bar, for sign-in, sign-up and verification. Its `window` emphasis uses a 450 ms fade from 0 to 1, a 24 px rise and scale from 0.96 to 1. Reduced or unknown motion preference uses only a 120 ms fade. It runs on mount and step title changes without remounting the form; signed-in screens keep their subtle entrance.
 
 Implements part of [0004](../decisoes/0004-seguranca-da-conta.md). Server code is in `apps/web/lib/server/auth/`, forms in `packages/app/src/auth.tsx`, shared input rules in `@packages/shared/auth`.
 
@@ -359,6 +371,8 @@ DATABASE_URL=<DATABASE_URL_UNPOOLED from that file> pnpm db:migrate
 The publication migrations print a `wal_level` warning on Neon: logical replication is off until PowerSync is needed ([0010](../decisoes/0010-nextjs-na-vercel.md)).
 
 ## Local database without Docker
+
+Local browser testing was enabled on 2026-10-26 using the existing Docker service `finfy-db-1` on localhost:5432, database `finfy`. All seven committed migrations were already applied; no migration or data reset was needed. The ignored `apps/web/.env.local` points to this local database, retains its existing password pepper, and uses `SIGN_UP_MODE=open` for local test registration. Production remains invite-only. `/api/health` returned `database: "ok"`; the local sign-up page rendered without an invite-code field. Use synthetic test accounts and never copy production credentials into the local setup.
 
 If Docker is not available, an embedded Postgres works for development. It was used to test milestone 2:
 

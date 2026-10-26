@@ -20,6 +20,7 @@ import { Spinner } from "@packages/ui/components/spinner";
 import { cn } from "@packages/ui/lib/utils";
 import type { Account } from "@packages/shared/accounts";
 import type { Card } from "@packages/shared/cards";
+import { endDateForCount } from "@packages/shared/recurrences";
 import { newId } from "@packages/shared/ids";
 import { DESCRIPTION_MAX, NOTES_MAX, type Entry, type EntryKind } from "@packages/shared/transactions";
 import type { Wallet } from "@packages/shared/wallets";
@@ -31,7 +32,7 @@ import { resolveRules, type Rule } from "@packages/shared/rules";
 import { useResource } from "./api";
 import type { Tag } from "@packages/shared/tags";
 import { CategoryPicker, type CategoryTree } from "./categories";
-import { useTranslations } from "./i18n";
+import { useLocale, useTranslations } from "./i18n";
 import { APP_ROUTES, useAppNavigation } from "./navigation";
 import { todayIso, useMoney } from "./money";
 import { useWalletRequest, WalletErrorMessage } from "./wallet-ui";
@@ -179,6 +180,7 @@ function EntryForm({
   const common = useTranslations("common");
   const request = useApi();
   const money = useMoney(wallet.currencyCode);
+  const locale = useLocale();
   const existing = editing.mode === "edit" ? editing.entry : null;
   const mainAccount = accounts.find((account) => account.isDefault) ?? accounts[0];
 
@@ -202,6 +204,13 @@ function EntryForm({
   const [installments, setInstallments] = React.useState(1);
   const [tagIds, setTagIds] = React.useState<string[]>(existing?.tagIds ?? []);
   const [repeat, setRepeat] = React.useState<RepeatChoice>(NEVER);
+  const [endMode, setEndMode] = React.useState<"never" | "date" | "count">("never");
+  const [endDate, setEndDate] = React.useState("");
+  const [occurrenceCount, setOccurrenceCount] = React.useState("");
+  const repeating = kind !== "TRANSFER" && repeat !== NEVER;
+  const calculatedEnd = repeat === NEVER ? null : endDateForCount(date, repeat, Number(occurrenceCount));
+  const scheduleEnd = endMode === "date" ? endDate : endMode === "count" ? calculatedEnd : null;
+  const invalidEnd = repeating && endMode !== "never" && (!scheduleEnd || scheduleEnd < date);
   const rules = useResource<{ rules: Rule[] }>(existing ? null : `/api/wallets/${wallet.id}/rules`);
   const [categoryByHand, setCategoryByHand] = React.useState(false);
   const [suggestedBy, setSuggestedBy] = React.useState<string | null>(null);
@@ -211,6 +220,7 @@ function EntryForm({
   const base = `/api/wallets/${wallet.id}/transactions`;
 
   const submit = async () => {
+    if (invalidEnd) return;
     const amountMinor = money.parse(amount);
     if (amountMinor === null || amountMinor <= 0) return setAmountInvalid(true);
     setAmountInvalid(false);
@@ -230,6 +240,7 @@ function EntryForm({
       categoryId,
       frequency: repeat,
       startDate: date,
+      endDate: scheduleEnd || null,
       firstPaid: paid,
       fromEntryId,
       tagIds,
@@ -405,7 +416,7 @@ function EntryForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="entry-amount">
-            {t("form.amount")} ({wallet.currencyCode})
+            {repeating && kind === "EXPENSE" ? tr("schedule.installmentAmount") : t("form.amount")} ({wallet.currencyCode})
           </Label>
           <Input
             id="entry-amount"
@@ -420,8 +431,9 @@ function EntryForm({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="entry-date">{t("form.date")}</Label>
+          <Label htmlFor="entry-date">{repeating ? tr("schedule.firstDueDate") : t("form.date")}</Label>
           <Input id="entry-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+          {repeating && repeat === "MONTHLY" && date && <p className="text-[11px] text-muted-foreground">{tr("schedule.dueDayHint", { day: Number(date.slice(8, 10)) })}</p>}
         </div>
       </div>
       {amountInvalid && (
@@ -506,6 +518,33 @@ function EntryForm({
       {canRepeat && (
         <RepeatSelect id="entry-repeat" value={repeat} onValueChange={setRepeat} label={existing ? tr("makeRecurring") : undefined} />
       )}
+      {canRepeat && repeating && (
+        <fieldset className="flex flex-col gap-3 rounded-lg border border-border p-3">
+          <legend className="px-1 text-[12px] font-medium">{tr("schedule.end")}</legend>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="entry-end-mode">{tr("schedule.endMode")}</Label>
+            <Select value={endMode} onValueChange={(value) => setEndMode(value as typeof endMode)}>
+              <SelectTrigger id="entry-end-mode"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="never">{tr("schedule.noEnd")}</SelectItem>
+                <SelectItem value="date">{tr("schedule.byDate")}</SelectItem>
+                <SelectItem value="count">{tr("schedule.byCount")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {endMode === "date" && <div className="flex flex-col gap-1.5">
+            <Label htmlFor="entry-end-date">{tr("schedule.lastDueDate")}</Label>
+            <Input id="entry-end-date" type="date" min={date} value={endDate} onChange={(event) => setEndDate(event.target.value)} required />
+          </div>}
+          {endMode === "count" && <div className="flex flex-col gap-1.5">
+            <Label htmlFor="entry-occurrence-count">{tr(kind === "EXPENSE" ? "schedule.installmentCount" : "schedule.occurrenceCount")}</Label>
+            <Input id="entry-occurrence-count" type="number" inputMode="numeric" min={1} step={1} value={occurrenceCount} onChange={(event) => setOccurrenceCount(event.target.value)} required aria-invalid={invalidEnd || undefined} aria-describedby="entry-count-hint" />
+            <p id="entry-count-hint" className="text-[11px] text-muted-foreground">{tr("schedule.countHint")}</p>
+            {calculatedEnd && <p className="text-[11px] text-muted-foreground">{tr("schedule.calculatedEnd", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${calculatedEnd}T00:00:00Z`)) })}</p>}
+          </div>}
+          <p className="text-[11px] text-muted-foreground">{tr("horizonNote")}</p>
+        </fieldset>
+      )}
       {kind !== "TRANSFER" && (
         <TagPicker wallet={wallet} tags={tags.tags} value={tagIds} onChange={setTagIds} onCreated={tags.add} />
       )}
@@ -533,7 +572,7 @@ function EntryForm({
           </Button>
           <Button
             type="submit"
-            disabled={pending || !description.trim() || needsCategory || (kind === "TRANSFER" && accountId === toAccountId)}
+            disabled={pending || invalidEnd || !description.trim() || needsCategory || (kind === "TRANSFER" && accountId === toAccountId)}
           >
             {pending ? <Spinner label={common("loading")} /> : existing ? t("form.save") : t("form.create")}
           </Button>

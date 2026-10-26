@@ -17,11 +17,13 @@
     "window": {
       "close": "Fechar",
       "minimize": "Minimizar",
-      "zoom": "Ampliar"
+      "zoom": "Ampliar",
+      "restore": "Restaurar janela"
     }
   },
   "public": {
     "nav": {
+      "backHome": "Voltar para a Home",
       "features": "Recursos",
       "openApp": "Abrir o finfy"
     },
@@ -801,6 +803,21 @@
         "show": "Mostrar recorrências encerradas",
         "hide": "Ocultar recorrências encerradas",
         "empty": "Nenhuma recorrência encerrada."
+      },
+      "schedule": {
+        "installmentAmount": "Valor da parcela",
+        "firstDueDate": "Primeiro vencimento",
+        "dueDayHint": "Vence todo mês no dia {day}. Em meses sem esse dia, vence no último dia.",
+        "end": "Fim da repetição",
+        "endMode": "Repetir até",
+        "noEnd": "Sem prazo",
+        "byDate": "Uma data",
+        "byCount": "Uma quantidade de pagamentos",
+        "lastDueDate": "Data de término",
+        "installmentCount": "Quantidade de parcelas",
+        "occurrenceCount": "Quantidade de lançamentos",
+        "countHint": "Inclui o primeiro vencimento. Informe só os pagamentos que ainda quer registrar.",
+        "calculatedEnd": "Último vencimento: {date}"
       }
     },
     "rules": {

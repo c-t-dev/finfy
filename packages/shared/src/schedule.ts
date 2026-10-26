@@ -26,6 +26,18 @@ export function nthDate(start: string, frequency: Frequency, n: number): string 
   return iso(new Date(Date.UTC(y, m - 1, Math.min(day, daysIn(y, m)))));
 }
 
+/** Inclusive end of a finite schedule; count includes its first occurrence. */
+export function endDateForCount(start: string, frequency: Frequency, count: number): string | null {
+  if (!Number.isSafeInteger(count) || count < 1 || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return null;
+  try {
+    if (nthDate(start, frequency, 0) !== start) return null;
+    const end = nthDate(start, frequency, count - 1);
+    return /^\d{4}-\d{2}-\d{2}$/.test(end) ? end : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Dates from `start` up to `until` (inclusive) and `end` (when set), at most `limit`. */
 export function occurrenceDates(start: string, frequency: Frequency, until: string, end: string | null, limit = 400): string[] {
   const last = end && end < until ? end : until;

@@ -62,6 +62,12 @@ Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (porta
 
 ### Modelo do finfy (em inglês)
 
+Prestações: [0014 — Registrar só as prestações por recorrência](decisoes/0014-prestacoes-por-recorrencia.md) (aceita; vencimento e término por data ou quantidade).
+
+Janela de login: [0013 — Sobre a Home ou página independente](decisoes/0013-janela-de-autenticacao.md) (aceita; rotas paralelas e interceptadas).
+
+Animações React: [0012 — Motion](decisoes/0012-motion.md) (aceita; entrada e troca de telas com movimento reduzido respeitado).
+
 | Página | Conteúdo |
 | --- | --- |
 | [finfy/codebase.md](finfy/codebase.md) | Estrutura do código, comandos, regras de código e o que já foi implementado |
