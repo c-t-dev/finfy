@@ -818,6 +818,65 @@
         "body": "Os lançamentos que ela já mudou ficam com a categoria e as tags.",
         "confirm": "Apagar"
       }
+    },
+    "patrimony": {
+      "title": "Bens e dívidas",
+      "netWorth": "Patrimônio líquido",
+      "accounts": "Contas",
+      "assets": "Bens",
+      "liabilities": "Dívidas",
+      "cardDebt": "Faturas em aberto",
+      "newAsset": "Novo bem",
+      "newLiability": "Nova dívida",
+      "empty": "Nenhum bem ou dívida ainda.",
+      "emptyHint": "Adicione uma casa, um carro ou um empréstimo para ver seu patrimônio completo.",
+      "share": "{percent}% seu",
+      "kinds": {
+        "ASSET": "Bem",
+        "LIABILITY": "Dívida"
+      },
+      "types": {
+        "REAL_ESTATE": "Imóvel",
+        "VEHICLE": "Veículo",
+        "ELECTRONICS": "Eletrônico",
+        "BUSINESS": "Empresa",
+        "COLLECTIBLE": "Coleção",
+        "RIGHTS": "Direitos",
+        "INVESTMENT": "Investimento",
+        "LOAN": "Empréstimo",
+        "FINANCING": "Financiamento",
+        "OTHER": "Outro"
+      },
+      "form": {
+        "createAssetTitle": "Novo bem",
+        "createLiabilityTitle": "Nova dívida",
+        "editTitle": "Editar",
+        "name": "Nome",
+        "type": "Tipo",
+        "current": "Quanto vale hoje",
+        "currentDebt": "Quanto deve hoje",
+        "purchase": "Quanto pagou (opcional)",
+        "purchaseDebt": "Valor original (opcional)",
+        "purchaseDate": "Data da compra (opcional)",
+        "ownership": "Sua parte (%)",
+        "notes": "Observações",
+        "save": "Salvar",
+        "create": "Adicionar",
+        "cancel": "Cancelar",
+        "archive": "Arquivar",
+        "invalid": "Confira os valores e a parte (1 a 100%)."
+      },
+      "archive": {
+        "title": "Arquivar {name}?",
+        "body": "Sai do patrimônio. Dá para restaurar depois.",
+        "confirm": "Arquivar"
+      },
+      "archived": {
+        "show": "Mostrar arquivados",
+        "hide": "Ocultar arquivados",
+        "empty": "Nada arquivado.",
+        "restore": "Restaurar"
+      }
     }
   },
   "errors": {

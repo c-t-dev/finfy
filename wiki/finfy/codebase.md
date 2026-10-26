@@ -208,6 +208,14 @@ Server: `apps/web/lib/server/members.ts`. Client: `packages/app/src/members-ui.t
 - `/app` pages without a session go to sign-in with `?next=` (only `/app/...` paths accepted, `lib/next-path.ts`); the proxy passes the path to the layout in a header.
 - Audit actions: `INVITE_SENT`, `INVITE_RESENT`, `INVITE_REVOKED`, `INVITE_ACCEPTED`, `INVITE_DECLINED`, `MEMBER_JOINED`, `MEMBER_ROLE_CHANGED`, `MEMBER_REMOVED`, `MEMBER_LEFT`.
 
+## Patrimony
+
+Server: `apps/web/lib/server/patrimony.ts`. Shared: `@packages/shared/patrimony`. Client: `packages/app/src/patrimony-ui.tsx` (`NetWorthCard` on top of Accounts and cards, `AssetsSection` at the bottom).
+
+- Assets (`REAL_ESTATE`, `VEHICLE`, `ELECTRONICS`, `BUSINESS`, `COLLECTIBLE`, `RIGHTS`, `INVESTMENT`, `OTHER`) and debts (`LOAN`, `FINANCING`, `OTHER`), with value today, purchase value and date, ownership share (basis points) and notes. Values are estimates: last write wins.
+- **Net worth** (`GET /api/wallets/:id/net-worth`) = active account balances + assets − debts, each by its share (`ownedPart`), − purchases on invoices still open. Checked on 2026-10-26 against the accounts screen and by hand.
+- Not yet: linking an asset to the debt that financed it (`asset_liabilities`), value history, investments.
+
 ## Categorization rules
 
 Server: `apps/web/lib/server/rules.ts`. Shared: `@packages/shared/rules` (schemas) and `rule-match.ts` (pure, tested: `ruleMatches`, `resolveRules`). Client: `packages/app/src/screens/rules.tsx` (Settings → Rules, `/app/settings/rules`) and the suggestion in the entry form.

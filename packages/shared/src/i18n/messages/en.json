@@ -818,6 +818,65 @@
         "body": "Entries it already changed keep their category and tags.",
         "confirm": "Delete"
       }
+    },
+    "patrimony": {
+      "title": "Assets and debts",
+      "netWorth": "Net worth",
+      "accounts": "Accounts",
+      "assets": "Assets",
+      "liabilities": "Debts",
+      "cardDebt": "Open card invoices",
+      "newAsset": "New asset",
+      "newLiability": "New debt",
+      "empty": "No assets or debts yet.",
+      "emptyHint": "Add a house, a car or a loan to see your full net worth.",
+      "share": "{percent}% yours",
+      "kinds": {
+        "ASSET": "Asset",
+        "LIABILITY": "Debt"
+      },
+      "types": {
+        "REAL_ESTATE": "Real estate",
+        "VEHICLE": "Vehicle",
+        "ELECTRONICS": "Electronics",
+        "BUSINESS": "Business",
+        "COLLECTIBLE": "Collectible",
+        "RIGHTS": "Rights",
+        "INVESTMENT": "Investment",
+        "LOAN": "Loan",
+        "FINANCING": "Financing",
+        "OTHER": "Other"
+      },
+      "form": {
+        "createAssetTitle": "New asset",
+        "createLiabilityTitle": "New debt",
+        "editTitle": "Edit",
+        "name": "Name",
+        "type": "Type",
+        "current": "Value today",
+        "currentDebt": "Amount owed today",
+        "purchase": "Paid at purchase (optional)",
+        "purchaseDebt": "Original amount (optional)",
+        "purchaseDate": "Purchase date (optional)",
+        "ownership": "Your share (%)",
+        "notes": "Notes",
+        "save": "Save",
+        "create": "Add",
+        "cancel": "Cancel",
+        "archive": "Archive",
+        "invalid": "Check the amounts and the share (1 to 100%)."
+      },
+      "archive": {
+        "title": "Archive {name}?",
+        "body": "It leaves the net worth. You can restore it later.",
+        "confirm": "Archive"
+      },
+      "archived": {
+        "show": "Show archived",
+        "hide": "Hide archived",
+        "empty": "Nothing archived.",
+        "restore": "Restore"
+      }
     }
   },
   "errors": {

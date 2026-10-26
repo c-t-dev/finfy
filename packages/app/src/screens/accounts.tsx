@@ -31,6 +31,7 @@ import { can } from "@packages/shared/roles";
 import type { Wallet } from "@packages/shared/wallets";
 import { useAccountClient, useAccountList } from "../accounts";
 import { CardsSection } from "../cards-ui";
+import { AssetsSection, NetWorthCard } from "../patrimony-ui";
 import { useLocale, useTranslations } from "../i18n";
 import { decimalSeparator, minorToInput } from "../money";
 import { useWalletRequest, WalletErrorMessage } from "../wallet-ui";
@@ -78,9 +79,12 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
   const client = useAccountClient();
 
   // A write can move the "main" mark between accounts, so both lists reload.
+  const [netWorthKey, setNetWorthKey] = React.useState(0);
+  const refreshNetWorth = () => setNetWorthKey((key) => key + 1);
   const reload = () => {
     active.reload();
     if (showArchived) archived.reload();
+    refreshNetWorth();
   };
   // Menu actions reload either way: on a failure (e.g. a newer version), the list shows the current state.
   const run = async (action: () => Promise<{ ok: boolean }>) => {
@@ -97,6 +101,7 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
 
   return (
     <section className="flex flex-col gap-3">
+      <NetWorthCard wallet={wallet} reloadKey={netWorthKey} />
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-[15px] font-semibold">{t("section")}</h2>
@@ -191,6 +196,9 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
           <CardsSection wallet={wallet} accounts={accounts} />
         </div>
       )}
+      <div className="mt-4">
+        <AssetsSection wallet={wallet} onChanged={refreshNetWorth} />
+      </div>
     </section>
   );
 }

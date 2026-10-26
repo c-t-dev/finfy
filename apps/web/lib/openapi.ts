@@ -93,6 +93,7 @@ import {
   ruleSchema,
   updateRuleInput,
 } from "@packages/shared/rules";
+import { assetListSchema, assetSchema, assetStateInput, createAssetInput, netWorthSchema, updateAssetInput } from "@packages/shared/patrimony";
 import {
   archiveWalletInput,
   createWalletInput,
@@ -184,6 +185,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           "Schedules that create pending entries (occurrences) up to 90 days ahead, with deterministic IDs so they never duplicate",
       },
       { name: "rules", description: "Categorization rules: AND conditions, actions set the category and add tags; never on transfers, payments or adjustments" },
+      { name: "patrimony", description: "Assets and debts by ownership share, and the net worth" },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -234,6 +236,9 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         RuleList: json(ruleListSchema),
         RulePreview: json(rulePreviewSchema),
         RuleApplyResult: json(ruleApplyResultSchema),
+        Asset: json(assetSchema),
+        AssetList: json(assetListSchema),
+        NetWorth: json(netWorthSchema),
         InviteLink: json(inviteLinkSchema),
         InvitePreview: json(invitePreviewSchema),
         AcceptedInvite: json(acceptedInviteSchema),
@@ -610,6 +615,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       ...tagPaths(),
       ...recurrencePaths(),
       ...rulePaths(),
+      ...patrimonyPaths(),
       "/api/wallets/{id}/activity": {
         get: {
           tags: ["activity"],
@@ -722,6 +728,48 @@ function cardPaths() {
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+  };
+}
+
+function patrimonyPaths() {
+  const assetIdParam = { name: "assetId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const write = (summary: string, description: string, parameters: unknown[], input: z.ZodType, ok: Record<number, unknown>, errors: string[]) => ({
+    ...cardWrite(summary, `OWNER, ADMIN, EDITOR. ${description}`, parameters, input, ok, errors),
+    tags: ["patrimony"],
+  });
+  const one = [walletIdParam, assetIdParam];
+  const ok = { 200: response("The asset or debt.", ref("Asset")) };
+  return {
+    "/api/wallets/{id}/net-worth": {
+      get: {
+        tags: ["patrimony"],
+        summary: "Net worth",
+        description: "Any member. Account balances + assets − debts (each by its ownership share) − purchases on unpaid card invoices.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam],
+        responses: { 200: response("The parts and the total.", ref("NetWorth")), ...walletErrors("notFound") },
+      },
+    },
+    "/api/wallets/{id}/assets": {
+      get: {
+        tags: ["patrimony"],
+        summary: "Assets and debts",
+        description: "Any member. `?archived=1` lists the archived ones.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam, { name: "archived", in: "query", required: false, schema: { type: "string", enum: ["0", "1"] } }],
+        responses: { 200: response("The list.", ref("AssetList")), ...walletErrors("notFound") },
+      },
+      post: write("Add an asset or debt", "The type must fit the kind (debts: loan, financing, other).", [walletIdParam], createAssetInput, { 201: response("Created.", ref("Asset")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/assets/{assetId}": {
+      patch: write("Edit an asset or debt", "Values are estimates: the last write wins.", one, updateAssetInput, ok, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/assets/{assetId}/archive": {
+      post: write("Archive", "It leaves the net worth.", one, assetStateInput, ok, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/assets/{assetId}/restore": {
+      post: write("Restore", "", one, assetStateInput, ok, ["invalidInput", "forbidden", "notFound"]),
     },
   };
 }
