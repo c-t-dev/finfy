@@ -61,6 +61,16 @@ import {
   updateGoalInput,
 } from "@packages/shared/planning";
 import {
+  acceptedInviteSchema,
+  changeRoleInput,
+  createInviteInput,
+  inviteActionInput,
+  inviteLinkSchema,
+  invitePreviewSchema,
+  memberActionInput,
+  membersSchema,
+} from "@packages/shared/members";
+import {
   archiveWalletInput,
   createWalletInput,
   updateWalletInput,
@@ -138,6 +148,11 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           "Credit cards, purchases (with installments) and invoices. A purchase goes to the invoice whose closing date is on or after its date; invoices are addressed by reference month `YYYY-MM`",
       },
       { name: "planning", description: "Monthly budget limits per top-level expense category, and goals with deposits" },
+      {
+        name: "members",
+        description:
+          "Who has access to a wallet. Without e-mail, an invite is a private link (token shown once, valid 7 days); accepting needs the link and the account with the invited e-mail",
+      },
       { name: "system", description: "Health" },
     ],
     components: {
@@ -176,6 +191,10 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         BudgetMonth: json(budgetMonthSchema),
         GoalList: json(goalListSchema),
         GoalDetail: json(goalDetailSchema),
+        Members: json(membersSchema),
+        InviteLink: json(inviteLinkSchema),
+        InvitePreview: json(invitePreviewSchema),
+        AcceptedInvite: json(acceptedInviteSchema),
         Health: {
           type: "object",
           required: ["status", "database"],
@@ -514,6 +533,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       },
       ...cardPaths(),
       ...planningPaths(),
+      ...memberPaths(),
     },
   };
 }
@@ -606,6 +626,65 @@ function cardPaths() {
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
+    },
+  };
+}
+
+function memberPaths() {
+  const memberIdParam = { name: "memberId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const inviteIdParam = { name: "inviteId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+  const tokenParam = { name: "token", in: "path", required: true, description: "The invite link's token.", schema: { type: "string", pattern: "^[A-Za-z0-9_-]{43}$" } };
+  const write = (summary: string, description: string, parameters: unknown[], input: z.ZodType, ok: Record<number, unknown>, errors: string[]) => ({
+    ...cardWrite(summary, description, parameters, input, ok, errors),
+    tags: ["members"],
+  });
+  const membersOk = { 200: response("Members and pending invites.", ref("Members")) };
+  const invite = [walletIdParam, inviteIdParam];
+  const member = [walletIdParam, memberIdParam];
+  return {
+    "/api/wallets/{id}/members": {
+      get: {
+        tags: ["members"],
+        summary: "Members and pending invites",
+        description: "Any member.",
+        security: [{ session: [] }],
+        parameters: [walletIdParam],
+        responses: { ...membersOk, ...walletErrors("notFound") },
+      },
+    },
+    "/api/wallets/{id}/invites": {
+      post: write("Invite someone", "OWNER, ADMIN (only the OWNER invites ADMINs). A pending invite to the same e-mail gets a new link instead. Answers the token once; build the link as `/app/invites/{token}`. The answer does not tell whether the e-mail has an account.", [walletIdParam], createInviteInput, { 201: response("The invite and its token.", ref("InviteLink")) }, ["invalidInput", "forbidden", "notFound", "alreadyMember"]),
+    },
+    "/api/wallets/{id}/invites/{inviteId}/renew": {
+      post: write("New link for an invite", "OWNER, ADMIN. The previous link stops working.", invite, inviteActionInput, { 200: response("The invite and its new token.", ref("InviteLink")) }, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/invites/{inviteId}/revoke": {
+      post: write("Cancel an invite", "OWNER, ADMIN.", invite, inviteActionInput, membersOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/members/{memberId}/role": {
+      post: write("Change a member's role", "Nobody changes their own role or a role equal to or above their own; OWNER only through a transfer.", member, changeRoleInput, membersOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/members/{memberId}/remove": {
+      post: write("Remove a member", "Access ends at once: roles are read on every request.", member, memberActionInput, membersOk, ["invalidInput", "forbidden", "notFound"]),
+    },
+    "/api/wallets/{id}/leave": {
+      post: write("Leave the wallet", "Anyone but the OWNER.", [walletIdParam], memberActionInput, { 204: response("Left.") }, ["invalidInput", "notFound", "ownerCannotLeave"]),
+    },
+    "/api/invites/{token}": {
+      get: {
+        tags: ["members"],
+        summary: "Preview an invite",
+        description: "Signed-in user with the link: wallet, inviter, role, state, and whether this account has the invited e-mail.",
+        security: [{ session: [] }],
+        parameters: [tokenParam],
+        responses: { 200: response("The invite.", ref("InvitePreview")), ...walletErrors("inviteInvalid") },
+      },
+    },
+    "/api/invites/{token}/accept": {
+      post: write("Accept an invite", "Needs the link and the invited account; the person joins with the invited role.", [tokenParam], memberActionInput, { 200: response("The wallet joined.", ref("AcceptedInvite")) }, ["invalidInput", "inviteInvalid", "inviteWrongAccount"]),
+    },
+    "/api/invites/{token}/decline": {
+      post: write("Decline an invite", "Needs the link and the invited account.", [tokenParam], memberActionInput, { 200: response("The wallet of the invite.", ref("AcceptedInvite")) }, ["invalidInput", "inviteInvalid", "inviteWrongAccount"]),
     },
   };
 }
@@ -709,6 +788,10 @@ const WALLET_ERROR_STATUS: Record<string, [number, string]> = {
   currencyLocked: [409, "The currency is fixed after the first entry."],
   versionConflict: [409, "The row changed since `baseVersion`."],
   invoicePaid: [409, "The invoice is paid; reopen it first."],
+  alreadyMember: [409, "That e-mail is already a member."],
+  inviteInvalid: [410, "The link expired, was used or canceled."],
+  inviteWrongAccount: [403, "The invite is for another e-mail."],
+  ownerCannotLeave: [409, "The owner has to transfer ownership first."],
   rateLimited: [429, "Too many attempts; see `Retry-After`."],
 };
 
