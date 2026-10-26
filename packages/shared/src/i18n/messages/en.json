@@ -582,6 +582,40 @@
         "done": "Password changed. Your other sessions were signed out."
       }
     },
+    "signupInvites": {
+      "title": "Invite to finfy",
+      "body": "Make a code so someone can create an account. Each code works for one account, lasts {days} days and is only shown when you make it.",
+      "openNote": "Sign-up is open right now, so the code is not required yet.",
+      "note": "Who is it for (optional)",
+      "notePlaceholder": "Only you see this, as a reminder",
+      "create": "Make code",
+      "noNote": "No name",
+      "created": "Made {date}",
+      "status": {
+        "PENDING": "expires {date}",
+        "USED": "used by {name} on {date}",
+        "EXPIRED": "expired {date}",
+        "REVOKED": "canceled"
+      },
+      "revoke": {
+        "action": "Cancel",
+        "title": "Cancel this code?",
+        "body": "Nobody will be able to create an account with it.",
+        "confirm": "Cancel code",
+        "cancel": "Keep"
+      },
+      "dialog": {
+        "title": "Invite code",
+        "body": "Send the code or the link to the person. It works for one account, lasts {days} days and will not be shown again.",
+        "code": "Code",
+        "link": "Sign-up link",
+        "copyCode": "Copy code",
+        "copyLink": "Copy link",
+        "copied": "Copied",
+        "share": "Share",
+        "done": "Done"
+      }
+    },
     "activity": {
       "title": "Activity",
       "settingsBody": "Everything changed in this wallet, by whom and when.",
@@ -923,7 +957,11 @@
       "passwordBreached": "This password has appeared in a data breach. Choose another one.",
       "unauthenticated": "Your session has ended. Sign in again.",
       "forbiddenOrigin": "This request was blocked for security reasons.",
-      "unavailable": "Sign-in is not available right now. Try again later."
+      "unavailable": "Sign-in is not available right now. Try again later.",
+      "inviteCodeRequired": "To create an account, enter your invite code.",
+      "inviteCodeInvalid": "This code does not work: it is wrong, used, expired or canceled. Ask for a new one.",
+      "tooManyInvites": "You already have 10 codes waiting to be used. Cancel one or wait until they are used.",
+      "notFound": "Not found."
     }
   },
   "auth": {
@@ -940,7 +978,8 @@
       "submit": "Create account",
       "haveAccount": "Already have an account?",
       "toSignIn": "Sign in",
-      "passwordHint": "At least {min} characters. A sentence is easier to remember."
+      "passwordHint": "At least {min} characters. A sentence is easier to remember.",
+      "inviteCodeHint": "Signing up to finfy is by invitation. Ask someone who uses it for a code."
     },
     "verify": {
       "title": "Check your e-mail",
@@ -955,7 +994,8 @@
       "name": "Name",
       "email": "E-mail",
       "password": "Password",
-      "code": "Code"
+      "code": "Code",
+      "inviteCode": "Invite code"
     },
     "signOut": "Sign out"
   },

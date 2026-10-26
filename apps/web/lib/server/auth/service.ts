@@ -11,6 +11,8 @@ import {
 import { securityEvents, userCredentials, users } from "@packages/shared/db/schema";
 import { getDb } from "@/lib/server/db";
 import { EMAIL_DELIVERY_ENABLED, queueEmail } from "@/lib/server/mail";
+import { claimCode, isUsableCode, signUpNeedsCode } from "@/lib/server/signup-invites";
+import type { Tx } from "@/lib/server/write";
 import { isBreachedPassword } from "./breached";
 import { consumeOtp, issueOtp } from "./otp";
 import { hashPassword, verifyDummyPassword, verifyPassword } from "./password";
@@ -25,10 +27,17 @@ import { startSession } from "./session";
  * never reveals whether an e-mail has an account. With it off (for now, see
  * EMAIL_DELIVERY_ENABLED), there is no way to tell the owner privately, so
  * sign-up answers `emailTaken`; the per-IP limit slows down anyone probing.
+ *
+ * While sign-up is closed (`SIGN_UP_MODE=invite`), the invite code is checked
+ * before the e-mail, so without a code nobody learns which e-mails have an
+ * account, and it is spent in the same transaction that creates the user.
  */
 
 export type RequestMeta = { ip: string | null; userAgent: string | null };
 export type AuthResult = { ok: true; value: AuthNext } | { ok: false; error: AuthError; retryAfterSeconds?: number };
+
+/** Rolls the sign-up back when the code was spent by someone else meanwhile. */
+class CodeTaken extends Error {}
 
 /** 5 failures lock the account for 1, 2, 4, 8, then 15 minutes. */
 const LOCK_AFTER_FAILURES = 5;
@@ -50,6 +59,22 @@ export async function signUp(input: SignUpInput, meta: RequestMeta): Promise<Aut
   if (problem) return { ok: false, error: problem };
   if (await isBreachedPassword(input.password)) return { ok: false, error: "passwordBreached" };
 
+  const needsCode = await signUpNeedsCode();
+  if (needsCode) {
+    if (!input.inviteCode) return { ok: false, error: "inviteCodeRequired" };
+    if (!(await isUsableCode(input.inviteCode))) {
+      await logEvent(null, "SIGN_UP_INVITE_INVALID", meta);
+      return { ok: false, error: "inviteCodeInvalid" };
+    }
+  }
+  /** Spends the code for the new user; throws CodeTaken to roll the sign-up back. */
+  const spendCode = async (tx: Tx, userId: string) => {
+    if (!needsCode) return undefined;
+    const inviteId = await claimCode(tx, input.inviteCode!, userId);
+    if (!inviteId) throw new CodeTaken();
+    return { inviteId };
+  };
+
   // Hash before looking the e-mail up, so both paths take the same time.
   const password = await hashPassword(input.password);
   const db = getDb();
@@ -57,17 +82,24 @@ export async function signUp(input: SignUpInput, meta: RequestMeta): Promise<Aut
 
   if (!EMAIL_DELIVERY_ENABLED) {
     if (existing) return { ok: false, error: "emailTaken" };
-    const userId = await db.transaction(async (tx) => {
-      const [user] = await tx
-        .insert(users)
-        .values({ name: input.name, email: input.email, language: input.locale })
-        .returning({ id: users.id });
-      await tx
-        .insert(userCredentials)
-        .values({ userId: user.id, passwordHash: password.hash, pepperVersion: password.pepperVersion });
-      await tx.insert(securityEvents).values({ userId: user.id, type: "SIGN_UP", ip: meta.ip, userAgent: meta.userAgent });
-      return user.id;
-    });
+    const userId = await db
+      .transaction(async (tx) => {
+        const [user] = await tx
+          .insert(users)
+          .values({ name: input.name, email: input.email, language: input.locale })
+          .returning({ id: users.id });
+        await tx
+          .insert(userCredentials)
+          .values({ userId: user.id, passwordHash: password.hash, pepperVersion: password.pepperVersion });
+        const metadata = await spendCode(tx, user.id);
+        await tx.insert(securityEvents).values({ userId: user.id, type: "SIGN_UP", ip: meta.ip, userAgent: meta.userAgent, metadata });
+        return user.id;
+      })
+      .catch((error: unknown) => {
+        if (error instanceof CodeTaken) return null;
+        throw error;
+      });
+    if (!userId) return { ok: false, error: "inviteCodeInvalid" };
     // `email_verified_at` stays empty: nothing proved the address yet.
     await startSession(userId, meta);
     return { ok: true, value: { next: "app" } };
@@ -90,9 +122,12 @@ export async function signUp(input: SignUpInput, meta: RequestMeta): Promise<Aut
       await tx
         .insert(userCredentials)
         .values({ userId: user.id, passwordHash: password.hash, pepperVersion: password.pepperVersion });
+      const metadata = await spendCode(tx, user.id);
       const code = await issueOtp(tx, { email: input.email, userId: user.id, purpose: "EMAIL_VERIFY" });
       await queueEmail(tx, { to: input.email, template: "verify-email", locale: input.locale, payload: { code } });
-      await tx.insert(securityEvents).values({ userId: user.id, type: "SIGN_UP", ip: meta.ip, userAgent: meta.userAgent });
+      await tx.insert(securityEvents).values({ userId: user.id, type: "SIGN_UP", ip: meta.ip, userAgent: meta.userAgent, metadata });
+    }).catch((error: unknown) => {
+      if (!(error instanceof CodeTaken)) throw error;
     });
   }
   return { ok: true, value: { next: "verifyEmail", email: input.email } };

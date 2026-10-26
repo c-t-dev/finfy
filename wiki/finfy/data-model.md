@@ -1,6 +1,6 @@
 # finfy — Data model
 
-> Last updated: 2026-10-25
+> Last updated: 2026-10-26
 
 This is the data model of **finfy** itself. It consolidates the decisions in [`../decisoes/`](../decisoes/README.md) and proposes the financial core. For the reverse-engineered model of the Minhas Economias app, see [`../api/modelo-de-dados.md`](../api/modelo-de-dados.md) instead.
 
@@ -339,6 +339,7 @@ erDiagram
 | `user_sessions` | `id`, `user_id`, `device_id`, `token_hash`, `ip`, `user_agent`, `last_seen_at`, `idle_expires_at`, `absolute_expires_at`, `step_up_until`, `revoked_at`, `created_at` | Opaque token; only SHA-256 stored |
 | `password_reset_tokens` | `id`, `user_id`, `token_hash`, `expires_at`, `used_at` | 30 min |
 | `security_events` | `id`, `user_id`, `type`, `ip`, `user_agent`, `metadata` (jsonb), `created_at` | Account-level events, separate from `audit_logs` |
+| `signup_invites` | `id`, `created_by`, `code_hash` (SHA-256, unique), `note`, `expires_at`, `used_at`, `used_by`, `revoked_at`, `created_at` | Codes to create an account while sign-up is closed (`SIGN_UP_MODE=invite`); single use, 7 days; any account makes them. Not synced |
 | `rate_limits` | `key` PK (e.g. `signInByIp:1.2.3.4`), `window_started_at`, `count` | Fixed-window counters in Postgres (no Redis); one row per key, reset in place |
 | `devices` | `id`, `user_id`, `name`, `platform` (`WINDOWS`, `MACOS`, `ANDROID`, `IOS`, `WEB`), `schema_version`, `last_sync_at`, `revoked_at` | Web sessions also get a device row, without sync |
 

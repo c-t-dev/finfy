@@ -30,7 +30,7 @@ export type AuthResponse = AuthNext | AuthFailure;
 
 export interface AuthClient {
   signIn(input: { email: string; password: string }): Promise<AuthResponse>;
-  signUp(input: { name: string; email: string; password: string; locale: string }): Promise<AuthResponse>;
+  signUp(input: { name: string; email: string; password: string; locale: string; inviteCode?: string }): Promise<AuthResponse>;
   verifyEmail(input: { email: string; code: string }): Promise<AuthResponse>;
   resendCode(input: { email: string }): Promise<AuthResponse>;
 }
@@ -162,11 +162,14 @@ export function SignUpForm({
   onDone,
   onVerify,
   signInLink,
+  inviteCode = null,
 }: {
   client: AuthClient;
   onDone: () => void;
   onVerify: (email: string) => void;
   signInLink: React.ReactNode;
+  /** Shows the invite code field: needed while sign-up is closed, prefilled from an invite link. */
+  inviteCode?: { required: boolean; value: string } | null;
 }) {
   const t = useTranslations("auth");
   const locale = useLocale();
@@ -182,6 +185,7 @@ export function SignUpForm({
           email: String(data.get("email")),
           password: String(data.get("password")),
           locale,
+          ...(inviteCode && data.get("inviteCode") ? { inviteCode: String(data.get("inviteCode")) } : {}),
         };
         // Same rules as the server, checked first to save a round trip.
         const problem = passwordProblem(input.password, input.email);
@@ -190,6 +194,20 @@ export function SignUpForm({
       }}
     >
       <ErrorMessage failure={failure} />
+      {inviteCode && (
+        <Field
+          id="inviteCode"
+          label={t("fields.inviteCode")}
+          defaultValue={inviteCode.value}
+          required={inviteCode.required}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          maxLength={40}
+          className="font-mono uppercase"
+          hint={t("signUp.inviteCodeHint")}
+        />
+      )}
       <Field id="name" label={t("fields.name")} autoComplete="name" required autoFocus maxLength={100} />
       <Field id="email" label={t("fields.email")} type="email" autoComplete="email" required />
       <Field

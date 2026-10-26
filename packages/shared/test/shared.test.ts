@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { matchLocale } from "../src/i18n/locales.ts";
 import { CURRENCIES, formatMoney, parseMoney } from "../src/money.ts";
 import { can, canChangeRole } from "../src/roles.ts";
+import { formatSignupCode, normalizeSignupCode, SIGNUP_CODE_ALPHABET } from "../src/signup-invites.ts";
 
 // Intl uses non-breaking spaces; compare with plain ones.
 const plain = (value: string) => value.replace(/ | /g, " ");
@@ -141,4 +142,12 @@ test("rules: AND conditions, accents ignored, never transfers, first category wi
     { id: "off", priority: 0, isActive: false, conditions: [{ field: "type", type: "EXPENSE" }], actions: [{ set: "category", categoryId: "x" }] },
   ] as Parameters<typeof resolveRules>[1];
   assert.deepEqual(resolveRules(entry, rules), { categoryId: "food", tagIds: ["t1", "t2"], ruleIds: ["early", "late"] });
+});
+
+test("sign-up invite codes: typed any way, they hash the same", () => {
+  assert.equal(normalizeSignupCode(" abcd-efgh jkmn-pqrs "), "ABCDEFGHJKMNPQRS");
+  assert.equal(formatSignupCode("abcdefghjkmnpqrs"), "ABCD-EFGH-JKMN-PQRS");
+  assert.equal(normalizeSignupCode(formatSignupCode("ABCDEFGHJKMNPQRS")), "ABCDEFGHJKMNPQRS");
+  // No look-alikes to misread.
+  for (const symbol of "01ILO") assert.ok(!SIGNUP_CODE_ALPHABET.includes(symbol));
 });

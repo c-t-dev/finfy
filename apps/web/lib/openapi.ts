@@ -11,6 +11,7 @@ import {
   signUpInput,
   verifyEmailInput,
 } from "@packages/shared/auth";
+import { createdSignupInviteSchema, createSignupInviteInput, signupInviteListSchema } from "@packages/shared/signup-invites";
 import {
   accountListSchema,
   accountSchema,
@@ -210,6 +211,8 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         },
         AuthNext: json(authNextSchema),
         CurrentUser: json(currentUserSchema),
+        SignupInviteList: json(signupInviteListSchema),
+        CreatedSignupInvite: json(createdSignupInviteSchema),
         Wallet: json(walletSchema),
         WalletList: json(walletListSchema),
         Account: json(accountSchema),
@@ -270,10 +273,11 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
         post: {
           tags: ["auth"],
           summary: "Create an account",
-          description: `**While e-mail delivery is off (now):** creates the account, starts a session (cookie) and answers \`app\`; an e-mail that already has an account gets \`409 emailTaken\`. **Once it is on:** always answers \`verifyEmail\`, whether or not the e-mail has an account, and e-mails a code (or a notice). ${originNote}`,
+          description: `**While e-mail delivery is off (now):** creates the account, starts a session (cookie) and answers \`app\`; an e-mail that already has an account gets \`409 emailTaken\`. **Once it is on:** always answers \`verifyEmail\`, whether or not the e-mail has an account, and e-mails a code (or a notice). **While sign-up is closed** (\`SIGN_UP_MODE=invite\`, once any account exists): \`inviteCode\` is required and checked before the e-mail; the code is spent with the new account. ${originNote}`,
           requestBody: body(signUpInput),
           responses: {
             ...authResponses("passwordTooShort", "passwordTooLong", "passwordSameAsEmail", "passwordBreached"),
+            403: err("Wrong origin, or sign-up is closed and the invite code is missing or unusable.", "forbiddenOrigin", "inviteCodeRequired", "inviteCodeInvalid"),
             409: err("The e-mail already has an account (only while e-mail delivery is off).", "emailTaken"),
           },
         },
@@ -378,6 +382,45 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
             401: err("Wrong current password, or no session.", "invalidCredentials", "unauthenticated"),
             403: err("Wrong origin.", "forbiddenOrigin"),
             429: { description: "Too many attempts.", content: errorBody(["rateLimited"]) },
+          },
+        },
+      },
+      "/api/account/signup-invites": {
+        get: {
+          tags: ["account"],
+          summary: "The user's sign-up invite codes",
+          description: "The last 50, newest first, with status. The codes themselves are never listed. `signUpClosed` says whether sign-up needs a code now.",
+          security: [{ session: [] }],
+          responses: { 200: response("The codes.", ref("SignupInviteList")), 401: err("No valid session.", "unauthenticated") },
+        },
+        post: {
+          tags: ["account"],
+          summary: "Make a sign-up invite code",
+          description: `Any account can. Single use, valid for 7 days; only its SHA-256 is stored, so the code comes back only here. Up to 10 unused codes at once and 20 a day. ${originNote}`,
+          security: [{ session: [] }],
+          requestBody: body(createSignupInviteInput),
+          responses: {
+            201: response("Made.", ref("CreatedSignupInvite")),
+            400: err("Invalid input.", "invalidInput"),
+            401: err("No valid session.", "unauthenticated"),
+            403: err("Wrong origin.", "forbiddenOrigin"),
+            409: err("Already 10 codes waiting to be used.", "tooManyInvites"),
+            429: { description: "20 codes made in the last day.", content: errorBody(["rateLimited"]) },
+          },
+        },
+      },
+      "/api/account/signup-invites/{inviteId}/revoke": {
+        post: {
+          tags: ["account"],
+          summary: "Cancel a sign-up invite code",
+          description: `Only the account that made it, while unused. ${originNote}`,
+          security: [{ session: [] }],
+          parameters: [{ name: "inviteId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+          responses: {
+            204: response("Canceled."),
+            401: err("No valid session.", "unauthenticated"),
+            403: err("Wrong origin.", "forbiddenOrigin"),
+            404: err("Not this account's, already used or canceled.", "notFound"),
           },
         },
       },

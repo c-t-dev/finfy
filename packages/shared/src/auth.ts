@@ -25,6 +25,10 @@ export const AUTH_ERRORS = [
   "unauthenticated",
   "forbiddenOrigin",
   "unavailable",
+  "inviteCodeRequired",
+  "inviteCodeInvalid",
+  "tooManyInvites",
+  "notFound",
 ] as const;
 export type AuthError = (typeof AUTH_ERRORS)[number];
 
@@ -48,6 +52,8 @@ export const signUpInput = z.object({
   email: emailSchema,
   password: z.string().max(PASSWORD_MAX * 4),
   locale: z.enum(LOCALES),
+  /** Needed while sign-up is closed (`SIGN_UP_MODE=invite`); see ./signup-invites. */
+  inviteCode: z.string().trim().max(40).optional(),
 });
 export type SignUpInput = z.infer<typeof signUpInput>;
 

@@ -1,6 +1,6 @@
 # 0003 — Convites para wallets por e-mail
 
-> Status: Proposta · Última atualização: 2026-10-25
+> Status: Proposta · Última atualização: 2026-10-26
 
 ## Contexto
 
@@ -74,4 +74,4 @@ Quando houver provedor de e-mail, o mesmo convite passa a ser enviado por e-mail
 
 - [ ] Qual provedor de e-mail (Resend, Amazon SES, SMTP próprio)? E qual domínio remetente? Até isso ser decidido, o finfy não envia e-mail nenhum (2026-10-25): convites por e-mail esperam, e a conta funciona sem verificação do e-mail ([0004](0004-seguranca-da-conta.md#o-que-já-está-implementado-2026-10-25)).
 - [ ] Validade de 7 dias está boa?
-- [ ] O convite para o app (sem wallet), que o Wallefy tem em `user_invites`, continua existindo no finfy?
+- [x] O convite para o app (sem wallet), que o Wallefy tem em `user_invites`, continua existindo no finfy? **Sim**, como código de convite para criar conta quando o cadastro está fechado (2026-10-26, [0004 → Cadastro por convite](0004-seguranca-da-conta.md#cadastro-por-convite-decidido-em-2026-10-26)). Tabela `signup_invites`.

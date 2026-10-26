@@ -107,8 +107,11 @@
               "unauthenticated",
               "forbiddenOrigin",
               "unavailable",
-              "forbidden",
+              "inviteCodeRequired",
+              "inviteCodeInvalid",
+              "tooManyInvites",
               "notFound",
+              "forbidden",
               "currencyLocked",
               "versionConflict",
               "invoicePaid",
@@ -189,6 +192,141 @@
           "email",
           "language",
           "emailVerified"
+        ],
+        "additionalProperties": false
+      },
+      "SignupInviteList": {
+        "type": "object",
+        "properties": {
+          "invites": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "PENDING",
+                    "USED",
+                    "REVOKED",
+                    "EXPIRED"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "type": "string"
+                },
+                "usedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "usedByName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "note",
+                "status",
+                "createdAt",
+                "expiresAt",
+                "usedAt",
+                "usedByName"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "signUpClosed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "invites",
+          "signUpClosed"
+        ],
+        "additionalProperties": false
+      },
+      "CreatedSignupInvite": {
+        "type": "object",
+        "properties": {
+          "invite": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PENDING",
+                  "USED",
+                  "REVOKED",
+                  "EXPIRED"
+                ]
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string"
+              },
+              "usedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "usedByName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "note",
+              "status",
+              "createdAt",
+              "expiresAt",
+              "usedAt",
+              "usedByName"
+            ],
+            "additionalProperties": false
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "invite",
+          "code"
         ],
         "additionalProperties": false
       },
@@ -3752,7 +3890,7 @@
           "auth"
         ],
         "summary": "Create an account",
-        "description": "**While e-mail delivery is off (now):** creates the account, starts a session (cookie) and answers `app`; an e-mail that already has an account gets `409 emailTaken`. **Once it is on:** always answers `verifyEmail`, whether or not the e-mail has an account, and e-mails a code (or a notice). The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "description": "**While e-mail delivery is off (now):** creates the account, starts a session (cookie) and answers `app`; an e-mail that already has an account gets `409 emailTaken`. **Once it is on:** always answers `verifyEmail`, whether or not the e-mail has an account, and e-mails a code (or a notice). **While sign-up is closed** (`SIGN_UP_MODE=invite`, once any account exists): `inviteCode` is required and checked before the e-mail; the code is spent with the new account. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3779,6 +3917,10 @@
                       "en",
                       "pt-BR"
                     ]
+                  },
+                  "inviteCode": {
+                    "type": "string",
+                    "maxLength": 40
                   }
                 },
                 "required": [
@@ -3825,7 +3967,7 @@
             }
           },
           "403": {
-            "description": "Wrong origin.",
+            "description": "Wrong origin, or sign-up is closed and the invite code is missing or unusable.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3834,7 +3976,9 @@
                     "error": {
                       "type": "string",
                       "enum": [
-                        "forbiddenOrigin"
+                        "forbiddenOrigin",
+                        "inviteCodeRequired",
+                        "inviteCodeInvalid"
                       ]
                     }
                   }
@@ -4697,6 +4841,264 @@
                       "type": "string",
                       "enum": [
                         "rateLimited"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/signup-invites": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "The user's sign-up invite codes",
+        "description": "The last 50, newest first, with status. The codes themselves are never listed. `signUpClosed` says whether sign-up needs a code now.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The codes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupInviteList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthenticated"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Make a sign-up invite code",
+        "description": "Any account can. Single use, valid for 7 days; only its SHA-256 is stored, so the code comes back only here. Up to 10 unused codes at once and 20 a day. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 60
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedSignupInvite"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "invalidInput"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthenticated"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already 10 codes waiting to be used.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "tooManyInvites"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "20 codes made in the last day.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rateLimited"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/signup-invites/{inviteId}/revoke": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Cancel a sign-up invite code",
+        "description": "Only the account that made it, while unused. The request must carry an `Origin` header equal to the app's origin; otherwise `403 forbiddenOrigin`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inviteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Canceled."
+          },
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthenticated"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Wrong origin.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbiddenOrigin"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not this account's, already used or canceled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "notFound"
                       ]
                     }
                   }

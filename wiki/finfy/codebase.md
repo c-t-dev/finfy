@@ -1,6 +1,6 @@
 # finfy — Codebase
 
-> Last updated: 2026-10-25
+> Last updated: 2026-10-26
 
 How the code is organized and how to run it. The reasons behind each choice are in the decisions: [0008](../decisoes/0008-linguagem-visual.md) (UI), [0009](../decisoes/0009-react-tauri-capacitor.md) (clients), [0010](../decisoes/0010-nextjs-na-vercel.md) (Next.js on Vercel, Drizzle), [0011](../decisoes/0011-traducoes.md) (translations).
 
@@ -71,6 +71,8 @@ Run `typecheck`, `test`, `check:messages` and `check:openapi` before committing.
 Environment variables are in `apps/web/.env.example`. `DATABASE_URL` and `PASSWORD_PEPPER_V1` are optional: without them the public pages work, `/api/health` answers `database: "not_configured"`, the auth API answers `unavailable` (503), and `/app` redirects to sign-in.
 
 ## Rules for code
+
+- Server components never import values from `"use client"` modules: they get a client reference, not the value (a `redirect` to it fails with "Invalid character in header content"). Shared constants go in plain modules, like `APP_BASE` in `@packages/app/app-base`.
 
 - **Text:** no fixed text in components, API responses or e-mails. Add the key to both `packages/shared/src/i18n/messages/*.json`. Message keys are typed: a missing key is a compile error. UI components that need a label (`DialogContent closeLabel`, `Spinner label`, `TrafficLights labels`) get the translated text from the caller.
 - **Money:** integers in minor units; format with `formatMoney`, parse input with `parseMoney`. Never floats in storage or arithmetic.
@@ -312,7 +314,8 @@ In both modes:
 | Enumeration | Generic "incorrect e-mail or password"; unknown e-mails run a dummy Argon2 verification (same timing). **With e-mail off, sign-up reveals that an e-mail has an account** (`emailTaken`): without e-mail there is no private way to tell the owner. The per-IP sign-up limit (10 / hour) slows down probing. With e-mail on, sign-up and resend answer the same either way |
 | CSRF | Every POST checks `Origin` against the app's origin; plus SameSite=Lax |
 | Errors | API returns codes (`errors.auth.*`), translated by the client |
-| Events | `security_events`: `SIGN_UP`, `SIGN_UP_EXISTING_ACCOUNT`, `EMAIL_VERIFIED`, `LOGIN`, `LOGIN_FAILED`, `LOGOUT` |
+| Events | `security_events`: `SIGN_UP`, `SIGN_UP_EXISTING_ACCOUNT`, `SIGN_UP_INVITE_INVALID`, `SIGNUP_INVITE_CREATED`, `SIGNUP_INVITE_REVOKED`, `EMAIL_VERIFIED`, `LOGIN`, `LOGIN_FAILED`, `LOGOUT` |
+| Closed sign-up | `SIGN_UP_MODE=invite` (default `open`): once any account exists, sign-up needs an invite code. Any account makes codes in Settings (`/api/account/signup-invites`): 16 symbols from `SIGNUP_CODE_ALPHABET`, single use, 7 days, only the SHA-256 stored, at most 10 unused per account and 20 a day. The code is checked before the e-mail lookup and spent in the sign-up transaction (`apps/web/lib/server/signup-invites.ts`). The sign-up page shows the code field when sign-up is closed or the link has `?code=` |
 
 **E-mails:** with e-mail on, they are queued in `email_outbox` and a future job sends them ([0003](../decisoes/0003-convites-por-email.md)). In development the server log prints each one, including the code: look for `[mail:dev]`. Payloads hold codes, so the sender must clear them after sending. With e-mail off (now), nothing is queued.
 
@@ -344,6 +347,8 @@ Live since 2026-10-26, for personal use: `https://finfy-tau.vercel.app`.
 | Database | Neon Postgres (free plan) from the Vercel Marketplace, resource `finfy-db`, AWS `eu-west-2` (London). The integration sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` in every environment. Previews use the same database as production |
 | Other variables | `PASSWORD_PEPPER_V1` (Secret, production and preview; a copy kept by the owner outside the repository; losing it locks every account), `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_APP_NAME` |
 
+Sign-up there is closed: `SIGN_UP_MODE=invite` (see [Authentication](#authentication)).
+
 Migrations do not run in the build. After merging a schema change, run them against Neon with the unpooled URL before (or right after) the deploy:
 
 ```bash
@@ -351,7 +356,7 @@ vercel env pull <file outside the repo> --environment production
 DATABASE_URL=<DATABASE_URL_UNPOOLED from that file> pnpm db:migrate
 ```
 
-The publication migrations print a `wal_level` warning on Neon: logical replication is off until PowerSync is needed ([0010](../decisoes/0010-nextjs-na-vercel.md)). Sign-up is open to anyone with the address.
+The publication migrations print a `wal_level` warning on Neon: logical replication is off until PowerSync is needed ([0010](../decisoes/0010-nextjs-na-vercel.md)).
 
 ## Local database without Docker
 

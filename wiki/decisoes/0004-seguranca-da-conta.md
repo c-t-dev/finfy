@@ -1,6 +1,6 @@
 # 0004 — Segurança da conta
 
-> Status: Proposta · Última atualização: 2026-10-25
+> Status: Proposta · Última atualização: 2026-10-26
 
 ## Contexto
 
@@ -93,6 +93,18 @@ Detalhes em [codebase.md → Authentication](../finfy/codebase.md#authentication
 **Sem e-mail por enquanto (2026-10-25).** Não há provedor de e-mail, então nada que dependa de e-mail está ligado: código por e-mail (OTP), verificação do e-mail e avisos. O cadastro já entra direto no app, e o login não pede código. O código desse passo continua pronto e volta a funcionar quando houver provedor ([0003](0003-convites-por-email.md)); a chave é `EMAIL_DELIVERY_ENABLED` em `apps/web/lib/server/mail.ts`.
 
 Consequência: enquanto o e-mail estiver desligado, o cadastro avisa quando o e-mail já tem conta (`emailTaken`). Isso revela se um e-mail está cadastrado, o que a regra contra enumeração queria evitar. Sem e-mail, não há outro jeito de avisar o dono da conta. O limite de 10 cadastros por hora por IP reduz o abuso. Com e-mail ligado, o cadastro volta a responder igual exista ou não a conta, e o login volta a exigir e-mail verificado.
+
+### Cadastro por convite (decidido em 2026-10-26)
+
+Com o finfy no ar para uso pessoal, o cadastro pode ser **fechado**: `SIGN_UP_MODE=invite` na Vercel (o padrão é `open`).
+
+- Fechado, uma conta nova precisa de um **código de convite**. **Qualquer conta** gera códigos em Ajustes → "Convidar para o finfy". Assim, só entra quem foi convidado por alguém que já está dentro.
+- O código é de **uso único** e vale **7 dias**. Tem 16 caracteres, no formato `XXXX-XXXX-XXXX-XXXX`, sem 0/O e 1/I/L. Pode ser digitado em minúsculas e sem traços.
+- O código aparece uma vez só, com um link `/sign-up?code=…` que já preenche o campo. No banco fica só o SHA-256 (`signup_invites`).
+- Cada conta tem no máximo 10 códigos esperando uso e gera até 20 por dia. Quem gerou pode cancelar um código ainda não usado, e vê quem usou cada um.
+- O código é conferido **antes** do e-mail: sem um código válido, o cadastro não revela se um e-mail tem conta. O código é gasto na mesma transação que cria a conta.
+- **A primeira conta** do sistema nunca precisa de código.
+- Eventos: `SIGNUP_INVITE_CREATED`, `SIGNUP_INVITE_REVOKED`, `SIGN_UP_INVITE_INVALID`, e `SIGN_UP` guarda o `inviteId`.
 
 ## Diferenças
 

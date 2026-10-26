@@ -16,7 +16,17 @@ const linkClass = "font-medium text-primary hover:underline";
  * (only while e-mail delivery is on, see lib/server/mail.ts). The step lives
  * in state, so the e-mail never goes into the URL.
  */
-export function AuthFlow({ mode, next }: { mode: "signIn" | "signUp"; /** Already checked by safeNextPath. */ next: string | null }) {
+export function AuthFlow({
+  mode,
+  next,
+  inviteCode = null,
+}: {
+  mode: "signIn" | "signUp";
+  /** Already checked by safeNextPath. */
+  next: string | null;
+  /** Sign-up only: shows the invite code field (closed sign-up, or a code in the link). */
+  inviteCode?: { required: boolean; value: string } | null;
+}) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [verifyEmail, setVerifyEmail] = React.useState<string | null>(null);
@@ -58,6 +68,7 @@ export function AuthFlow({ mode, next }: { mode: "signIn" | "signUp"; /** Alread
     <AuthWindow title={t("signUp.title")} trailing={<PublicLanguageSwitcher />}>
       <SignUpForm
         client={webAuthClient}
+        inviteCode={inviteCode}
         onDone={goToApp}
         onVerify={setVerifyEmail}
         signInLink={

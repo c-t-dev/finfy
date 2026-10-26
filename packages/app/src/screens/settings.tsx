@@ -22,6 +22,7 @@ import { WALLET_NAME_MAX } from "@packages/shared/wallets";
 import { useTranslations } from "../i18n";
 import { AccountCard } from "../account-ui";
 import { MembersCard } from "../members-ui";
+import { SignupInvitesCard } from "../signup-invites-ui";
 import { ACTIVITY_PATH } from "./activity";
 import { RULES_PATH } from "./rules";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
@@ -48,6 +49,7 @@ export function SettingsScreen() {
         <p className="text-[13px] text-muted-foreground">{t("settings.wallet.none")}</p>
       )}
       <AccountCard />
+      <SignupInvitesCard />
     </div>
   );
 }

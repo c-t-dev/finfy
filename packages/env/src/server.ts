@@ -18,6 +18,11 @@ export const env = createEnv({
      * rotate; users are re-hashed on their next login.
      */
     PASSWORD_PEPPER_V1: z.string().min(32).optional(),
+    /**
+     * `open`: anyone can sign up. `invite`: a new account needs a code made by
+     * an existing account (wiki/decisoes/0004); the very first account never does.
+     */
+    SIGN_UP_MODE: z.enum(["open", "invite"]).default("open"),
   },
   experimental__runtimeEnv: {},
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

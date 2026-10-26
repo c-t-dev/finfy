@@ -43,6 +43,13 @@
       "when": 1792963843143,
       "tag": "0005_seed_system_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793000416978,
+      "tag": "0006_signup_invites",
+      "breakpoints": true
     }
   ]
 }

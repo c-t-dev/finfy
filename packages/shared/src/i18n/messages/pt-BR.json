@@ -582,6 +582,40 @@
         "done": "Senha trocada. As outras sessões foram encerradas."
       }
     },
+    "signupInvites": {
+      "title": "Convidar para o finfy",
+      "body": "Gere um código para alguém criar uma conta. Cada código serve para uma conta, vale {days} dias e só aparece na hora em que é gerado.",
+      "openNote": "Hoje o cadastro está aberto, então o código ainda não é exigido.",
+      "note": "Para quem é (opcional)",
+      "notePlaceholder": "Só você vê, para lembrar",
+      "create": "Gerar código",
+      "noNote": "Sem nome",
+      "created": "Gerado em {date}",
+      "status": {
+        "PENDING": "vence em {date}",
+        "USED": "usado por {name} em {date}",
+        "EXPIRED": "venceu em {date}",
+        "REVOKED": "cancelado"
+      },
+      "revoke": {
+        "action": "Cancelar",
+        "title": "Cancelar este código?",
+        "body": "Ninguém mais vai conseguir criar conta com ele.",
+        "confirm": "Cancelar código",
+        "cancel": "Manter"
+      },
+      "dialog": {
+        "title": "Código de convite",
+        "body": "Envie o código ou o link para a pessoa. Ele serve para uma conta, vale {days} dias e não vai aparecer de novo.",
+        "code": "Código",
+        "link": "Link de cadastro",
+        "copyCode": "Copiar código",
+        "copyLink": "Copiar link",
+        "copied": "Copiado",
+        "share": "Compartilhar",
+        "done": "Pronto"
+      }
+    },
     "activity": {
       "title": "Atividade",
       "settingsBody": "Tudo o que mudou nesta wallet, por quem e quando.",
@@ -923,7 +957,11 @@
       "passwordBreached": "Esta senha já apareceu em um vazamento de dados. Escolha outra.",
       "unauthenticated": "Sua sessão terminou. Entre de novo.",
       "forbiddenOrigin": "Este pedido foi bloqueado por segurança.",
-      "unavailable": "O login não está disponível agora. Tente mais tarde."
+      "unavailable": "O login não está disponível agora. Tente mais tarde.",
+      "inviteCodeRequired": "Para criar conta, informe o código de convite.",
+      "inviteCodeInvalid": "Este código não vale: está errado, já foi usado, venceu ou foi cancelado. Peça um novo.",
+      "tooManyInvites": "Você já tem 10 códigos esperando uso. Cancele algum ou espere que usem.",
+      "notFound": "Não encontrado."
     }
   },
   "auth": {
@@ -940,7 +978,8 @@
       "submit": "Criar conta",
       "haveAccount": "Já tem uma conta?",
       "toSignIn": "Entrar",
-      "passwordHint": "Pelo menos {min} caracteres. Uma frase é mais fácil de lembrar."
+      "passwordHint": "Pelo menos {min} caracteres. Uma frase é mais fácil de lembrar.",
+      "inviteCodeHint": "O cadastro no finfy é só por convite. Peça um código a quem já usa."
     },
     "verify": {
       "title": "Confira seu e-mail",
@@ -955,7 +994,8 @@
       "name": "Nome",
       "email": "E-mail",
       "password": "Senha",
-      "code": "Código"
+      "code": "Código",
+      "inviteCode": "Código de convite"
     },
     "signOut": "Sair"
   },

@@ -11,6 +11,7 @@ export const LIMITS = {
   verifyByIp: { limit: 30, windowSeconds: 15 * 60 },
   // Password asked again before a sensitive action (step-up).
   stepUpByUser: { limit: 5, windowSeconds: 15 * 60 },
+  signupInviteByUser: { limit: 20, windowSeconds: 24 * 60 * 60 },
 } as const;
 
 /**

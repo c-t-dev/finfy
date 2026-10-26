@@ -222,3 +222,27 @@ export const securityEvents = pgTable(
   },
   (t) => [index("security_events_user_created_idx").on(t.userId, t.createdAt)],
 );
+
+/**
+ * Codes that let someone create an account while sign-up is closed
+ * (`SIGN_UP_MODE=invite`). Any account can make them; single use, 7 days.
+ * Only the SHA-256 of the code is stored.
+ */
+export const signupInvites = pgTable(
+  "signup_invites",
+  {
+    id: idColumn(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    codeHash: text("code_hash").notNull(),
+    /** Who it is for, as the inviter wrote it; only the inviter sees it. */
+    note: text("note"),
+    expiresAt: timestamptz("expires_at").notNull(),
+    usedAt: timestamptz("used_at"),
+    usedBy: uuid("used_by").references(() => users.id),
+    revokedAt: timestamptz("revoked_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("signup_invites_code_hash_unique").on(t.codeHash), index("signup_invites_created_by_idx").on(t.createdBy)],
+);
