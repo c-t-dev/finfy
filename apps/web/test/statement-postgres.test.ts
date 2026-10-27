@@ -6,7 +6,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { eq } from "drizzle-orm";
 import { accounts, creditCards, creditCardInvoices, transactions, wallets } from "@packages/shared/db/schema";
 import { entrySummarySchema, type EntryFilter } from "@packages/shared/transactions";
-import { selectStatementRows, selectStatementTotals } from "../lib/server/entry-queries";
+import { selectStatementRows, selectStatementTotals, toEntrySummary } from "../lib/server/entry-queries";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
@@ -22,9 +22,7 @@ test("statement totals execute on PostgreSQL with the real migrated schema", asy
     const filter: EntryFilter = { from: "2026-10-01", to: "2026-10-31" };
     const totals = async (filters = filter) => {
       const [row] = await selectStatementTotals(db, walletId, filters);
-      const numeric = Object.fromEntries(Object.entries(row).map(([key, value]) => [key, Number(value)]));
-      return entrySummarySchema.parse({ ...numeric,
-        accumulatedBalanceMinor: numeric.confirmedBalanceMinor + numeric.accumulatedPendingMinor });
+      return entrySummarySchema.parse(toEntrySummary(row));
     };
     // The actual Drizzle single-table SELECT failed even for an empty wallet.
     assert.equal((await totals()).accumulatedBalanceMinor, 0);

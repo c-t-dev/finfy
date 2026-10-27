@@ -1,6 +1,6 @@
 # Competência das faturas pelo vencimento
 
-> Última atualização: 2026-10-26
+> Última atualização: 2026-10-27
 > Status: Aceita
 
 ## Contexto
@@ -14,7 +14,7 @@ O usuário confirmou que o título da fatura e as compras do cartão no extrato 
 - O extrato agrupa compras pelo dia de vencimento. A linha mantém visível a data original da compra. Cada parcela segue sua própria fatura.
 - O pagamento aparece na data efetiva e reduz o saldo da conta. Não entra novamente nos gastos. Pagar antecipadamente ou reabrir não muda a competência da compra.
 - O mês de referência interno continua sendo o fechamento. IDs, rotas, vínculos e datas das faturas existentes permanecem. A navegação avança pelos mesmos ciclos, com título pelo vencimento.
-- A listagem de cartões continua mostrando o ciclo atual de compras, seu total e vencimento. Saldos, limite utilizado e patrimônio mantêm suas regras.
+- A lista destaca a próxima fatura realizada a pagar, conforme a [0023](0023-contas-e-proximas-faturas.md). Competência permanece pelo vencimento; limite e patrimônio seguem a 0022.
 
 ## Modelo de dados e API
 

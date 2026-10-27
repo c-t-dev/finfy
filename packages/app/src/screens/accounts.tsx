@@ -22,6 +22,7 @@ import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
+import { LoadingList, ResourceFeedback } from "../loading";
 import { cn } from "@packages/ui/lib/utils";
 import { ACCOUNT_COLORS, ACCOUNT_NAME_MAX, type Account, type AccountColor } from "@packages/shared/accounts";
 import { ACCOUNT_TYPES, type AccountType } from "@packages/shared/finance";
@@ -31,7 +32,7 @@ import { can } from "@packages/shared/roles";
 import type { Wallet } from "@packages/shared/wallets";
 import { useAccountClient, useAccountList } from "../accounts";
 import { CardsSection } from "../cards-ui";
-import { AssetsSection, NetWorthCard } from "../patrimony-ui";
+import { PATRIMONY_PATH, useAppNavigation } from "../navigation";
 import { useLocale, useTranslations } from "../i18n";
 import { decimalSeparator, minorToInput } from "../money";
 import { useWalletRequest, WalletErrorMessage } from "../wallet-ui";
@@ -51,10 +52,16 @@ const COLOR_CLASS: Record<AccountColor, string> = {
 
 export function AccountsScreen() {
   const t = useTranslations("app");
+  const orientation = useTranslations("app.orientation");
   const { current } = useWallets();
+  const { Link } = useAppNavigation();
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{t("nav.accounts")}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1"><h1 className="text-2xl font-semibold">{t("nav.accounts")}</h1>
+          <p className="max-w-xl text-[13px] text-muted-foreground">{orientation("accounts")}</p></div>
+        <Link href={PATRIMONY_PATH} className="text-[13px] text-primary hover:underline">{t("patrimony.pageTitle")}</Link>
+      </div>
       {current ? (
         <WalletAccounts key={current.id} wallet={current} />
       ) : (
@@ -79,12 +86,9 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
   const client = useAccountClient();
 
   // A write can move the "main" mark between accounts, so both lists reload.
-  const [netWorthKey, setNetWorthKey] = React.useState(0);
-  const refreshNetWorth = () => setNetWorthKey((key) => key + 1);
   const reload = () => {
     active.reload();
     if (showArchived) archived.reload();
-    refreshNetWorth();
   };
   // Menu actions reload either way: on a failure (e.g. a newer version), the list shows the current state.
   const run = async (action: () => Promise<{ ok: boolean }>) => {
@@ -101,7 +105,6 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <NetWorthCard wallet={wallet} reloadKey={netWorthKey} />
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-[15px] font-semibold">{t("section")}</h2>
@@ -120,7 +123,7 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
       </div>
       {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
 
-      {active.state.status === "loading" && <Spinner label={t("section")} />}
+      {active.state.status === "loading" && <LoadingList rows={3} />}
       {active.state.status === "error" && (
         <div className="flex items-center gap-3 text-[13px] text-destructive">
           {t("loadError")}
@@ -155,6 +158,7 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
       <Button variant="link" size="sm" className="self-start px-0" onClick={() => setShowArchived((show) => !show)}>
         {showArchived ? t("archived.hide") : t("archived.show")}
       </Button>
+      {showArchived && <ResourceFeedback state={archived.state} reload={archived.reload} />}
       {showArchived &&
         archived.state.status === "ready" &&
         (archived.state.accounts.length === 0 ? (
@@ -191,13 +195,8 @@ function WalletAccounts({ wallet }: { wallet: Wallet }) {
           reload();
         }}
       />
-      {active.state.status === "ready" && (
-        <div className="mt-4">
-          <CardsSection wallet={wallet} accounts={accounts} />
-        </div>
-      )}
       <div className="mt-4">
-        <AssetsSection wallet={wallet} onChanged={refreshNetWorth} />
+        <CardsSection wallet={wallet} accounts={accounts} accountsReady={active.state.status === "ready"} />
       </div>
     </section>
   );

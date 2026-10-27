@@ -1,5 +1,5 @@
 import "server-only";
-import { selectStatementRows, selectStatementTotals } from "./entry-queries";
+import { selectStatementRows, selectStatementTotals, toEntrySummary } from "./entry-queries";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { accounts, creditCardInvoices, creditCards, transactionLinks, transactions } from "@packages/shared/db/schema";
 import { deterministicId } from "@packages/shared/ids";
@@ -9,6 +9,8 @@ import type {
   Entry,
   EntryFilter,
   EntryList,
+  EntryRows,
+  EntrySummaryResponse,
   EntryStateInput,
   UpdateEntryInput,
 } from "@packages/shared/transactions";
@@ -107,16 +109,24 @@ export async function listEntries(userId: string, walletId: string, filter: Entr
     const [totals] = await selectStatementTotals(tx, walletId, filter);
     return {
       entries: await toEntries(tx, rows),
-      summary: {
-        accumulatedBalanceMinor: Number(totals.confirmedBalanceMinor) + Number(totals.accumulatedPendingMinor),
-        confirmedBalanceMinor: Number(totals.confirmedBalanceMinor),
-        accumulatedPendingMinor: Number(totals.accumulatedPendingMinor),
-        incomeMinor: Number(totals.incomeMinor),
-        expenseMinor: Number(totals.expenseMinor),
-        pendingIncomeMinor: Number(totals.pendingIncomeMinor),
-        pendingExpenseMinor: Number(totals.pendingExpenseMinor),
-      },
+      summary: toEntrySummary(totals),
     };
+  });
+}
+
+/** Independent reads let either part of the statement render as soon as it arrives. */
+export async function listEntryRows(userId: string, walletId: string, filter: EntryFilter): Promise<CommandResult<EntryRows>> {
+  return runCommand(async (tx) => {
+    await requireRole(tx, walletId, userId, "view");
+    return { entries: await toEntries(tx, await selectStatementRows(tx, walletId, filter)) };
+  });
+}
+
+export async function getEntrySummary(userId: string, walletId: string, filter: EntryFilter): Promise<CommandResult<EntrySummaryResponse>> {
+  return runCommand(async (tx) => {
+    await requireRole(tx, walletId, userId, "view");
+    const [totals] = await selectStatementTotals(tx, walletId, filter);
+    return { summary: toEntrySummary(totals) };
   });
 }
 

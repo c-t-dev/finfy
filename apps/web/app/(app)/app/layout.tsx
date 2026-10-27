@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LOCALE_PREFIXES } from "@packages/shared/i18n";
 import { AppHost } from "@/components/app-host";
+import { PublicHome } from "@/components/public-home";
 import { RootDocument } from "@/components/root-document";
 import { getCurrentUser } from "@/lib/server/auth/session";
 import { listWallets } from "@/lib/server/wallets";
@@ -36,6 +37,7 @@ export default async function SignedInLayout({ children }: LayoutProps<"/app">) 
     <RootDocument locale={locale}>
       <AppHost
         initialWide={wide}
+        minimizedBackground={<PublicHome locale={locale} inApp />}
         user={{ name: user.name, email: user.email }}
         wallets={wallets}
         currentWalletId={currentWalletId}

@@ -1,6 +1,6 @@
 import { and, desc, eq, getTableColumns, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { categories, transactionTags, transactions } from "@packages/shared/db/schema";
-import type { EntryFilter } from "@packages/shared/transactions";
+import type { EntryFilter, EntrySummary } from "@packages/shared/transactions";
 import { accumulatedBalance, accumulatedPendingBalance } from "./account-balance";
 import { statementDate } from "./entry-dates";
 import type { Tx } from "./write";
@@ -61,4 +61,16 @@ export function selectStatementTotals(tx: Reader, walletId: string, filter: Entr
     confirmedBalanceMinor: accumulatedBalance(walletId, filter.to, filter.accountId),
     accumulatedPendingMinor: accumulatedPendingBalance(walletId, filter.to, filter.accountId),
   }).from(transactions).where(filterWhere(walletId, filter));
+}
+
+export function toEntrySummary(totals: Awaited<ReturnType<typeof selectStatementTotals>>[number]): EntrySummary {
+  return {
+    accumulatedBalanceMinor: Number(totals.confirmedBalanceMinor) + Number(totals.accumulatedPendingMinor),
+    confirmedBalanceMinor: Number(totals.confirmedBalanceMinor),
+    accumulatedPendingMinor: Number(totals.accumulatedPendingMinor),
+    incomeMinor: Number(totals.incomeMinor),
+    expenseMinor: Number(totals.expenseMinor),
+    pendingIncomeMinor: Number(totals.pendingIncomeMinor),
+    pendingExpenseMinor: Number(totals.pendingExpenseMinor),
+  };
 }

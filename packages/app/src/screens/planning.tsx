@@ -26,6 +26,7 @@ import { Label } from "@packages/ui/components/label";
 import { SegmentedControl } from "@packages/ui/components/segmented-control";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
+import { LoadingList, ResourceFeedback } from "../loading";
 import { cn } from "@packages/ui/lib/utils";
 import { GOAL_TEMPLATES, type GoalTemplate } from "@packages/shared/finance";
 import { newId } from "@packages/shared/ids";
@@ -52,12 +53,14 @@ type Tab = "budget" | "goals";
 
 export function PlanningScreen() {
   const t = useTranslations("app");
+  const orientation = useTranslations("app.orientation");
   const { current } = useWallets();
   const [tab, setTab] = React.useState<Tab>("budget");
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t("nav.goals")}</h1>
+        <div className="space-y-1"><h1 className="text-2xl font-semibold">{t("nav.goals")}</h1>
+        <p className="max-w-xl text-[13px] text-muted-foreground">{orientation("planning")}</p></div>
         <SegmentedControl
           aria-label={t("nav.goals")}
           value={tab}
@@ -68,6 +71,7 @@ export function PlanningScreen() {
           ]}
         />
       </div>
+      <p className="text-[13px] text-muted-foreground">{orientation(tab)}</p>
       {!current ? (
         <p className="text-[13px] text-muted-foreground">{t("planning.noWallet")}</p>
       ) : tab === "budget" ? (
@@ -174,7 +178,7 @@ function BudgetTab({ wallet }: { wallet: Wallet }) {
         )}
       </div>
       {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
-      {budget.state.status === "loading" && <Spinner label={t("tabs.budget")} />}
+      {budget.state.status === "loading" && <LoadingList />}
       {budget.state.status === "error" && (
         <div className="flex items-center gap-3 text-[13px] text-destructive">
           {t("loadError")}
@@ -438,7 +442,7 @@ function GoalsTab({ wallet }: { wallet: Wallet }) {
         </Button>
       )}
       {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
-      {goals.state.status === "loading" && <Spinner label={t("tabs.goals")} />}
+      <ResourceFeedback state={goals.state} reload={goals.reload} />
       {goals.state.status === "ready" && list.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-10 text-center">
           <p className="text-[13px] font-medium">{t("goals.empty")}</p>
@@ -457,6 +461,7 @@ function GoalsTab({ wallet }: { wallet: Wallet }) {
       <Button variant="link" size="sm" className="self-start px-0" onClick={() => setShowArchived((show) => !show)}>
         {showArchived ? t("goals.archived.hide") : t("goals.archived.show")}
       </Button>
+      {showArchived && <ResourceFeedback state={archived.state} reload={archived.reload} />}
       {showArchived &&
         archived.state.status === "ready" &&
         (archived.state.value.goals.length === 0 ? (
@@ -496,6 +501,7 @@ function GoalsTab({ wallet }: { wallet: Wallet }) {
       <GoalDetailDialog
         wallet={wallet}
         goalId={openGoalId}
+        initialGoal={list.find(goal => goal.id === openGoalId)}
         canEdit={canEdit}
         onClose={() => setOpenGoalId(null)}
         onChanged={reload}
@@ -648,6 +654,7 @@ function GoalForm({ wallet, goal, onCancel, onSaved }: { wallet: Wallet; goal: G
 function GoalDetailDialog({
   wallet,
   goalId,
+  initialGoal,
   canEdit,
   onClose,
   onChanged,
@@ -655,6 +662,7 @@ function GoalDetailDialog({
 }: {
   wallet: Wallet;
   goalId: string | null;
+  initialGoal?: Goal;
   canEdit: boolean;
   onClose: () => void;
   onChanged: () => void;
@@ -669,7 +677,7 @@ function GoalDetailDialog({
   const [moving, setMoving] = React.useState<"deposit" | "withdraw" | null>(null);
   const [archiving, setArchiving] = React.useState(false);
   const [deleting, setDeleting] = React.useState<string | null>(null);
-  const goal = detail.state.status === "ready" ? detail.state.value.goal : null;
+  const goal = detail.state.status === "ready" ? detail.state.value.goal : initialGoal ?? null;
   const deposits = detail.state.status === "ready" ? detail.state.value.deposits : [];
   const refresh = () => {
     detail.reload();
@@ -681,7 +689,10 @@ function GoalDetailDialog({
       <Dialog open={goalId !== null && moving === null && !archiving && deleting === null} onOpenChange={(open) => !open && onClose()}>
         <DialogContent closeLabel={common("close")} className="max-w-md">
           {!goal ? (
-            <Spinner label={t("detail.history")} />
+            <div className="flex flex-col gap-3">
+              <DialogHeader><DialogTitle>{t("detail.history")}</DialogTitle></DialogHeader>
+              <ResourceFeedback state={detail.state} reload={detail.reload} />
+            </div>
           ) : (
             <div className="flex flex-col gap-4">
               <DialogHeader>
@@ -707,6 +718,7 @@ function GoalDetailDialog({
               )}
               <div className="flex flex-col gap-1.5">
                 <h3 className="text-[12px] font-medium text-muted-foreground">{t("detail.history")}</h3>
+                <ResourceFeedback state={detail.state} reload={detail.reload} />
                 <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border">
                   {goal.initialMinor > 0 && (
                     <li className="flex items-center justify-between px-3 py-2 text-[13px]">
@@ -729,7 +741,7 @@ function GoalDetailDialog({
                       )}
                     </li>
                   ))}
-                  {deposits.length === 0 && goal.initialMinor === 0 && <li className="px-3 py-2 text-[13px] text-muted-foreground">{t("detail.noDeposits")}</li>}
+                  {detail.state.status === "ready" && deposits.length === 0 && goal.initialMinor === 0 && <li className="px-3 py-2 text-[13px] text-muted-foreground">{t("detail.noDeposits")}</li>}
                 </ul>
               </div>
               {canEdit && (

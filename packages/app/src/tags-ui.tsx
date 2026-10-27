@@ -20,6 +20,7 @@ import {
 import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { Spinner } from "@packages/ui/components/spinner";
+import { ResourceFeedback } from "./loading";
 import { cn } from "@packages/ui/lib/utils";
 import { ACCOUNT_COLORS, type AccountColor } from "@packages/shared/accounts";
 import { newId } from "@packages/shared/ids";
@@ -41,7 +42,7 @@ export function useTags(walletId: string | null) {
     return [...list, ...extra.filter((tag) => !known.has(tag.id))];
   }, [state, extra]);
   const add = React.useCallback((tag: Tag) => setExtra((list) => [...list, tag]), []);
-  return { tags, byId: React.useMemo(() => new Map(tags.map((tag) => [tag.id, tag])), [tags]), reload, add };
+  return { state, tags, byId: React.useMemo(() => new Map(tags.map((tag) => [tag.id, tag])), [tags]), reload, add };
 }
 
 export function TagChip({ tag, className }: { tag: Pick<Tag, "name" | "color">; className?: string }) {
@@ -157,7 +158,7 @@ export function TagsManager({ wallet }: { wallet: Wallet }) {
   const t = useTranslations("app.tags");
   const request = useApi();
   const canEdit = can(wallet.role, "editEntries");
-  const { tags, reload } = useTags(wallet.id);
+  const { tags, state, reload } = useTags(wallet.id);
   const [showArchived, setShowArchived] = React.useState(false);
   const archived = useResource<{ tags: Tag[] }>(showArchived ? `/api/wallets/${wallet.id}/tags?archived=1` : null);
   const [editing, setEditing] = React.useState<{ tag: Tag | null } | null>(null);
@@ -178,12 +179,13 @@ export function TagsManager({ wallet }: { wallet: Wallet }) {
           {t("form.createTitle")}
         </Button>
       )}
-      {tags.length === 0 ? (
+      <ResourceFeedback state={state} reload={reload} />
+      {state.status === "ready" && tags.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-8 text-center">
           <p className="text-[13px] font-medium">{t("empty")}</p>
           <p className="mt-1 text-[12px] text-muted-foreground">{t("emptyHint")}</p>
         </div>
-      ) : (
+      ) : state.status === "ready" ? (
         <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border bg-card">
           {tags.map((tag) => (
             <li key={tag.id} className="flex items-center gap-3 px-4 py-2.5">
@@ -211,10 +213,11 @@ export function TagsManager({ wallet }: { wallet: Wallet }) {
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
       <Button variant="link" size="sm" className="self-start px-0" onClick={() => setShowArchived((show) => !show)}>
         {showArchived ? t("archived.hide") : t("archived.show")}
       </Button>
+      {showArchived && <ResourceFeedback state={archived.state} reload={archived.reload} />}
       {showArchived &&
         archived.state.status === "ready" &&
         (archived.state.value.tags.length === 0 ? (

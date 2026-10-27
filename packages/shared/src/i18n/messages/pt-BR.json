@@ -1,6 +1,8 @@
 {
   "common": {
     "appName": "finfy",
+    "loadError": "Não foi possível carregar esta seção.",
+    "retry": "Tentar novamente",
     "loading": "Carregando",
     "close": "Fechar",
     "language": "Idioma",
@@ -18,7 +20,9 @@
       "close": "Fechar",
       "minimize": "Minimizar",
       "zoom": "Ampliar",
-      "restore": "Restaurar janela"
+      "restore": "Restaurar janela",
+      "maximize": "Maximizar janela",
+      "restoreSize": "Restaurar tamanho da janela"
     }
   },
   "public": {
@@ -71,7 +75,8 @@
       "statement": "Extrato",
       "accounts": "Contas e cartões",
       "goals": "Planejamento",
-      "settings": "Configurações"
+      "settings": "Configurações",
+      "patrimony": "Bens e dívidas"
     },
     "wallet": {
       "label": "Wallet",
@@ -338,8 +343,9 @@
       "retry": "Tentar de novo",
       "income": "Receitas",
       "expense": "Despesas",
+      "summaryLoadError": "Não foi possível carregar o resumo do extrato.",
       "accumulatedResult": "Resultado acumulado",
-      "accumulatedResultHint": "Pendente: {amount}. Incluído no saldo previsto até o fim do mês. Apenas o filtro de conta se aplica.",
+      "accumulatedResultHint": "Pendente: {amount}. Incluído no saldo previsto até {date}. Apenas o filtro de conta se aplica.",
       "result": "Resultado",
       "pending": "Pendente: {amount}",
       "pendingBadge": "Pendente",
@@ -391,6 +397,14 @@
         "body": "Todo lançamento sai de uma conta ou entra nela: conta corrente, poupança, dinheiro na carteira. Crie a primeira em Contas e cartões e volte aqui.",
         "create": "Criar conta",
         "later": "Agora não"
+      },
+      "period": {
+        "custom": "Período personalizado",
+        "from": "Data inicial",
+        "to": "Data final",
+        "apply": "Aplicar período",
+        "month": "Usar mês completo",
+        "invalid": "A data final deve ser igual ou posterior à inicial."
       }
     },
     "cards": {
@@ -401,7 +415,17 @@
       "needsAccount": "Crie uma conta primeiro: o cartão precisa de uma para pagar as faturas.",
       "used": "{used} de {limit} usados",
       "noLimit": "{used} usados",
-      "currentInvoice": "Fatura atual",
+      "nextInvoice": "Próxima fatura a pagar",
+      "actualInvoiceHint": "Compras já realizadas nesta fatura. Sem previsões.",
+      "noNextInvoice": "Nenhuma próxima fatura com compras já realizadas.",
+      "overdueSummary": "Vencidas: {amount} ({count} faturas)",
+      "forecastSummary": "Apenas previsão: {amount} · vence em {date}",
+      "viewInvoice": "Ver fatura",
+      "viewOverdue": "Ver fatura vencida",
+      "creditDetails": "Limite e parcelas futuras",
+      "currentInvoice": "Ciclo de compras em andamento",
+      "invoiceProjectionHint": "Total deste ciclo, com previsões futuras.",
+      "usedHint": "Compras já realizadas, incluindo parcelas futuras.",
       "due": "Vence em {date}",
       "closes": "Fecha em {date}",
       "brands": {
@@ -953,11 +977,14 @@
     },
     "patrimony": {
       "title": "Bens e dívidas",
+      "pageTitle": "Bens e dívidas",
+      "backToAccounts": "Voltar às contas",
       "netWorth": "Patrimônio líquido",
+      "cardDebtHint": "A dívida total inclui parcelas que ainda vão vencer. Não é apenas o valor a pagar neste mês.",
       "accounts": "Contas",
       "assets": "Bens",
       "liabilities": "Dívidas",
-      "cardDebt": "Faturas em aberto",
+      "cardDebt": "Dívida total dos cartões",
       "newAsset": "Novo bem",
       "newLiability": "Nova dívida",
       "empty": "Nenhum bem ou dívida ainda.",
@@ -1030,6 +1057,21 @@
         "INVOICE_OVERDUE": "A fatura do {card} ({amount}) venceu em {date} e não foi paga.",
         "PENDING_DUE": "{count, plural, one {# lançamento pendente} other {# lançamentos pendentes}} com data até hoje."
       }
+    },
+    "orientation": {
+      "home": "Visão do mês, com pendências incluídas. O saldo das contas considera apenas movimentos confirmados.",
+      "statement": "Confira os lançamentos do período selecionado. Receitas e despesas incluem pendentes; o resultado acumulado projeta o saldo até a data final.",
+      "accounts": "Saldos disponíveis nas contas e próximas faturas dos cartões. Previsões aparecem separadas.",
+      "planning": "Defina limites para os gastos do mês e acompanhe o dinheiro reservado para suas metas.",
+      "patrimony": "Visão geral do que você tem e deve, incluindo parcelas de compras já realizadas.",
+      "settings": "Organize a carteira, o compartilhamento e seu acesso ao finfy.",
+      "walletGroup": "Carteira e compartilhamento",
+      "organizationGroup": "Organização dos lançamentos",
+      "personalGroup": "Seu acesso",
+      "advancedGroup": "Administração da carteira",
+      "budget": "Limites e gastos por categoria no mês selecionado.",
+      "goals": "Valores reservados e progresso das suas metas.",
+      "monthlyHint": "Inclui valores pendentes. Compras de cartão seguem o vencimento da fatura."
     }
   },
   "errors": {

@@ -17,6 +17,7 @@ import { Label } from "@packages/ui/components/label";
 import { SegmentedControl } from "@packages/ui/components/segmented-control";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
+import { ResourceFeedback } from "../loading";
 import { cn } from "@packages/ui/lib/utils";
 import { newId } from "@packages/shared/ids";
 import { can } from "@packages/shared/roles";
@@ -76,7 +77,7 @@ function WalletRules({ wallet }: { wallet: Wallet }) {
           {t("new")}
         </Button>
       )}
-      {rules.state.status === "loading" && <Spinner label={t("title")} />}
+      <ResourceFeedback state={rules.state} reload={rules.reload} />
       {rules.state.status === "ready" && list.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card/50 px-6 py-10 text-center">
           <WandSparklesIcon className="size-7 text-primary" aria-hidden />

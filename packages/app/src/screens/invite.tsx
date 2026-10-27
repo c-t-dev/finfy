@@ -4,6 +4,7 @@ import * as React from "react";
 import { MailOpenIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { Spinner } from "@packages/ui/components/spinner";
+import { LoadingList, ResourceFeedback } from "../loading";
 import { newId } from "@packages/shared/ids";
 import type { InvitePreview } from "@packages/shared/members";
 import { useApi, useResource } from "../api";
@@ -37,8 +38,8 @@ export function InviteScreen({ token, onAccepted }: { token: string; onAccepted:
   };
 
   const body = (() => {
-    if (preview.state.status === "loading") return <Spinner label={t("title")} />;
-    if (preview.state.status === "error") return <p className="text-[13px] text-muted-foreground">{t("used")}</p>;
+    if (preview.state.status === "loading") return <LoadingList rows={2} />;
+    if (preview.state.status === "error") return <ResourceFeedback state={preview.state} reload={preview.reload} />;
     const invite = preview.state.value;
     if (declined) return <p className="text-[13px] text-muted-foreground">{t("declined")}</p>;
     if (invite.alreadyMember) return <p className="text-[13px] text-muted-foreground">{t("alreadyMember")}</p>;

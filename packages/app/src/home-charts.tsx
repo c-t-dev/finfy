@@ -6,7 +6,7 @@ import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, Referenc
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@packages/ui/components/chart";
 import { SegmentedControl } from "@packages/ui/components/segmented-control";
 import { Button } from "@packages/ui/components/button";
-import { Spinner } from "@packages/ui/components/spinner";
+import { Skeleton } from "@packages/ui/components/skeleton";
 import { cn } from "@packages/ui/lib/utils";
 import { FORECAST_PERIODS, INSIGHT_PERIODS, type HomeInsights } from "@packages/shared/home";
 import type { Wallet } from "@packages/shared/wallets";
@@ -104,7 +104,9 @@ function ChartState({ state, reload, label }: { state: "loading" | "error"; relo
   return (
     <div className="flex h-56 items-center justify-center gap-3 text-[13px] text-muted-foreground">
       {state === "loading" ? (
-        <Spinner label={label} />
+        <div role="status" aria-label={label} aria-busy="true" className="flex h-full w-full items-end gap-3 p-3">
+          {[55, 80, 65, 100, 75, 90].map((height, index) => <Skeleton key={index} className="flex-1" style={{ height: `${height}%` }} />)}
+        </div>
       ) : (
         <>
           <span className="text-destructive">{t("loadError")}</span>

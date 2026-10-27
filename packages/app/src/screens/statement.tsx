@@ -1,17 +1,20 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeftRightIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CreditCardIcon, PlusIcon, RepeatIcon, SearchIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
+import { DatePicker } from "@packages/ui/components/date-picker";
+import { Label } from "@packages/ui/components/label";
 import { Input } from "@packages/ui/components/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
-import { Spinner } from "@packages/ui/components/spinner";
+import { LoadingList, LoadingSummary } from "../loading";
 import { cn } from "@packages/ui/lib/utils";
 import type { Account } from "@packages/shared/accounts";
 import type { Card } from "@packages/shared/cards";
 import { newId } from "@packages/shared/ids";
 import { can } from "@packages/shared/roles";
-import { addMonths, monthRange, type Entry, type EntryList } from "@packages/shared/transactions";
+import { addMonths, monthRange, type Entry, type EntryRows, type EntrySummaryResponse } from "@packages/shared/transactions";
 import type { Wallet } from "@packages/shared/wallets";
 import { useApi, useResource } from "../api";
 import { CategoryBadge, useCategories, useCategoryLabel, type CategoryTree } from "../categories";
@@ -20,7 +23,7 @@ import { TagChip, useTags } from "../tags-ui";
 import { useRecurrenceRefresh } from "../recurrences-ui";
 import { APP_ROUTES, useAppNavigation } from "../navigation";
 import type { Tag } from "@packages/shared/tags";
-import { useFormatter, useTranslations } from "../i18n";
+import { useFormatter, useLocale, useTranslations } from "../i18n";
 import { todayIso, useMoney } from "../money";
 import { useWallets } from "../wallets";
 
@@ -29,10 +32,12 @@ export const RECURRENCES_PATH = `${APP_ROUTES.find((route) => route.key === "sta
 
 export function StatementScreen() {
   const t = useTranslations("app");
+  const orientation = useTranslations("app.orientation");
   const { current } = useWallets();
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
-      <h1 className="text-2xl font-semibold">{t("nav.statement")}</h1>
+      <div className="space-y-1"><h1 className="text-2xl font-semibold">{t("nav.statement")}</h1>
+        <p className="max-w-xl text-[13px] text-muted-foreground">{orientation("statement")}</p></div>
       {current ? (
         <WalletStatement key={current.id} wallet={current} />
       ) : (
@@ -71,7 +76,7 @@ export function useWalletAccounts(walletId: string) {
     reloadArchived();
     reloadCards();
   }, [reloadActive, reloadArchived, reloadCards]);
-  return { accounts: activeList, cards: cardList, names, reload };
+  return { accounts: activeList, accountsLoading: active.state.status === "loading", accountsState: active.state, cards: cardList, names, reload };
 }
 
 function WalletStatement({ wallet }: { wallet: Wallet }) {
@@ -79,10 +84,17 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
   const tagsT = useTranslations("app.tags");
   const recurrencesT = useTranslations("app.recurrences");
   const format = useFormatter();
+  const locale = useLocale();
+  const reducedMotion = useReducedMotion();
+  const rangeButton = React.useRef<HTMLButtonElement>(null);
   const money = useMoney(wallet.currencyCode);
   const request = useApi();
   const canEdit = can(wallet.role, "editEntries");
   const [month, setMonth] = React.useState(() => todayIso().slice(0, 7));
+  const [customRange, setCustomRange] = React.useState<{ from: string; to: string } | null>(null);
+  const [rangeOpen, setRangeOpen] = React.useState(false);
+  const [rangeError, setRangeError] = React.useState(false);
+  const changeMonth = (next: string) => { setMonth(next); setCustomRange(null); setRangeOpen(false); };
   const [accountFilter, setAccountFilter] = React.useState(ALL);
   const [categoryFilter, setCategoryFilter] = React.useState(ALL);
   const [tagFilter, setTagFilter] = React.useState(ALL);
@@ -99,18 +111,20 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { from, to } = monthRange(month);
+  const { from, to } = customRange ?? monthRange(month);
   const params = new URLSearchParams({ from, to });
   if (accountFilter !== ALL) params.set("accountId", accountFilter);
   if (categoryFilter !== ALL) params.set("categoryId", categoryFilter);
   if (tagFilter !== ALL) params.set("tagId", tagFilter);
   if (query) params.set("q", query);
-  const list = useResource<EntryList>(`/api/wallets/${wallet.id}/transactions?${params}`);
-  useRecurrenceRefresh(wallet.id, list.reload);
+  const list = useResource<EntryRows>(`/api/wallets/${wallet.id}/transactions/entries?${params}`);
+  const totals = useResource<EntrySummaryResponse>(`/api/wallets/${wallet.id}/transactions/summary?${params}`);
+  const reloadStatement = React.useCallback(() => { list.reload(); totals.reload(); }, [list.reload, totals.reload]);
+  useRecurrenceRefresh(wallet.id, reloadStatement);
   const { Link } = useAppNavigation();
 
   const refresh = () => {
-    list.reload();
+    reloadStatement();
     reloadAccounts();
   };
   const markPaid = async (entry: Entry) => {
@@ -132,26 +146,27 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
     }
     return [...byDate];
   }, [list.state]);
-  const summary = list.state.status === "ready" ? list.state.value.summary : null;
+  const summary = totals.state.status === "ready" ? totals.state.value.summary : null;
 
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" aria-label={t("previousMonth")} onClick={() => setMonth(addMonths(month, -1))}>
+          <Button variant="ghost" size="icon-sm" aria-label={t("previousMonth")} onClick={() => changeMonth(addMonths(month, -1))}>
             <ChevronLeftIcon />
           </Button>
-          <span className="inline-block min-w-36 text-center text-[15px] font-semibold first-letter:uppercase">{monthLabel}</span>
-          <Button variant="ghost" size="icon-sm" aria-label={t("nextMonth")} onClick={() => setMonth(addMonths(month, 1))}>
+          <span className="inline-block min-w-36 text-center text-[15px] font-semibold first-letter:uppercase">{customRange ? `${format.dateTime(new Date(`${from}T12:00:00`), { day: "numeric", month: "short", year: "numeric" })} – ${format.dateTime(new Date(`${to}T12:00:00`), { day: "numeric", month: "short", year: "numeric" })}` : monthLabel}</span>
+          <Button variant="ghost" size="icon-sm" aria-label={t("nextMonth")} onClick={() => changeMonth(addMonths(month, 1))}>
             <ChevronRightIcon />
           </Button>
-          {month !== todayIso().slice(0, 7) && (
-            <Button variant="link" size="sm" onClick={() => setMonth(todayIso().slice(0, 7))}>
+          {(customRange || month !== todayIso().slice(0, 7)) && (
+            <Button variant="link" size="sm" onClick={() => changeMonth(todayIso().slice(0, 7))}>
               {t("today")}
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button ref={rangeButton} variant="secondary" size="sm" aria-expanded={rangeOpen} aria-controls="statement-period" onClick={() => { setRangeOpen(!rangeOpen); setRangeError(false); }}>{t("period.custom")}</Button>
           <Link
             href={RECURRENCES_PATH}
             className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[13px] text-foreground/80 outline-none hover:bg-foreground/5 focus-visible:ring-[3px] focus-visible:ring-ring/40"
@@ -168,14 +183,39 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
         </div>
       </div>
 
+      <AnimatePresence initial={false}>
+      {rangeOpen && <motion.div key="custom-period" initial={{ height: reducedMotion === false ? 0 : "auto", opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: reducedMotion === false ? 0 : "auto", opacity: 0 }} transition={{ duration: reducedMotion === false ? 0.22 : 0.12, ease: "easeOut" }} className="overflow-hidden">
+      <form id="statement-period" className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4" onSubmit={(event) => {
+        event.preventDefault();
+        const fields = event.currentTarget.elements;
+        const start = (fields.namedItem("from") as HTMLInputElement).value;
+        const end = (fields.namedItem("to") as HTMLInputElement).value;
+        if (!start || !end || start > end) { setRangeError(true); return; }
+        setCustomRange({ from: start, to: end }); setMonth(start.slice(0, 7)); setRangeOpen(false); setRangeError(false); rangeButton.current?.focus();
+      }}>
+        <div className="flex min-w-0 flex-col gap-1.5"><Label htmlFor="statement-from">{t("period.from")}</Label><DatePicker id="statement-from" name="from" defaultValue={from} locale={locale} label={t("period.from")} todayLabel={t("today")} aria-invalid={rangeError || undefined} aria-describedby={rangeError ? "statement-period-error" : undefined} /></div>
+        <div className="flex min-w-0 flex-col gap-1.5"><Label htmlFor="statement-to">{t("period.to")}</Label><DatePicker id="statement-to" name="to" defaultValue={to} locale={locale} label={t("period.to")} todayLabel={t("today")} aria-invalid={rangeError || undefined} aria-describedby={rangeError ? "statement-period-error" : undefined} /></div>
+        <Button type="submit">{t("period.apply")}</Button>
+        <Button type="button" variant="ghost" onClick={() => changeMonth(month)}>{t("period.month")}</Button>
+        {rangeError && <p id="statement-period-error" role="alert" className="w-full text-[13px] text-destructive">{t("period.invalid")}</p>}
+      </form></motion.div>}
+      </AnimatePresence>
+
+      {totals.state.status === "loading" && <LoadingSummary />}
+      {totals.state.status === "error" && (
+        <div className="flex items-center gap-3 text-[13px] text-destructive">
+          {t("summaryLoadError")}
+          <Button variant="secondary" size="sm" onClick={totals.reload}>{t("retry")}</Button>
+        </div>
+      )}
       {summary && (
         <div className="grid grid-cols-3 gap-2">
-          <SummaryCard label={t("income")} value={money.format(summary.incomeMinor)} tone="positive"
+          <SummaryCard label={t("income")} value={money.format(summary.incomeMinor + summary.pendingIncomeMinor)} tone="positive"
             hint={summary.pendingIncomeMinor ? t("pending", { amount: money.format(summary.pendingIncomeMinor) }) : undefined} />
-          <SummaryCard label={t("expense")} value={money.format(summary.expenseMinor)} tone="negative"
+          <SummaryCard label={t("expense")} value={money.format(summary.expenseMinor + summary.pendingExpenseMinor)} tone="negative"
             hint={summary.pendingExpenseMinor ? t("pending", { amount: money.format(summary.pendingExpenseMinor) }) : undefined} />
           <SummaryCard label={t("accumulatedResult")} value={money.format(summary.accumulatedBalanceMinor)}
-            hint={t("accumulatedResultHint", { amount: money.format(summary.accumulatedPendingMinor) })}
+            hint={t("accumulatedResultHint", { amount: money.format(summary.accumulatedPendingMinor), date: format.dateTime(new Date(`${to}T12:00:00`), { day: "numeric", month: "short", year: "numeric" }) })}
             tone={summary.accumulatedBalanceMinor < 0 ? "negative" : "positive"} />
         </div>
       )}
@@ -219,7 +259,7 @@ function WalletStatement({ wallet }: { wallet: Wallet }) {
       {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
       {canEdit && accounts && accounts.length === 0 && <p className="text-[13px] text-muted-foreground">{t("noAccounts")}</p>}
 
-      {list.state.status === "loading" && <Spinner label={t("new")} />}
+      {list.state.status === "loading" && <LoadingList rows={5} />}
       {list.state.status === "error" && (
         <div className="flex items-center gap-3 text-[13px] text-destructive">
           {t("loadError")}

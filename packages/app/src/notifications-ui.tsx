@@ -13,6 +13,7 @@ import {
 import { cn } from "@packages/ui/lib/utils";
 import { CURRENCIES, formatMoney, type CurrencyCode } from "@packages/shared/money";
 import type { AppNotification, NotificationList } from "@packages/shared/notifications";
+import { ResourceFeedback } from "./loading";
 import { useApi, useResource } from "./api";
 import { useFormatter, useLocale, useTranslations } from "./i18n";
 import { useAppNavigation } from "./navigation";
@@ -64,7 +65,8 @@ export function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
         <DropdownMenuLabel>{t("title")}</DropdownMenuLabel>
-        {!list?.notifications.length && <p className="px-2 py-3 text-[12px] text-muted-foreground">{t("empty")}</p>}
+        <ResourceFeedback state={state} reload={reload} />
+        {state.status === "ready" && !list?.notifications.length && <p className="px-2 py-3 text-[12px] text-muted-foreground">{t("empty")}</p>}
         {list?.notifications.map((item) => (
           <DropdownMenuItem key={item.key} asChild className="items-start">
             <Link href={item.path} className="flex w-full items-start gap-2">

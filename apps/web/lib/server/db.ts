@@ -4,7 +4,9 @@ import postgres from "postgres";
 import { env } from "@packages/env/server";
 import * as schema from "@packages/shared/db/schema";
 
-let db: ReturnType<typeof createDb> | undefined;
+type Database = ReturnType<typeof createDb>;
+const developmentCache = globalThis as typeof globalThis & { finfyDevelopmentDb?: Database };
+let db: Database | undefined;
 
 function createDb(url: string) {
   // Small pool: each Vercel function instance opens its own connections.
@@ -14,6 +16,10 @@ function createDb(url: string) {
 /** Lazily connects, so pages that never touch the database build without DATABASE_URL. */
 export function getDb() {
   if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
+  if (process.env.NODE_ENV === "development") {
+    developmentCache.finfyDevelopmentDb ??= createDb(env.DATABASE_URL);
+    return developmentCache.finfyDevelopmentDb;
+  }
   db ??= createDb(env.DATABASE_URL);
   return db;
 }

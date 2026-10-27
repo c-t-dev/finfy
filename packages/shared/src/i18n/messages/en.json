@@ -1,6 +1,8 @@
 {
   "common": {
     "appName": "finfy",
+    "loadError": "Could not load this section.",
+    "retry": "Try again",
     "loading": "Loading",
     "close": "Close",
     "language": "Language",
@@ -18,7 +20,9 @@
       "close": "Close",
       "minimize": "Minimize",
       "zoom": "Zoom",
-      "restore": "Restore window"
+      "restore": "Restore window",
+      "maximize": "Maximize window",
+      "restoreSize": "Restore window size"
     }
   },
   "public": {
@@ -71,7 +75,8 @@
       "statement": "Statement",
       "accounts": "Accounts and cards",
       "goals": "Planning",
-      "settings": "Settings"
+      "settings": "Settings",
+      "patrimony": "Assets and debts"
     },
     "wallet": {
       "label": "Wallet",
@@ -338,8 +343,9 @@
       "retry": "Try again",
       "income": "Income",
       "expense": "Expenses",
+      "summaryLoadError": "Could not load the statement summary.",
       "accumulatedResult": "Accumulated result",
-      "accumulatedResultHint": "Pending: {amount}. Included in the projected month-end balance. Only the account filter applies.",
+      "accumulatedResultHint": "Pending: {amount}. Included in the projected balance through {date}. Only the account filter applies.",
       "result": "Result",
       "pending": "Pending: {amount}",
       "pendingBadge": "Pending",
@@ -391,6 +397,14 @@
         "body": "Every entry comes out of or goes into an account: checking, savings, cash in your wallet. Create the first one in Accounts and cards, then come back.",
         "create": "Create account",
         "later": "Not now"
+      },
+      "period": {
+        "custom": "Custom period",
+        "from": "Start date",
+        "to": "End date",
+        "apply": "Apply period",
+        "month": "Use full month",
+        "invalid": "The end date must be on or after the start date."
       }
     },
     "cards": {
@@ -401,7 +415,17 @@
       "needsAccount": "Create an account first: a card needs one to pay its invoices.",
       "used": "{used} of {limit} used",
       "noLimit": "{used} used",
-      "currentInvoice": "Current invoice",
+      "nextInvoice": "Next invoice to pay",
+      "actualInvoiceHint": "Purchases already made in this invoice. Excludes forecasts.",
+      "noNextInvoice": "No upcoming invoice with purchases already made.",
+      "overdueSummary": "Overdue: {amount} ({count} invoices)",
+      "forecastSummary": "Forecast only: {amount} · due {date}",
+      "viewInvoice": "View invoice",
+      "viewOverdue": "View overdue invoice",
+      "creditDetails": "Credit limit and future installments",
+      "currentInvoice": "Ongoing purchase cycle",
+      "invoiceProjectionHint": "This cycle total includes future forecasts.",
+      "usedHint": "Purchases already made, including future installments.",
       "due": "Due {date}",
       "closes": "Closes {date}",
       "brands": {
@@ -953,11 +977,14 @@
     },
     "patrimony": {
       "title": "Assets and debts",
+      "pageTitle": "Assets and debts",
+      "backToAccounts": "Back to accounts",
       "netWorth": "Net worth",
+      "cardDebtHint": "Total debt includes installments due later. It is not just the amount payable this month.",
       "accounts": "Accounts",
       "assets": "Assets",
       "liabilities": "Debts",
-      "cardDebt": "Open card invoices",
+      "cardDebt": "Total card debt",
       "newAsset": "New asset",
       "newLiability": "New debt",
       "empty": "No assets or debts yet.",
@@ -1030,6 +1057,21 @@
         "INVOICE_OVERDUE": "The {card} invoice ({amount}) was due on {date} and is not paid.",
         "PENDING_DUE": "{count, plural, one {# pending entry} other {# pending entries}} dated today or earlier."
       }
+    },
+    "orientation": {
+      "home": "This month at a glance, including pending entries. Account balances include confirmed movements only.",
+      "statement": "Review entries for the selected period. Income and expenses include pending entries; the accumulated result projects the balance through the end date.",
+      "accounts": "Available account balances and upcoming card invoices. Forecasts appear separately.",
+      "planning": "Set monthly spending limits and track money reserved for your goals.",
+      "patrimony": "An overview of what you own and owe, including installments of purchases already made.",
+      "settings": "Manage your wallet, sharing and access to finfy.",
+      "walletGroup": "Wallet and sharing",
+      "organizationGroup": "Entry organization",
+      "personalGroup": "Your access",
+      "advancedGroup": "Wallet administration",
+      "budget": "Limits and spending by category for the selected month.",
+      "goals": "Reserved amounts and progress toward your goals.",
+      "monthlyHint": "Includes pending entries. Card purchases follow the invoice due date."
     }
   },
   "errors": {

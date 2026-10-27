@@ -1,4 +1,6 @@
 import "server-only";
+import { selectCommittedCardDebt } from "./card-debt";
+import { cardPaymentOverview } from "./card-overview";
 import { and, asc, eq, inArray, isNotNull, isNull, ne, sql, type SQL } from "drizzle-orm";
 import {
   addMonthsToDate,
@@ -12,6 +14,8 @@ import {
   type CreatePurchaseInput,
   type Invoice,
   type InvoiceDetail,
+  type InvoiceHeader,
+  type InvoicePurchases,
   type InvoicePeriod,
   type PayInvoiceInput,
   type PurchaseStateInput,
@@ -104,15 +108,19 @@ async function selectCards(db: Db, where: SQL | undefined): Promise<Card[]> {
   const unpaid = await db
     .select()
     .from(creditCardInvoices)
-    .where(and(inArray(creditCardInvoices.creditCardId, cardIds), eq(creditCardInvoices.status, "OPEN")));
+    .where(and(inArray(creditCardInvoices.creditCardId, cardIds), eq(creditCardInvoices.status, "OPEN"), isNull(creditCardInvoices.archivedAt)));
   const currentIds = rows.map((row) => invoiceId(row.id, invoiceForDate(today(), row.closingDay, row.dueDay)));
   const current = await db.select().from(creditCardInvoices).where(inArray(creditCardInvoices.id, currentIds));
   const totals = await invoiceTotals(db, [...new Set([...unpaid, ...current].map((invoice) => invoice.id))]);
+  const committedTotals = new Map((await selectCommittedCardDebt(db, inArray(transactions.creditCardId, cardIds), today()))
+    .map(row => [row.invoiceId!, Number(row.totalMinor)]));
 
   return rows.map((row) => {
     const period = invoiceForDate(today(), row.closingDay, row.dueDay);
     const currentRow = current.find((invoice) => invoice.id === invoiceId(row.id, period));
     return {
+      ...cardPaymentOverview(unpaid.filter(invoice => invoice.creditCardId === row.id)
+        .map(invoice => toInvoice(invoice, totals.get(invoice.id) ?? 0)), committedTotals, today()),
       id: row.id,
       name: row.name,
       paymentAccountId: row.paymentAccountId,
@@ -123,7 +131,7 @@ async function selectCards(db: Db, where: SQL | undefined): Promise<Card[]> {
       color: (row.color ?? "blue") as AccountColor,
       usedMinor: unpaid
         .filter((invoice) => invoice.creditCardId === row.id)
-        .reduce((sum, invoice) => sum + (totals.get(invoice.id) ?? 0), 0),
+        .reduce((sum, invoice) => sum + (committedTotals.get(invoice.id) ?? 0), 0),
       currentInvoice: currentRow ? toInvoice(currentRow, totals.get(currentRow.id) ?? 0) : virtualInvoice(row, period),
       archived: row.archivedAt !== null,
       version: row.version,
@@ -402,6 +410,33 @@ export async function getInvoice(userId: string, walletId: string, cardId: strin
     if (!row) return { invoice: virtualInvoice(card, invoicePeriod(year, monthNumber, card.closingDay, card.dueDay)), purchases: [] };
     const totals = await invoiceTotals(tx, [id]);
     return { invoice: toInvoice(row, totals.get(id) ?? 0), purchases: await purchasesOf(tx, id) };
+  });
+}
+
+async function invoiceReadContext(tx: Tx, userId: string, walletId: string, cardId: string, month: string) {
+  await requireRole(tx, walletId, userId, "view");
+  const [card] = await tx.select().from(creditCards)
+    .where(and(eq(creditCards.walletId, walletId), eq(creditCards.id, cardId))).limit(1);
+  if (!card) throw new CommandError("notFound");
+  const [referenceYear, referenceMonth] = month.split("-").map(Number);
+  const id = invoiceId(cardId, { referenceYear, referenceMonth });
+  const [row] = await tx.select().from(creditCardInvoices)
+    .where(and(eq(creditCardInvoices.walletId, walletId), eq(creditCardInvoices.id, id))).limit(1);
+  return { card, row, id, referenceYear, referenceMonth };
+}
+
+export async function getInvoiceHeader(userId: string, walletId: string, cardId: string, month: string): Promise<CommandResult<InvoiceHeader>> {
+  return runCommand(async tx => {
+    const { card, row, id, referenceYear, referenceMonth } = await invoiceReadContext(tx, userId, walletId, cardId, month);
+    return { invoice: row ? toInvoice(row, (await invoiceTotals(tx, [id])).get(id) ?? 0)
+      : virtualInvoice(card, invoicePeriod(referenceYear, referenceMonth, card.closingDay, card.dueDay)) };
+  });
+}
+
+export async function getInvoicePurchases(userId: string, walletId: string, cardId: string, month: string): Promise<CommandResult<InvoicePurchases>> {
+  return runCommand(async tx => {
+    const { row, id } = await invoiceReadContext(tx, userId, walletId, cardId, month);
+    return { purchases: row ? await purchasesOf(tx, id) : [] };
   });
 }
 

@@ -1,6 +1,6 @@
 # Problemas encontrados
 
-> Última atualização: 2026-10-26
+> Última atualização: 2026-10-27
 
 Bugs, inconsistências e riscos observados nos testes. Úteis como lista do que **não** repetir no finfy.
 
@@ -48,3 +48,15 @@ Bugs, inconsistências e riscos observados nos testes. Úteis como lista do que 
 ## finfy — regressão do extrato (2026-10-26)
 
 Após v0.2.2, abrir o extrato falhava com "Não foi possível carregar os lançamentos". Logs confirmaram PostgreSQL `42702`, referência ambígua a `id`. A seleção de tabela única do Drizzle removia nomes de tabelas dentro do SQL de saldo, afetando os joins da projeção e a correlação por conta. Testes anteriores compilavam expressões isoladas em SQLite e não exerciam essa transformação. Correção: identificadores explicitamente qualificados; teste das consultas completas de produção em PostgreSQL em memória, com esquema migrado e dados sintéticos. Sem conexão ao banco real.
+## finfy — recarga contínua no desenvolvimento Windows (2026-10-27)
+
+Turbopack recompilava sem alteração de fonte, com sucessivos `Compiled in 0ms` e recargas de `/en`. Contorno adotado: Webpack no desenvolvimento. Imports de mensagens por caminhos literais corrigem a resolução de exports do pacote nesse bundler. Página local voltou a HTTP 200. Causa interna do ciclo no Turbopack não determinada.
+
+## finfy — projeções no limite usado e patrimônio (2026-10-27)
+
+Diagnóstico na cópia local autorizado pelo proprietário: `invoiceTotals` soma todas as compras não arquivadas/não canceladas de cada fatura. O limite utilizado soma esses totais de todas as faturas abertas; o patrimônio também soma compras de todas as faturas abertas, sem distinguir ocorrências futuras de recorrência. Assim, gastos ainda projetados afetam os números apresentados como limite usado e dívida de cartão. O patrimônio pode ficar negativo antes de essas compras ocorrerem. Não houve alteração de dados neste diagnóstico.
+
+O total da fatura exibida e o limite usado têm escopos diferentes: o primeiro é só o ciclo atual de compras; o segundo soma todas as faturas abertas. Cada cartão pode ter vencimento em um mês diferente. Os saldos das contas seguem apenas movimentos pagos, conforme o modelo atual. Pergunta encaminhada ao usuário: excluir previsões futuras do limite usado e do patrimônio, mantendo parcelas de compras já realizadas e as previsões no extrato. O usuário confirmou a separação. Correção local usa a regra da [0022](decisoes/0022-divida-realizada-e-previsoes-dos-cartoes.md): excluir compras futuras previstas e manter parcelas de compras já realizadas.
+### 2026-10-27 — conexões no desenvolvimento
+
+Recompilações locais recriavam o pool do banco porque o cache era apenas do módulo. Após várias atualizações, o banco recusava novas conexões. Cache global apenas em desenvolvimento mantém o pool entre hot reloads; reinício libera os pools antigos. Produção mantém pool por instância.

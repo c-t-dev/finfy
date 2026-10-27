@@ -29,12 +29,14 @@ function Link(props: AppLinkProps) {
 export function AppHost({
   children,
   initialWide,
+  minimizedBackground,
   user,
   wallets,
   currentWalletId,
 }: {
   children: React.ReactNode;
   initialWide: boolean;
+  minimizedBackground: React.ReactNode;
   user: { name: string; email: string };
   wallets: Wallet[];
   currentWalletId: string | null;
@@ -77,7 +79,9 @@ export function AppHost({
           >
             <AccountClientProvider client={webAccountClient}>
               <AppShell
+                allowMinimize
                 wide={wide}
+                minimizedBackground={minimizedBackground}
                 account={
                   <AccountPanel name={user.name} email={user.email} pending={signingOut} onSignOut={() => void handleSignOut()} />
                 }

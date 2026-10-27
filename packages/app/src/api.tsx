@@ -49,5 +49,7 @@ export function useResource<T>(path: string | null) {
   }, [request, path, reloadKey]);
 
   const reload = React.useCallback(() => setReloadKey((key) => key + 1), []);
-  return { state: state as LoadState<T>, reload };
+  // A changed context must not paint the previous wallet/month before the effect runs.
+  const visibleState: LoadState<T> = state.path === path ? state : { status: "loading" };
+  return { state: visibleState, reload };
 }

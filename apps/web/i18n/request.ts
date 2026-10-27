@@ -3,6 +3,11 @@ import { getRequestConfig } from "next-intl/server";
 import { isLocale, LOCALE_COOKIE, matchLocale, type Locale } from "@packages/shared/i18n";
 import { getCurrentUser } from "@/lib/server/auth/session";
 
+const messages = {
+  en: () => import("@packages/shared/i18n/messages/en"),
+  "pt-BR": () => import("@packages/shared/i18n/messages/pt-BR"),
+};
+
 /**
  * Public pages get the locale from the URL segment. The signed-in app has no
  * segment: it uses the account language (`users.language`), then the cookie
@@ -20,6 +25,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
   }
   return {
     locale,
-    messages: (await import(`@packages/shared/i18n/messages/${locale}`)).default,
+    messages: (await messages[locale]()).default,
   };
 });

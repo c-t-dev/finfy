@@ -15,6 +15,7 @@ import {
 import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { Spinner } from "@packages/ui/components/spinner";
+import { ResourceFeedback } from "./loading";
 import { AUTH_ERRORS, type AuthError } from "@packages/shared/auth";
 import {
   SIGNUP_INVITE_DAYS,
@@ -59,6 +60,7 @@ export function SignupInvitesCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        <ResourceFeedback state={state} reload={reload} />
         <form
           className="flex flex-col gap-3"
           onSubmit={async (event) => {

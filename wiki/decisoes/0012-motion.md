@@ -1,6 +1,6 @@
 # 0012 — Motion para animações React
 
-> Status: Aceita · Decidido em 2026-10-26 · Última atualização: 2026-10-26
+> Status: Aceita · Decidido em 2026-10-26 · Última atualização: 2026-10-27
 
 ## Contexto
 
@@ -25,3 +25,17 @@ A entrada da janela de autenticação é mais visível: 450 ms, deslocamento ver
 - [Instalação e Next.js](https://motion.dev/docs/react-installation)
 - [Tailwind v4](https://motion.dev/docs/react-tailwind)
 - [Acessibilidade](https://motion.dev/docs/react-accessibility)
+
+## Minimizar o app (2026-10-27)
+
+Botão laranja da janela logada usa o mesmo efeito do login: escala até 0,15, deslocamento para baixo de 40vh e fade em 350 ms; restaurar inverte o efeito. Movimento reduzido ou desconhecido usa apenas fade de 120 ms. A janela fica montada e inerte enquanto minimizada. Controle inferior restaura a janela, com foco transferido ao restaurar e devolvido ao botão anterior. Sem navegação ou alteração de dados.
+
+Ao minimizar o app, mostrar a Home pública atrás da janela, como no login. O host fornece PublicHome como slot renderizado no servidor; packages/app permanece independente de Next.js. Abrir app na Home restaura a janela atual sem navegar, assim como o controle inferior. Troca de idioma usa o comportamento do app para manter a sessão e rota.
+
+A Home pública permanece montada por trás da janela também quando aberta, com o mesmo desfoque e escurecimento do login. Fica inerte e oculta para leitores de tela enquanto o app está aberto; minimizar revela a Home retirando o efeito.
+
+Restrição aprovada: minimizar para revelar a Home pública é exclusivo da web. AppShell exige allowMinimize explícito, desativado por padrão; somente AppHost web o habilita. Tauri e Capacitor usam os controles nativos do sistema, sem Home pública ao fundo.
+
+Botão verde da web maximiza a janela dentro do navegador, remove margens e oculta a Home pública ao fundo. Novo clique restaura tamanho e fundo anteriores. Não usa fullscreen do navegador. Estado dos formulários e preferência de largura são preservados; minimizar a partir de maximizado revela a Home e restaurar mantém maximizado. Controles nativos continuam a cargo do sistema.
+
+Maximizar e restaurar usam transição de posição/tamanho com Motion layout por 350 ms, desativada com movimento reduzido. Ícone do botão verde indica expandir ou restaurar conforme o estado, mantendo rótulo acessível e foco.

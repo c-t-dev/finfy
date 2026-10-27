@@ -31,25 +31,38 @@ import { useWallets } from "../wallets";
 
 export function SettingsScreen() {
   const t = useTranslations("app");
+  const orientation = useTranslations("app.orientation");
   const { current } = useWallets();
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{t("nav.settings")}</h1>
+      <div className="space-y-1"><h1 className="text-2xl font-semibold">{t("nav.settings")}</h1>
+        <p className="max-w-xl text-[13px] text-muted-foreground">{orientation("settings")}</p></div>
       {current ? (
         // Keyed by wallet, so switching wallets resets the forms.
         <React.Fragment key={current.id}>
-          <WalletSettings wallet={current} />
-          <MembersCard wallet={current} />
-          <CategoriesLink />
-          <RulesLink />
-          <ActivityLink />
-          {can(current.role, "archiveWallet") && <ArchiveWallet wallet={current} />}
+          <section aria-labelledby="settings-wallet-heading" className="flex flex-col gap-3">
+            <h2 id="settings-wallet-heading" className="text-[15px] font-semibold">{orientation("walletGroup")}</h2>
+            <WalletSettings wallet={current} />
+            <MembersCard wallet={current} />
+          </section>
+          <section aria-labelledby="settings-organization-heading" className="flex flex-col gap-3">
+            <h2 id="settings-organization-heading" className="text-[15px] font-semibold">{orientation("organizationGroup")}</h2>
+            <div className="grid gap-3 sm:grid-cols-2"><CategoriesLink /><RulesLink /></div>
+            <ActivityLink />
+          </section>
         </React.Fragment>
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("settings.wallet.none")}</p>
       )}
-      <AccountCard />
-      <SignupInvitesCard />
+      <section aria-labelledby="settings-personal-heading" className="flex flex-col gap-3">
+        <h2 id="settings-personal-heading" className="text-[15px] font-semibold">{orientation("personalGroup")}</h2>
+        <AccountCard />
+        <SignupInvitesCard />
+      </section>
+      {current && can(current.role, "archiveWallet") && <section aria-labelledby="settings-admin-heading" className="flex flex-col gap-3">
+        <h2 id="settings-admin-heading" className="text-[15px] font-semibold">{orientation("advancedGroup")}</h2>
+        <ArchiveWallet key={current.id} wallet={current} />
+      </section>}
     </div>
   );
 }

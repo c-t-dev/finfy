@@ -1,6 +1,6 @@
 # finfy — Codebase
 
-> Last updated: 2026-10-26
+> Last updated: 2026-10-27
 
 How the code is organized and how to run it. The reasons behind each choice are in the decisions: [0008](../decisoes/0008-linguagem-visual.md) (UI), [0009](../decisoes/0009-react-tauri-capacitor.md) (clients), [0010](../decisoes/0010-nextjs-na-vercel.md) (Next.js on Vercel, Drizzle), [0011](../decisoes/0011-traducoes.md) (translations).
 
@@ -162,16 +162,16 @@ Server: `apps/web/lib/server/entries.ts`. Shared: `@packages/shared/transactions
 Rules:
 
 - Amounts are positive minor units; the type gives the direction. The category must fit the type (`EXPENSE`/`INCOME`, or `BOTH`).
-- **Status:** `PAID` sets `paid_at`; `PENDING` counts in no balance or total, only in the "pending" figures. "Mark as paid" is a `PATCH` of `status`.
+- **Status:** `PAID` sets `paid_at`; `PENDING` does not affect actual account balances. Statement headline income/expense totals and projected accumulated result include pending entries, with the pending component shown below. "Mark as paid" is a `PATCH` of `status`.
 - **Transfers:** two rows (`TRANSFER_OUT` with the request `id`, `TRANSFER_IN` with `inId`) and a `transaction_links` row (`TRANSFER`, ID `deterministicId("transaction_link", outId, inId, "TRANSFER")`). Editing a leg mirrors amount, date, status, description and notes to the other; `accountId` moves only that leg. Archiving one leg archives both and the link. Transfers are not income or expense.
 - **Conflicts:** description, notes and category, last write wins. Amount, date, account and status need the latest `baseVersion` (`409 versionConflict`).
-- **Totals** (`summary`): paid `INCOME`; paid `EXPENSE` plus `CREDIT_CARD_PURCHASE` (on its linked invoice due date, whatever the invoice status); pending income and expense apart. The Home "where the money went" uses the same rule, grouped by top-level category.
+- **Totals** (`summary`): paid `INCOME`; paid `EXPENSE` plus `CREDIT_CARD_PURCHASE` (on its linked invoice due date, whatever the invoice status); pending income and expense apart. The Home "where the money went" includes pending expenses as well, grouped by top-level category.
 - The first entry locks the wallet's currency.
 - Checked on 2026-10-25: balances after expense, income, pending, transfer, transfer edit and transfer delete; filters by category (with subcategories) and search; stale edits.
 
 ## Credit cards
 
-Invoice titles and payment labels use the saved due month, including existing payment labels on read. Internal reference months, IDs and API routes still identify closing months. Statement filtering, ordering, grouping and totals use derived optional `statementDate`; card purchases use the linked invoice due date and other entries their transaction date. Original purchase dates remain visible. Home categories, budget spending and budget alerts share this competence. Payments debit accounts on their actual date and never duplicate expenses. The card list still selects the current purchase cycle. See [0016](../decisoes/0016-competencia-das-faturas.md).
+Invoice titles and payment labels use the saved due month, including existing payment labels on read. Internal reference months, IDs and API routes still identify closing months. Statement filtering, ordering, grouping and totals use derived optional `statementDate`; card purchases use the linked invoice due date and other entries their transaction date. Original purchase dates remain visible. Home categories, budget spending and budget alerts share this competence. Payments debit accounts on their actual date and never duplicate expenses. The card list highlights the next actual invoice, separates overdue debt and forecasts, and links to the matching internal reference month. Credit commitments are in card details; patrimony has its own accounts subpage. See [0023](../decisoes/0023-contas-e-proximas-faturas.md). See [0016](../decisoes/0016-competencia-das-faturas.md).
 
 Regression SQL is executed against isolated in-memory SQLite tables by `apps/web/test/statement-dates.test.ts`; no account or external database is used.
 
@@ -191,7 +191,7 @@ Rules:
 - **Installments:** the total is split in minor units with the leftover on the first; installment k is dated k−1 months after the purchase (day clamped) and lands on that date's invoice. IDs: the first keeps the request `id`, the others `deterministicId("installment", id, k)`; `installment_group_id` is the first ID. Editing changes description, category and notes of every installment; amount and date need a new purchase.
 - **Purchases** are `CREDIT_CARD_PURCHASE` rows, `PENDING` until their invoice is paid. They never touch an account balance and count as expense on their linked invoice due date.
 - **Paying** creates one `CREDIT_CARD_PAYMENT` (paid) from the chosen account for the whole total, marks the invoice and its purchases `PAID` and stores `payment_transaction_id`. Partial payments are not supported yet (`amountMinor` must equal the total). A paid invoice refuses new purchases and deletions (`409 invoicePaid`). **Reopening** archives the payment and puts invoice and purchases back to open/pending.
-- **Limit used** = purchases of unpaid invoices.
+- **Limit used** = actual outstanding card purchases through today, plus future installments of purchases already made; excludes future forecasts. The shared ``card-debt.ts`` query is also used by net worth (see [0022](../decisoes/0022-divida-realizada-e-previsoes-dos-cartoes.md)).
 - **Changing closing or due day** affects only invoices opened afterwards; existing invoices keep their dates.
 - Checked on 2026-10-25: purchases before and after closing, 3 installments of 100,00 (33,34 + 33,33 + 33,33 on three invoices), wrong payment amount, payment debit, writes on a paid invoice, reopen, edit and delete of every installment, month totals.
 
@@ -376,6 +376,16 @@ Swagger UI loads `swagger-ui-dist@5.17.14` from jsDelivr.
 
 ## Deploy (Vercel)
 
+### Production version tags
+
+Use annotated Git tags (`vMAJOR.MINOR.PATCH`) on the exact commit of a confirmed ready production deployment. The first tag is `v0.1.0` on `d3790824ee6ef08e67f8effd52f6b9195d465ac4`. This is a manual release procedure, not automatic tagging or a change to workspace package versions. See [0015](../decisoes/0015-tags-de-producao.md).
+
+For each future release, verify the deployment's source commit and status, then create an annotated tag with `git tag -a <version> <commit> -m <description>` and publish that specific reference with `git push origin <version>`. Never move a published tag. Use minor increments for new features and patch increments for fixes while in `0.x`; `1.0.0` requires an explicit stable-release decision.
+
+Tags preserve code references, not database snapshots. To undo shipped code in Git, use `git revert` and validate the resulting commit before an authorized push to `main`; do not force-push shared history. Vercel rollback is a separate immediate recovery action and does not revert the database.
+
+### Hosting configuration
+
 Live since 2026-10-26, for personal use: `https://finfy-tau.vercel.app`.
 
 | What | Value |
@@ -424,3 +434,64 @@ If Docker Desktop crashes on start with `sailor-ingest.sock ... The file cannot 
 ## Accumulated statement result
 
 Statement summary includes `accumulatedBalanceMinor` = `confirmedBalanceMinor` + signed `accumulatedPendingMinor`. Confirmed cash includes current active accounts' opening balances and paid, non-archived movements through inclusive `to`. Pending cash includes stored pending account movements through `to` and pending purchases of unpaid invoices due through `to`, attributed to the card's configured payment account. Paying replaces pending purchases with the actual account payment; reopening restores pending purchases. Only `accountId` applies; category, tag, search and `from` filter monthly figures and entries only. Positive result is green; the hint shows net pending cash included in the projected balance. Opening balances have no effective date. Historical views reflect current record/archive state. No extra recurrence occurrences are generated. Home and account balances are unchanged. See [0018](../decisoes/0018-resultado-acumulado-do-extrato.md). Regression SQL covers both isolated SQLite expressions and the actual API row/totals query builders in in-memory PostgreSQL (PGlite), applying every committed migration. `entry-queries.ts` is shared by the API and these integration tests. Nested balance SQL uses explicit qualified identifiers: Drizzle single-table selections otherwise strip column table names, causing ambiguous joins (SQLSTATE 42702). No external database or real account is used.
+
+Statement headline cards include pending entries: income is `incomeMinor + pendingIncomeMinor`; expense is `expenseMinor + pendingExpenseMinor`. Card purchases are already included in `expenseMinor` by invoice due date and are never added twice. Pending hints identify an included portion. Monthly filters apply as before; the API contract is unchanged; Home now uses the same pending-inclusive monthly display (2026-10-27).
+
+## Local production snapshot (2026-10-27)
+
+At the owner's explicit request, a read-only logical production dump was restored into a separate local PostgreSQL 18 container (`finfy-prod-copy-db`, database `finfy_copy`, loopback port 5434). PostgreSQL 17's pg_dump cannot export the PostgreSQL 18 source. Existing local Postgres on port 5432 was preserved. Backup archives and the previous local environment configuration stay outside the repository under `%LOCALAPPDATA%/finfy-backups/`; never commit them. Publications and subscriptions were excluded, and production was not modified. Only the database connection variable was retrieved; no full production environment export was performed.
+
+The ignored web `.env.local` now points to the local copy. Development runs with `next dev --hostname 127.0.0.1` to avoid exposing copied personal data on the LAN. Local `/api/health` reports database `ok`; `/en` returns HTTP 200. Production password hashes require the matching password pepper, which is not part of a database dump. The pre-existing local pepper was preserved. The owner then explicitly authorized a separate password for the single imported local account. Its local credential was rehashed with that pepper and local lockout cleared; the sign-in endpoint returned HTTP 200 with next=app. Production credentials were not changed. Do not reset copied passwords or retrieve other production secrets without explicit authorization. Do not use this snapshot for synthetic fixtures committed to Git.
+## Windows development refresh loop (2026-10-27)
+
+On this Windows checkout, Turbopack repeatedly reported zero-millisecond compilations and refreshed the public page without source edits. Development now defaults to Webpack. Translation loaders use literal exported package paths for each supported locale, since the interpolated package import fails Webpack context resolution. Production build configuration is unchanged. When using copied data, start with `pnpm --filter web exec next dev --webpack --hostname 127.0.0.1`.
+
+## Release notes
+
+Maintain the root [CHANGELOG.md](../../CHANGELOG.md) alongside user-visible changes. Add completed features, improvements and fixes under the unpublished section. Work and validate locally on the current branch; assign a version only for an explicitly authorized release. Consolidate version/date notes when publishing and tag the confirmed production commit under decision 0015. See [0025](../decisoes/0025-desenvolvimento-local-e-release-notes.md).
+
+## Data loading skeletons (2026-10-27)
+
+`packages/ui/components/skeleton` provides decorative placeholders using existing tokens and motion-safe pulse. `packages/app/src/loading.tsx` composes translated, accessible loading lists and statement summaries. Coverage includes Home, Statement, Accounts/cards/assets/net worth, invoices, planning/goals and goal history, categories/tags, recurrences, rules, activity, settings members/invites, invite preview and notifications, including archived lists. Home defers empty-list messages until the relevant requests finish. Skeletons depend on actual loading states, not timers; account errors do not leave the balance skeleton spinning forever. Same-path resource refreshes continue keeping existing data visible. Submission buttons retain their action spinners. No API or financial calculation changes.
+## Progressive statement loading (2026-10-27)
+
+The Statement launches independent resources for `GET /api/wallets/:id/transactions/entries` (`{ entries }`) and `/summary` (`{ summary }`). Either block can finish first, or fail independently. Each owns its skeleton, error and retry; retries do not reload the successful block. Month/filter changes and entry/recurrence mutations refresh both. These are independent JSON reads and progressive React rendering, not a continuous network stream or server components in `packages/app`. The combined endpoint remains available to Home and existing consumers. All reads enforce wallet membership and use the same query builders and `toEntrySummary` converter. No database change. Two requests are not a single snapshot during concurrent writes. See [0020](../decisoes/0020-carregamento-progressivo-do-extrato.md).
+
+`statement-progressive.test.ts` renders the actual Statement screen in Happy DOM with controlled response promises. It covers both response orders, independent errors/retry and month changes, using synthetic data only. PostgreSQL regression tests continue checking the real query builders and shared summary conversion.
+## Progressive loading across pages (2026-10-27)
+
+Shared `ResourceFeedback` provides translated loading/error/retry per resource with list/panel skeletons. Account-dependent actions wait for usable accounts, but CardsSection mounts immediately alongside account resources; net worth now loads on the separate patrimony page. Home now uses independent statement summary/entries reads; top spending waits only for the entries and category metadata it actually needs. Goal detail initially displays the already-known goal while its history loads and never labels an unfinished history as empty. `useResource` hides a previous path's data immediately on context changes, and keeps same-path data during refresh.
+
+Invoice GET accepts optional `part=summary` or `part=purchases` to run independently authorized header/totals and purchase-detail reads. The combined response remains unchanged for existing consumers. The card screen refreshes both after writes. Compound data derived from the same required collection, such as budget totals and category items, still shares its necessary read; static content and action forms are not hidden. Authentication and initial wallet access remain prerequisite security context. See [0021](../decisoes/0021-carregamento-progressivo-em-todas-as-paginas.md). No schema migration or financial rule change.
+## Actual card debt versus forecasts (2026-10-27)
+
+`selectCommittedCardDebt` is shared by the card list's `usedMinor` and net worth's `cardDebtMinor`. It excludes future standalone and recurring purchases, retaining future installments only when the active, non-canceled first purchase in the same wallet/card is dated through today. Paid/archived invoices and canceled/archived purchases do not contribute. A paid first invoice does not remove outstanding later installments. Current-cycle invoice totals and statement/planning forecasts remain unchanged. The Accounts UI explains this distinction. PostgreSQL regression coverage is in `card-debt-postgres.test.ts`; no schema migration.
+Accounts labels distinguish total card debt (including installments due later, not only this month's payable amount) from the ongoing purchase cycle and its forecasts. This wording change does not change financial calculations.
+
+### Screen information hierarchy (2026-10-27)
+
+Home monthly totals and category spending include pending entries, matching Statement, while account balances remain confirmed. Screen headers explain their scope. Settings groups wallet/sharing, entry organization, personal access and wallet administration; archival remains last. Planning retains separate budget/goals tabs. Patrimony is a primary destination after Accounts and cards, using its existing URL. Active matching excludes Accounts when viewing Patrimony. Mobile navigation has six columns. See [0024](../decisoes/0024-organizacao-das-telas.md).
+
+The primary destination is labeled Assets and debts (Bens e dívidas); Net worth labels the calculated summary only. The existing patrimony URL remains stable.
+
+Development database pools are cached on globalThis across hot reloads to avoid accumulating connections. Production keeps its per-instance pool.
+
+### Custom Statement periods (2026-10-27)
+
+Statement supports explicit inclusive start/end dates through the existing summary and entries queries. Invalid reversed ranges do not fetch or replace the applied range. Monthly arrows and full-month reset restore monthly navigation. The accumulated result remains through the selected end date, shown explicitly in its hint. See [0026](../decisoes/0026-periodo-personalizado-do-extrato.md).
+
+Calendar and DatePicker in packages/ui wrap @daypicker/react and Radix Popover. Their styling uses app tokens and circular day selection, local-date serialization, localized calendar labels, Escape dismissal and focus restoration. The Statement period panel animates entrance and exit with Motion; reduced or unknown motion preference uses opacity only.
+
+AppShell orange traffic light minimizes the mounted window using the AuthWindow scale/translation/fade timing. An external restore control remains accessible; the minimized window is inert and hidden from assistive technology. Focus returns to the previous control on restore. Reduced motion uses opacity only.
+
+AppHost receives server-rendered PublicHome as minimizedBackground. AppShell reveals it when minimized and intercepts its /app links to restore the existing window without navigation. PublicHome inApp uses the signed-in language switcher; other public routes keep their URL-based switcher.
+
+The public background remains mounted behind the open app with a non-interactive blur/dim overlay, matching login. It is inert and aria-hidden until minimized; the overlay fades out on minimize.
+
+Web-only window minimization: allowMinimize defaults to false in AppShell and is enabled explicitly by apps/web AppHost. Without this capability, no public background or restore control is rendered and the traffic light has no minimize action. Native hosts rely on OS window management.
+
+Web green traffic light toggles viewport maximization: no outer margins, rounded frame or public background while maximized. Restore retains the prior width preference and mounted screen. Minimizing a maximized window reveals Home; restoring keeps the maximized state. This does not invoke browser fullscreen. Traffic light keys remain stable as accessible labels change.
+
+Green control uses outward/inward diagonal icons according to zoomed state. Window layout transitions use Motion with 350 ms ease-out and no competing CSS width animation; reduced motion disables geometry interpolation.
+
+The green window glyph uses two filled diagonal macOS-style triangles, pointing outward to maximize and inward to restore, rather than generic Lucide arrows.

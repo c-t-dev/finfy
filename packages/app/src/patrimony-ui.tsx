@@ -16,6 +16,7 @@ import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
+import { ResourceFeedback } from "./loading";
 import { cn } from "@packages/ui/lib/utils";
 import type { AssetType } from "@packages/shared/finance";
 import { FULL_BPS } from "@packages/shared/finance";
@@ -40,7 +41,7 @@ export function NetWorthCard({ wallet, reloadKey }: { wallet: Wallet; reloadKey:
   React.useEffect(() => {
     if (reloadKey > 0) reload();
   }, [reloadKey, reload]);
-  if (data.state.status !== "ready") return null;
+  if (data.state.status !== "ready") return <ResourceFeedback state={data.state} reload={data.reload} layout="panel" />;
   const value = data.state.value;
   const parts: [string, number, boolean][] = [
     [t("accounts"), value.accountsMinor, false],
@@ -52,6 +53,7 @@ export function NetWorthCard({ wallet, reloadKey }: { wallet: Wallet; reloadKey:
     <div className="rounded-xl border border-border bg-card px-4 py-3">
       <div className="text-[11px] font-medium uppercase text-muted-foreground">{t("netWorth")}</div>
       <div className={cn("text-2xl font-semibold tabular-nums", value.netWorthMinor < 0 && "text-destructive")}>{money.format(value.netWorthMinor)}</div>
+      <p className="mt-1 text-[12px] text-muted-foreground">{t("cardDebtHint")}</p>
       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-0.5 text-[12px] sm:grid-cols-4">
         {parts.map(([label, amount, minus]) => (
           <div key={label} className="flex flex-col">
@@ -101,6 +103,7 @@ export function AssetsSection({ wallet, onChanged }: { wallet: Wallet; onChanged
           </div>
         )}
       </div>
+      <ResourceFeedback state={list.state} reload={list.reload} />
       {list.state.status === "ready" && items.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-8 text-center">
           <p className="text-[13px] font-medium">{t("empty")}</p>
@@ -145,6 +148,7 @@ export function AssetsSection({ wallet, onChanged }: { wallet: Wallet; onChanged
       <Button variant="link" size="sm" className="self-start px-0" onClick={() => setShowArchived((show) => !show)}>
         {showArchived ? t("archived.hide") : t("archived.show")}
       </Button>
+      {showArchived && <ResourceFeedback state={archived.state} reload={archived.reload} />}
       {showArchived &&
         archived.state.status === "ready" &&
         (archived.state.value.assets.length === 0 ? (

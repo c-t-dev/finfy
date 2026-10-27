@@ -15,8 +15,9 @@ import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
+import { ResourceFeedback } from "../loading";
 import type { Account } from "@packages/shared/accounts";
-import { invoiceForDate, invoicePeriod, type Card, type Invoice, type InvoiceDetail } from "@packages/shared/cards";
+import { invoiceForDate, invoicePeriod, type Card, type Invoice, type InvoiceHeader, type InvoicePurchases } from "@packages/shared/cards";
 import { newId } from "@packages/shared/ids";
 import { can } from "@packages/shared/roles";
 import { addMonths } from "@packages/shared/transactions";
@@ -34,7 +35,7 @@ import { EntryRow } from "./statement";
 
 const ACCOUNTS_PATH = APP_ROUTES.find((route) => route.key === "accounts")!.path;
 
-export function CardScreen({ cardId }: { cardId: string }) {
+export function CardScreen({ cardId, initialMonth }: { cardId: string; initialMonth?: string }) {
   const t = useTranslations("app.cards.detail");
   const { current } = useWallets();
   const { Link } = useAppNavigation();
@@ -44,21 +45,21 @@ export function CardScreen({ cardId }: { cardId: string }) {
         <ChevronLeftIcon className="size-4" aria-hidden />
         {t("back")}
       </Link>
-      {current && <WalletCard key={current.id} wallet={current} cardId={cardId} />}
+      {current && <WalletCard key={current.id} wallet={current} cardId={cardId} initialMonth={initialMonth} />}
     </div>
   );
 }
 
-function WalletCard({ wallet, cardId }: { wallet: Wallet; cardId: string }) {
+function WalletCard({ wallet, cardId, initialMonth }: { wallet: Wallet; cardId: string; initialMonth?: string }) {
   const t = useTranslations("app.cards");
   const cards = useResource<{ cards: Card[] }>(`/api/wallets/${wallet.id}/cards`);
-  if (cards.state.status === "loading") return <Spinner label={t("title")} />;
+  if (cards.state.status !== "ready") return <ResourceFeedback state={cards.state} reload={cards.reload} />;
   const card = cards.state.status === "ready" ? cards.state.value.cards.find((item) => item.id === cardId) : undefined;
   if (!card) return <p className="text-[13px] text-muted-foreground">{t("detail.notFound")}</p>;
-  return <CardInvoices wallet={wallet} card={card} onChanged={cards.reload} />;
+  return <CardInvoices key={`${card.id}:${initialMonth ?? ""}`} wallet={wallet} card={card} onChanged={cards.reload} initialMonth={initialMonth} />;
 }
 
-function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card; onChanged: () => void }) {
+function CardInvoices({ wallet, card, onChanged, initialMonth }: { wallet: Wallet; card: Card; onChanged: () => void; initialMonth?: string }) {
   const t = useTranslations("app.cards");
   const format = useFormatter();
   const money = useMoney(wallet.currencyCode);
@@ -66,8 +67,9 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
   const request = useApi();
   const canEdit = can(wallet.role, "editEntries");
   const current = invoiceForDate(todayIso(), card.closingDay, card.dueDay);
-  const [month, setMonth] = React.useState(`${current.referenceYear}-${String(current.referenceMonth).padStart(2, "0")}`);
-  const detail = useResource<InvoiceDetail>(`/api/wallets/${wallet.id}/cards/${card.id}/invoices/${month}`);
+  const [month, setMonth] = React.useState(initialMonth ?? `${current.referenceYear}-${String(current.referenceMonth).padStart(2, "0")}`);
+  const detail = useResource<InvoiceHeader>(`/api/wallets/${wallet.id}/cards/${card.id}/invoices/${month}?part=summary`);
+  const rows = useResource<InvoicePurchases>(`/api/wallets/${wallet.id}/cards/${card.id}/invoices/${month}?part=purchases`);
   const accounts = useResource<{ accounts: Account[] }>(`/api/wallets/${wallet.id}/accounts`);
   const { tree } = useCategories(wallet.id);
   const tags = useTags(wallet.id);
@@ -78,10 +80,11 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
 
   const refresh = () => {
     detail.reload();
+    rows.reload();
     onChanged();
   };
   const invoice = detail.state.status === "ready" ? detail.state.value.invoice : null;
-  const purchases = detail.state.status === "ready" ? detail.state.value.purchases : [];
+  const purchases = rows.state.status === "ready" ? rows.state.value.purchases : [];
   const [year, monthNumber] = month.split("-").map(Number);
   const dueDate = invoice?.dueDate ?? invoicePeriod(year, monthNumber, card.closingDay, card.dueDay).dueDate;
   const monthLabel = format.dateTime(new Date(`${dueDate}T12:00:00`), { month: "long", year: "numeric" });
@@ -92,11 +95,15 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
       <div>
         <h1 className="text-2xl font-semibold">{card.name}</h1>
         <p className="text-[13px] text-muted-foreground">
-          {t(`brands.${card.brand}`)} ·{" "}
-          {card.limitMinor > 0
-            ? t("used", { used: money.format(card.usedMinor), limit: money.format(card.limitMinor) })
-            : t("noLimit", { used: money.format(card.usedMinor) })}
+          {t(`brands.${card.brand}`)}
         </p>
+        <details className="mt-3 rounded-xl border border-border bg-card px-4 py-3">
+          <summary className="cursor-pointer text-[13px] font-medium">{t("creditDetails")}</summary>
+          <p className="mt-2 text-[13px] tabular-nums">{card.limitMinor > 0
+            ? t("used", { used: money.format(card.usedMinor), limit: money.format(card.limitMinor) })
+            : t("noLimit", { used: money.format(card.usedMinor) })}</p>
+          <p className="mt-1 text-[12px] text-muted-foreground">{t("usedHint")}</p>
+        </details>
       </div>
 
       <div className="flex items-center gap-1">
@@ -111,6 +118,7 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
         </Button>
       </div>
 
+      <ResourceFeedback state={detail.state} reload={detail.reload} layout="panel" />
       {invoice && (
         <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
           <div>
@@ -119,6 +127,7 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
               <InvoiceStateBadge state={invoice.state} />
             </div>
             <div className="text-2xl font-semibold tabular-nums">{money.format(invoice.totalMinor)}</div>
+            <p className="text-[11px] text-muted-foreground">{t("invoiceProjectionHint")}</p>
             <div className="text-[12px] text-muted-foreground">
               {t("detail.period", { from: shortDate(invoice.openingDate), to: shortDate(invoice.closingDate) })} ·{" "}
               {t("due", { date: shortDate(invoice.dueDate) })}
@@ -149,8 +158,8 @@ function CardInvoices({ wallet, card, onChanged }: { wallet: Wallet; card: Card;
         </div>
       )}
 
-      {detail.state.status === "loading" && <Spinner label={t("title")} />}
-      {detail.state.status === "ready" &&
+      <ResourceFeedback state={rows.state} reload={rows.reload} />
+      {rows.state.status === "ready" &&
         (purchases.length === 0 ? (
           <p className="text-[13px] text-muted-foreground">{t("detail.emptyInvoice")}</p>
         ) : (

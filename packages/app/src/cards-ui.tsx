@@ -21,6 +21,7 @@ import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
+import { ResourceFeedback } from "./loading";
 import { cn } from "@packages/ui/lib/utils";
 import { ACCOUNT_COLORS, type Account, type AccountColor } from "@packages/shared/accounts";
 import { CARD_NAME_MAX, INSTALLMENTS_MAX, splitInstallments, type Card, type InvoiceState } from "@packages/shared/cards";
@@ -84,11 +85,12 @@ function ColorPicker({ value, onChange }: { value: AccountColor; onChange: (valu
 }
 
 /** Cards of the wallet, for the accounts screen. */
-export function CardsSection({ wallet, accounts }: { wallet: Wallet; accounts: Account[] }) {
+export function CardsSection({ wallet, accounts, accountsReady = true }: { wallet: Wallet; accounts: Account[]; accountsReady?: boolean }) {
   const t = useTranslations("app.cards");
   const request = useApi();
   const money = useMoney(wallet.currencyCode);
   const shortDate = useShortDate();
+  const format = useFormatter();
   const { Link } = useAppNavigation();
   const canEdit = can(wallet.role, "editEntries");
   const [showArchived, setShowArchived] = React.useState(false);
@@ -113,8 +115,8 @@ export function CardsSection({ wallet, accounts }: { wallet: Wallet; accounts: A
           </Button>
         )}
       </div>
-      {canEdit && accounts.length === 0 && <p className="text-[13px] text-muted-foreground">{t("needsAccount")}</p>}
-      {active.state.status === "loading" && <Spinner label={t("title")} />}
+      {canEdit && accountsReady && accounts.length === 0 && <p className="text-[13px] text-muted-foreground">{t("needsAccount")}</p>}
+      <ResourceFeedback state={active.state} reload={active.reload} />
       {active.state.status === "ready" && cards.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card/50 px-6 py-8 text-center">
           <CreditCardIcon className="size-7 text-primary" aria-hidden />
@@ -125,15 +127,16 @@ export function CardsSection({ wallet, accounts }: { wallet: Wallet; accounts: A
       {cards.length > 0 && (
         <ul className="grid gap-3 sm:grid-cols-2">
           {cards.map((card) => {
-            const invoice = card.currentInvoice;
-            const usedShare = card.limitMinor > 0 ? Math.min(100, (card.usedMinor / card.limitMinor) * 100) : 0;
+            const invoice = card.nextInvoice;
+            const month = invoice ? `${invoice.referenceYear}-${String(invoice.referenceMonth).padStart(2, "0")}` : null;
+            const href = `${CARDS_PATH}/${card.id}${month ? `?month=${month}` : ""}`;
             return (
               <li key={card.id} className="relative flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
                 <div className="flex items-start gap-3">
                   <span className={cn("mt-0.5 flex h-6 w-9 shrink-0 items-center justify-center rounded-md text-white", COLOR_BG[card.color])} aria-hidden>
                     <CreditCardIcon className="size-3.5" />
                   </span>
-                  <Link href={`${CARDS_PATH}/${card.id}`} className="min-w-0 flex-1 outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-[3px] focus-visible:after:ring-ring/40">
+                  <Link href={href} className="min-w-0 flex-1 outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-[3px] focus-visible:after:ring-ring/40">
                     <div className="truncate text-[13px] font-medium">{card.name}</div>
                     <div className="text-[12px] text-muted-foreground">{t(`brands.${card.brand}`)}</div>
                   </Link>
@@ -157,31 +160,26 @@ export function CardsSection({ wallet, accounts }: { wallet: Wallet; accounts: A
                     </DropdownMenu>
                   )}
                 </div>
-                {invoice && (
-                  <div className="flex items-end justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                        {t("currentInvoice")}
-                        <InvoiceStateBadge state={invoice.state} />
-                      </div>
-                      <div className="text-[15px] font-semibold tabular-nums">{money.format(invoice.totalMinor)}</div>
-                    </div>
-                    <div className="text-right text-[11px] text-muted-foreground">
-                      <div>{t("closes", { date: shortDate(invoice.closingDate) })}</div>
-                      <div>{t("due", { date: shortDate(invoice.dueDate) })}</div>
-                    </div>
+                {card.overdueMinor > 0 && (
+                  <div role="note" className="rounded-lg bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                    {t("overdueSummary", { amount: money.format(card.overdueMinor), count: card.overdueCount })}
+                    {card.overdueInvoice && <Link href={`${CARDS_PATH}/${card.id}?month=${card.overdueInvoice.referenceYear}-${String(card.overdueInvoice.referenceMonth).padStart(2, "0")}`} className="relative z-10 ml-2 underline">{t("viewOverdue")}</Link>}
                   </div>
                 )}
-                <div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-foreground/8">
-                    <div className={cn("h-full rounded-full", usedShare >= 90 ? "bg-destructive" : "bg-primary")} style={{ width: `${usedShare}%` }} />
-                  </div>
-                  <div className="mt-1 text-[11px] text-muted-foreground">
-                    {card.limitMinor > 0
-                      ? t("used", { used: money.format(card.usedMinor), limit: money.format(card.limitMinor) })
-                      : t("noLimit", { used: money.format(card.usedMinor) })}
-                  </div>
+                <div className="flex flex-col gap-1 py-2">
+                  <span className="text-[11px] font-medium uppercase text-muted-foreground">{t("nextInvoice")}</span>
+                  {invoice ? <>
+                    <div className="text-xl font-semibold tabular-nums">{money.format(invoice.totalMinor)}</div>
+                    <div className="text-[12px] text-muted-foreground">
+                      {format.dateTime(new Date(`${invoice.dueDate}T12:00:00`), { month: "long", year: "numeric" })} · {t("due", { date: shortDate(invoice.dueDate) })}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">{t("actualInvoiceHint")}</span>
+                  </> : <p className="text-[13px] text-muted-foreground">{t("noNextInvoice")}</p>}
                 </div>
+                {card.nextForecast && <p className="text-[12px] text-muted-foreground">
+                  {t("forecastSummary", { amount: money.format(card.nextForecast.amountMinor), date: shortDate(card.nextForecast.dueDate) })}
+                </p>}
+                <Link href={href} className="relative z-10 self-start text-[12px] text-primary hover:underline">{t("viewInvoice")}</Link>
               </li>
             );
           })}
@@ -190,6 +188,7 @@ export function CardsSection({ wallet, accounts }: { wallet: Wallet; accounts: A
       <Button variant="link" size="sm" className="self-start px-0" onClick={() => setShowArchived((show) => !show)}>
         {showArchived ? t("archived.hide") : t("archived.show")}
       </Button>
+      {showArchived && <ResourceFeedback state={archived.state} reload={archived.reload} />}
       {showArchived &&
         archived.state.status === "ready" &&
         (archived.state.value.cards.length === 0 ? (

@@ -6,7 +6,7 @@ import { APP_BASE } from "@packages/app/app-base";
 import { LOCALE_PREFIXES, type Locale } from "@packages/shared/i18n";
 import { getCurrentUser } from "@/lib/server/auth/session";
 import { buttonVariants } from "@packages/ui/components/button";
-import { PublicLanguageSwitcher } from "@/components/language-switcher";
+import { AppLanguageSwitcher, PublicLanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PublicFooter } from "@/components/public-footer";
 
@@ -19,7 +19,7 @@ const FEATURES = [
   { key: "languages", icon: LanguagesIcon },
 ] as const;
 
-export async function PublicHome({ locale }: { locale: Locale }) {
+export async function PublicHome({ locale, inApp = false }: { locale: Locale; inApp?: boolean }) {
   setRequestLocale(locale);
   const t = await getTranslations("public");
   const tCommon = await getTranslations("common");
@@ -39,7 +39,7 @@ export async function PublicHome({ locale }: { locale: Locale }) {
             </a>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <PublicLanguageSwitcher />
+            {inApp ? <AppLanguageSwitcher /> : <PublicLanguageSwitcher />}
             <div className="max-sm:hidden">
               <ThemeToggle />
             </div>

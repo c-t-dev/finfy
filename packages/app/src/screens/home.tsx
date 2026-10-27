@@ -4,7 +4,6 @@ import * as React from "react";
 import { ArrowDownIcon, ArrowUpIcon, EyeOffIcon, GripVerticalIcon, PlusIcon, SlidersHorizontalIcon, WalletIcon } from "lucide-react";
 import { Button, buttonVariants } from "@packages/ui/components/button";
 import { SegmentedControl } from "@packages/ui/components/segmented-control";
-import { Spinner } from "@packages/ui/components/spinner";
 import { cn } from "@packages/ui/lib/utils";
 import {
   DEFAULT_HOME_LAYOUT,
@@ -16,8 +15,10 @@ import {
   type HomeWidgetKey,
   type WidgetSize,
 } from "@packages/shared/home";
+import { Skeleton } from "@packages/ui/components/skeleton";
+import { LoadingPanel, ResourceFeedback } from "../loading";
 import { can } from "@packages/shared/roles";
-import { monthRange, type EntryList } from "@packages/shared/transactions";
+import { monthRange, type EntryRows, type EntrySummaryResponse } from "@packages/shared/transactions";
 import type { Wallet } from "@packages/shared/wallets";
 import { useApi, useResource } from "../api";
 import { CategoryBadge, useCategories, useCategoryLabel } from "../categories";
@@ -103,17 +104,21 @@ function useHomeLayout(walletId: string) {
 
 function WalletHome({ wallet }: { wallet: Wallet }) {
   const t = useTranslations("app.home");
+  const common = useTranslations("common");
+  const orientation = useTranslations("app.orientation");
   const entriesT = useTranslations("app.entries");
   const money = useMoney(wallet.currencyCode);
   const label = useCategoryLabel();
   const { Link } = useAppNavigation();
   const canEdit = can(wallet.role, "editEntries");
-  const { accounts, cards, names, reload: reloadAccounts } = useWalletAccounts(wallet.id);
-  const { tree } = useCategories(wallet.id);
+  const { accounts, accountsLoading, accountsState, cards, names, reload: reloadAccounts } = useWalletAccounts(wallet.id);
+  const { tree, state: categoryState, reload: reloadCategories } = useCategories(wallet.id);
   const tags = useTags(wallet.id);
   const { from, to } = monthRange(todayIso().slice(0, 7));
-  const month = useResource<EntryList>(`/api/wallets/${wallet.id}/transactions?from=${from}&to=${to}`);
-  useRecurrenceRefresh(wallet.id, month.reload);
+  const month = useResource<EntrySummaryResponse>(`/api/wallets/${wallet.id}/transactions/summary?from=${from}&to=${to}`);
+  const recent = useResource<EntryRows>(`/api/wallets/${wallet.id}/transactions/entries?from=${from}&to=${to}`);
+  const reloadMonth = React.useCallback(() => { month.reload(); recent.reload(); }, [month.reload, recent.reload]);
+  useRecurrenceRefresh(wallet.id, reloadMonth);
   const [editing, setEditing] = React.useState<EntryEditing>(null);
   const { layout, save, failed } = useHomeLayout(wallet.id);
   const [customizing, setCustomizing] = React.useState(false);
@@ -121,7 +126,8 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
 
   const balance = accounts?.reduce((sum, account) => sum + account.balanceMinor, 0) ?? null;
   const summary = month.state.status === "ready" ? month.state.value.summary : null;
-  const entries = month.state.status === "ready" ? month.state.value.entries : [];
+  const entries = recent.state.status === "ready" ? recent.state.value.entries : [];
+  const topState = { status: recent.state.status === "error" || categoryState.status === "error" ? "error" : recent.state.status === "loading" || categoryState.status === "loading" ? "loading" : "ready" } as const;
 
   // Expenses of the month by top-level category, largest first.
   const topExpenses = React.useMemo(() => {
@@ -130,7 +136,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
     for (const entry of entries) {
       if (!entry.categoryId || entry.status === "CANCELED") continue;
       if (entry.type !== "EXPENSE" && entry.type !== "CREDIT_CARD_PURCHASE") continue;
-      if (entry.type === "EXPENSE" && entry.status !== "PAID") continue;
+
       const category = tree.byId.get(entry.categoryId);
       const topId = category?.parentId ?? entry.categoryId;
       totals.set(topId, (totals.get(topId) ?? 0) + entry.amountMinor);
@@ -146,7 +152,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
   if (accounts && accounts.length === 0) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <div className="space-y-1"><h1 className="text-2xl font-semibold">{t("title")}</h1><p className="max-w-xl text-[13px] text-muted-foreground">{orientation("home")}</p></div>
         <div className="flex max-w-md flex-col items-start gap-3 rounded-xl border border-border bg-card px-5 py-4">
           <WalletIcon className="size-6 text-primary" aria-hidden />
           <div className="flex flex-col gap-1">
@@ -171,8 +177,9 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
           <div className="h-full rounded-xl border border-border bg-card px-4 py-3">
             <div className="text-[11px] font-medium uppercase text-muted-foreground">{t("balance")}</div>
             <div className={cn("text-2xl font-semibold tabular-nums", balance !== null && balance < 0 && "text-destructive")}>
-              {balance === null ? "—" : money.format(balance)}
+              {accountsLoading ? <Skeleton className="my-1 h-7 w-36" /> : balance === null ? "—" : money.format(balance)}
             </div>
+            {accountsState.status === "error" && <ResourceFeedback state={accountsState} reload={reloadAccounts} />}
             {canEdit && (
               <Button className="mt-3" size="sm" onClick={() => setEditing({ mode: "create" })} disabled={!accounts}>
                 <PlusIcon />
@@ -185,18 +192,20 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
         return (
           <div className="h-full rounded-xl border border-border bg-card px-4 py-3">
             <div className="text-[11px] font-medium uppercase text-muted-foreground">{t("month")}</div>
-            <dl className="mt-1 grid grid-cols-[1fr_auto] gap-y-1 text-[13px]">
+            <ResourceFeedback state={month.state.status === "error" ? month.state : { status: "ready" }} reload={month.reload} />
+            <dl aria-busy={month.state.status === "loading"} className="mt-1 grid grid-cols-[1fr_auto] gap-y-1 text-[13px]">
               <dt className="text-muted-foreground">{entriesT("income")}</dt>
               <dd className="text-right font-medium tabular-nums text-[#248a3d] dark:text-[#30d158]">
-                {summary ? money.format(summary.incomeMinor) : "—"}
+                {summary ? money.format(summary.incomeMinor + summary.pendingIncomeMinor) : month.state.status === "loading" ? <Skeleton className="ml-auto h-4 w-20" /> : "—"}
               </dd>
               <dt className="text-muted-foreground">{entriesT("expense")}</dt>
-              <dd className="text-right font-medium tabular-nums text-destructive">{summary ? money.format(summary.expenseMinor) : "—"}</dd>
+              <dd className="text-right font-medium tabular-nums text-destructive">{summary ? money.format(summary.expenseMinor + summary.pendingExpenseMinor) : month.state.status === "loading" ? <Skeleton className="ml-auto h-4 w-20" /> : "—"}</dd>
               <dt className="text-muted-foreground">{entriesT("result")}</dt>
               <dd className="text-right font-semibold tabular-nums">
-                {summary ? money.format(summary.incomeMinor - summary.expenseMinor) : "—"}
+                {summary ? money.format(summary.incomeMinor + summary.pendingIncomeMinor - summary.expenseMinor - summary.pendingExpenseMinor) : month.state.status === "loading" ? <Skeleton className="ml-auto h-4 w-20" /> : "—"}
               </dd>
             </dl>
+            <p className="mt-2 text-[12px] text-muted-foreground">{orientation("monthlyHint")}</p>
           </div>
         );
       case "balanceChart":
@@ -207,7 +216,8 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
         return (
           <section className="flex flex-col gap-2">
             <h2 className="text-[15px] font-semibold">{t("topExpenses")}</h2>
-            {topExpenses.length === 0 ? (
+            <ResourceFeedback state={topState} reload={() => { recent.reload(); reloadCategories(); }} />
+            {topState.status === "ready" && (topExpenses.length === 0 ? (
               <p className="text-[13px] text-muted-foreground">{t("noExpenses")}</p>
             ) : (
               <ul className="flex flex-col gap-2 rounded-xl border border-border bg-card px-4 py-3">
@@ -226,7 +236,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
                   </li>
                 ))}
               </ul>
-            )}
+            ))}
           </section>
         );
       case "recent":
@@ -238,7 +248,8 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
                 {t("seeAll")}
               </Link>
             </div>
-            {entries.length === 0 ? (
+            <ResourceFeedback state={recent.state} reload={recent.reload} />
+            {recent.state.status === "ready" && (entries.length === 0 ? (
               <p className="text-[13px] text-muted-foreground">{entriesT("empty")}</p>
             ) : (
               <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border bg-card">
@@ -254,7 +265,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
                   />
                 ))}
               </ul>
-            )}
+            ))}
           </section>
         );
     }
@@ -263,7 +274,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <div className="space-y-1"><h1 className="text-2xl font-semibold">{t("title")}</h1><p className="max-w-xl text-[13px] text-muted-foreground">{orientation("home")}</p></div>
         {layout &&
           (customizing ? (
             <div className="flex items-center gap-2">
@@ -290,7 +301,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
 
       {!layout ? (
         <div className="flex justify-center py-10">
-          <Spinner label={t("title")} />
+          <LoadingPanel />
         </div>
       ) : customizing ? (
         <HomeEditor widgets={layout.widgets} onChange={save} render={widget} />
@@ -323,7 +334,7 @@ function WalletHome({ wallet }: { wallet: Wallet }) {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
-            month.reload();
+            reloadMonth();
             reloadAccounts();
             setChartsKey((key) => key + 1);
           }}

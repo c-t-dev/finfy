@@ -1,6 +1,6 @@
 # Resultado acumulado do extrato
 
-> Última atualização: 2026-10-26
+> Última atualização: 2026-10-27
 > Status: Aceita
 
 ## Contexto
@@ -18,7 +18,7 @@ O usuário confirmou que o Resultado deve considerar o saldo acumulado das conta
 - Transferências se compensam quando ambas as contas estão incluídas. Ao selecionar uma conta, sua perna altera o saldo normalmente.
 - Compras pendentes de faturas não pagas entram como saída prevista no vencimento salvo da fatura, atribuídas à conta de pagamento configurada no cartão. Não alteram o saldo confirmado. Ao pagar, saem do componente pendente e o pagamento reduz o confirmado na data efetiva, uma única vez. Pagamento por outra conta usa essa conta efetiva. Ao reabrir, o pagamento é arquivado e as compras voltam à projeção no vencimento. A competência das despesas continua conforme [0016](0016-competencia-das-faturas.md).
 - Bens e dívidas não entram neste resultado. Patrimônio e saldo efetivo das contas mantêm seus cálculos próprios.
-- Receitas, despesas e pendências mensais mantêm suas regras. O Resultado mensal da Home permanece receitas menos despesas.
+- No extrato, o valor principal de Receitas inclui receitas pagas e pendentes do mês. Despesas inclui despesas pagas, pendentes e compras de cartão pelo vencimento (estas já entram no total da API e não são somadas novamente). O aviso abaixo indica a parte pendente, já incluída no valor principal. Confirmado pelo usuário em 2026-10-27. A Home mantém seu cálculo atual.
 
 ## Modelo de dados e API
 

@@ -1,6 +1,7 @@
 import "server-only";
-import { and, asc, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
-import { accounts, assetLiabilities, assets, creditCardInvoices, transactions } from "@packages/shared/db/schema";
+import { selectCommittedCardDebt } from "./card-debt";
+import { and, asc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { accounts, assetLiabilities, assets, transactions } from "@packages/shared/db/schema";
 import { deterministicId } from "@packages/shared/ids";
 import { BALANCE_SIGN } from "@packages/shared/finance";
 import {
@@ -76,26 +77,14 @@ export async function netWorth(userId: string, walletId: string): Promise<Comman
       .from(transactions)
       .innerJoin(accounts, eq(accounts.id, transactions.accountId))
       .where(and(eq(transactions.walletId, walletId), eq(transactions.status, "PAID"), isNull(transactions.archivedAt), isNull(accounts.archivedAt)));
-    const [cardDebt] = await tx
-      .select({ total: sql<string>`coalesce(sum(${transactions.amountMinor}), 0)` })
-      .from(transactions)
-      .innerJoin(creditCardInvoices, eq(creditCardInvoices.id, transactions.invoiceId))
-      .where(
-        and(
-          eq(transactions.walletId, walletId),
-          eq(transactions.type, "CREDIT_CARD_PURCHASE"),
-          isNull(transactions.archivedAt),
-          ne(transactions.status, "CANCELED"),
-          eq(creditCardInvoices.status, "OPEN"),
-        ),
-      );
+    const cardDebts = await selectCommittedCardDebt(tx, eq(transactions.walletId, walletId), new Date().toISOString().slice(0, 10));
     const rows = await tx.select().from(assets).where(and(eq(assets.walletId, walletId), isNull(assets.archivedAt)));
     const owned = (kind: "ASSET" | "LIABILITY") =>
       rows.filter((row) => row.kind === kind).reduce((sum, row) => sum + ownedPart(row.currentValueMinor, row.ownershipBps), 0);
     const accountsMinor = Number(initial.total) + Number(moved.total);
     const assetsMinor = owned("ASSET");
     const liabilitiesMinor = owned("LIABILITY");
-    const cardDebtMinor = Number(cardDebt.total);
+    const cardDebtMinor = cardDebts.reduce((sum, row) => sum + Number(row.totalMinor), 0);
     return {
       accountsMinor,
       assetsMinor,

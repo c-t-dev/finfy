@@ -142,6 +142,10 @@ export type EntrySummary = z.infer<typeof entrySummarySchema>;
 
 export const entryListSchema = z.object({ entries: z.array(entrySchema), summary: entrySummarySchema });
 export type EntryList = z.infer<typeof entryListSchema>;
+export const entryRowsSchema = entryListSchema.pick({ entries: true });
+export type EntryRows = z.infer<typeof entryRowsSchema>;
+export const entrySummaryResponseSchema = entryListSchema.pick({ summary: true });
+export type EntrySummaryResponse = z.infer<typeof entrySummaryResponseSchema>;
 
 /** First and last day of a `YYYY-MM` month, as ISO dates. */
 export function monthRange(month: string): { from: string; to: string } {

@@ -1,6 +1,6 @@
 # finfy — Data model
 
-> Last updated: 2026-10-26
+> Last updated: 2026-10-27
 
 This is the data model of **finfy** itself. It consolidates the decisions in [`../decisoes/`](../decisoes/README.md) and proposes the financial core. For the reverse-engineered model of the Minhas Economias app, see [`../api/modelo-de-dados.md`](../api/modelo-de-dados.md) instead.
 
@@ -383,7 +383,7 @@ Rules:
 
 - `amount_minor` is always positive; `type` sets the direction. Exception: `ADJUSTMENT` is signed.
 - Account balance = `initial_balance_minor` + Σ(`INCOME`, `TRANSFER_IN`, `REFUND` to account, `ADJUSTMENT`) − Σ(`EXPENSE`, `TRANSFER_OUT`, `CREDIT_CARD_PAYMENT`), over `PAID`, non-archived rows.
-- Reports and the balance use the **same** status filter, so totals never disagree (unlike Minhas Economias, where spending and balance diverged).
+- Actual account balances use paid movements. Statement projections explicitly include pending components; card expenses use invoice-due competence, while actual card debt excludes future forecasts under [0022](../decisoes/0022-divida-realizada-e-previsoes-dos-cartoes.md). These scopes must be labeled distinctly.
 - A transfer is two rows linked by `transaction_links`; archiving one leg archives both. Transfers are only between accounts of the same wallet (cross-currency transfers are out of scope for v1).
 - Invoice reference year/month identify the closing cycle and remain stable. Display titles and payment labels use the saved invoice due month. Card purchases and each installment count in the statement, Home and budgets on the linked invoice due date; their stored transaction date is preserved. Payments affect cash on the payment date and are excluded from expense totals. This is derived on read, with no schema migration. See [0016](../decisoes/0016-competencia-das-faturas.md).
 - Installments share `installment_group_id`; the total is split in minor units with leftover cents on the first installment; card installments go to the invoice of their own date.
@@ -407,7 +407,7 @@ Enforced by the database (`CHECK` and keys in `finance.ts`):
 | `budget_items` | `budget_id`, `category_id`, `year`, `month`, `amount_minor`, `alert_percentage` | Unique (`budget_id`, `category_id`, `year`, `month`); alert drives a notification |
 | `goals` | `name`, `template` (`EMERGENCY_FUND`, `RETIREMENT`, `TRAVEL`, `HOUSE`, `CAR`, `EDUCATION`, `DEBT_PAYOFF`, `OTHER`), `target_minor`, `initial_minor`, `deadline`, `expected_annual_return_bps` (nullable), `achieved_at` | Saved amount is derived from deposits; if a return rate is set, it is actually used (fixes the ignored 7.45% rate in Minhas Economias) |
 | `goal_deposits` | `goal_id`, `amount_minor`, `deposit_date`, `notes`, `transaction_id` (nullable) | Positive adds, negative withdraws (never 0). Optionally linked to the transaction that funded it |
-| `assets` | `kind` (`ASSET`, `LIABILITY`), `type` (`REAL_ESTATE`, `VEHICLE`, `ELECTRONICS`, `BUSINESS`, `COLLECTIBLE`, `RIGHTS`, `INVESTMENT`, `LOAN`, `FINANCING`, `OTHER`), `name`, `current_value_minor`, `purchase_value_minor`, `purchase_date`, `ownership_bps`, `notes` | Net worth = account balances + assets − liabilities − unpaid card purchases |
+| `assets` | `kind` (`ASSET`, `LIABILITY`), `type` (`REAL_ESTATE`, `VEHICLE`, `ELECTRONICS`, `BUSINESS`, `COLLECTIBLE`, `RIGHTS`, `INVESTMENT`, `LOAN`, `FINANCING`, `OTHER`), `name`, `current_value_minor`, `purchase_value_minor`, `purchase_date`, `ownership_bps`, `notes` | Net worth = account balances + assets − liabilities − actual outstanding card debt (excludes future forecasts; includes future installments of purchases already made, see [0022](../decisoes/0022-divida-realizada-e-previsoes-dos-cartoes.md)) |
 | `asset_liabilities` | `asset_id`, `liability_id` | Informational many-to-many association between opposite-kind entries in the same wallet; unique pair. IDs are deterministic; unlink archives, relink restores. Never changes net worth. See [0017](../decisoes/0017-bens-e-financiamentos.md) |
 
 ### Sync and audit ([0005](../decisoes/0005-offline-first-e-sincronizacao.md), [0006](../decisoes/0006-auditoria.md))
@@ -465,3 +465,9 @@ home_layouts        (user_id, wallet_id) unique
 ## Dated statement account balance
 
 The statement returns projected `summary.accumulatedBalanceMinor` = `confirmedBalanceMinor` (active account opening balances plus paid movements) + signed `accumulatedPendingMinor` (pending account movements and unpaid card purchases). Account movements use transaction dates through inclusive `to`; unpaid card purchases use saved invoice due dates and the card payment account. Paid purchases leave the projection; the actual invoice payment debits confirmed cash once. Reopening reverses that substitution. Only the account filter applies. Initial balances have no effective date; historical views reflect current account/archive state. Pending entries already stored are included, without generating extra recurrence occurrences. Actual account balance and net worth rules remain unchanged. See [0018](../decisoes/0018-resultado-acumulado-do-extrato.md).
+
+Actual card debt and used credit share one read rule: non-archived, non-canceled purchases on open non-archived invoices dated through today (UTC), plus future installments whose original first purchase has already occurred in the same wallet/card. The origin must be active and non-canceled; its own invoice may already be paid. Future standalone/recurring purchases and entirely future installment groups remain forecasts. Invoice-cycle totals and statement/planning projections retain their existing rules. No migration; see [0022](../decisoes/0022-divida-realizada-e-previsoes-dos-cartoes.md).
+
+### Card overview read fields (2026-10-27)
+
+Card reads derive nextInvoice (first unpaid actual debt due today or later), overdueMinor/count and oldest overdueInvoice, and nextForecast (first upcoming cycle with projected amount above committed debt). Paid and archived invoices are excluded. These are read fields, not stored columns. Detail totals retain forecasts. See [0023](../decisoes/0023-contas-e-proximas-faturas.md).

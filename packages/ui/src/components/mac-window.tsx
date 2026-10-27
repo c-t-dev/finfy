@@ -15,31 +15,41 @@ function MacWindow({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+/** Filled diagonal triangles used by the macOS green window control. */
+function ZoomGlyph({ zoomed }: { zoomed: boolean }) {
+  return <svg viewBox="0 0 12 12" className="size-2" aria-hidden fill="currentColor">
+    {zoomed ? <path d="M1.5 5.5H5.5V1.5Z M6.5 10.5V6.5H10.5Z" /> : <path d="M1.5 1.5H5.5L1.5 5.5Z M10.5 10.5H6.5L10.5 6.5Z" />}
+  </svg>;
+}
+
 /** Close / minimise / zoom buttons. Purely decorative unless handlers are passed. */
 function TrafficLights({
   className,
   onClose,
   onMinimize,
   onZoom,
+  zoomed = false,
   labels,
 }: {
   className?: string;
   onClose?: () => void;
   onMinimize?: () => void;
   onZoom?: () => void;
+  /** Whether the green control restores an already maximized window. */
+  zoomed?: boolean;
   /** Translated labels; only announced when a handler is passed. */
   labels?: { close?: string; minimize?: string; zoom?: string };
 }) {
   const lights = [
     { color: "bg-[#ff5f57]", glyph: "×", label: labels?.close ?? "Close", onClick: onClose },
     { color: "bg-[#febc2e]", glyph: "−", label: labels?.minimize ?? "Minimize", onClick: onMinimize },
-    { color: "bg-[#28c840]", glyph: "+", label: labels?.zoom ?? "Zoom", onClick: onZoom },
+    { color: "bg-[#28c840]", glyph: onZoom ? <ZoomGlyph zoomed={zoomed} /> : "+", label: labels?.zoom ?? "Zoom", onClick: onZoom },
   ];
   return (
     <div className={cn("group/lights flex items-center gap-2", className)}>
       {lights.map((light) => (
         <button
-          key={light.label}
+          key={light.color}
           type="button"
           tabIndex={light.onClick ? 0 : -1}
           aria-label={light.label}
@@ -48,6 +58,7 @@ function TrafficLights({
           className={cn(
             "flex size-3 items-center justify-center rounded-full text-[9px] font-bold leading-none text-black/0 shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.2)] transition-colors group-hover/lights:text-black/55",
             light.color,
+            light.onClick === onZoom && onZoom && "text-black/65",
             !light.onClick && "cursor-default",
           )}
         >

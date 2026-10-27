@@ -3,7 +3,7 @@
 Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (portal web, versão 7.18.1) funciona: telas, fluxos, regras de negócio, API e problemas encontrados. Ela é a base de contexto do projeto **finfy** e é lida por agentes diferentes (Claude Code, Codex, IA local), então precisa ficar completa e atualizada.
 
 - **Fonte:** inspeção manual do portal `portal.minhaseconomias.com.br` com uma conta de teste, interceptando as chamadas de rede no navegador.
-- **Última atualização:** 2026-10-26.
+- **Última atualização:** 2026-10-27.
 - **Regras para editar esta wiki:** veja [MANUTENCAO.md](MANUTENCAO.md).
 
 ## Índice
@@ -68,6 +68,8 @@ Competência de cartão: [0016 — Faturas pelo vencimento](decisoes/0016-compet
 
 ### Modelo do finfy (em inglês)
 
+Versões publicadas: [0015 — Tags de produção](decisoes/0015-tags-de-producao.md) (aceita; primeira tag `v0.1.0`).
+
 Prestações: [0014 — Registrar só as prestações por recorrência](decisoes/0014-prestacoes-por-recorrencia.md) (aceita; vencimento e término por data ou quantidade).
 
 Janela de login: [0013 — Sobre a Home ou página independente](decisoes/0013-janela-de-autenticacao.md) (aceita; rotas paralelas e interceptadas).
@@ -95,3 +97,15 @@ Animações React: [0012 — Motion](decisoes/0012-motion.md) (aceita; entrada e
 | [pendencias.md](pendencias.md) | O que ainda não foi testado ou documentado |
 
 Resultado do extrato: [0018 — Resultado acumulado](decisoes/0018-resultado-acumulado-do-extrato.md) (aceita; saldo previsto com saldo inicial, movimentos pagos e pendências até o mês selecionado).
+
+Notas de versão: [Histórico de alterações](../CHANGELOG.md), com mudanças ainda não publicadas. Fluxo local e consolidação das releases: [0025](decisoes/0025-desenvolvimento-local-e-release-notes.md).
+
+Extrato progressivo: [0020](decisoes/0020-carregamento-progressivo-do-extrato.md), com resumo e lista independentes e recuperação de erro por bloco.
+
+Carregamento progressivo nas demais páginas: [0021](decisoes/0021-carregamento-progressivo-em-todas-as-paginas.md), com skeletons e recuperação de erro por bloco.
+
+Dívida realizada dos cartões: [0022](decisoes/0022-divida-realizada-e-previsoes-dos-cartoes.md), separando limite/patrimônio das previsões futuras.
+
+Organização de Contas: [0023](decisoes/0023-contas-e-proximas-faturas.md). Distribuição das informações nas telas: [0024](decisoes/0024-organizacao-das-telas.md).
+
+Extrato com [período personalizado](decisoes/0026-periodo-personalizado-do-extrato.md), inclusive entre meses.

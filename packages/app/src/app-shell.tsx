@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { ExpandIcon, LogOutIcon, ShrinkIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { MacTitlebar, MacWindow } from "@packages/ui/components/mac-window";
@@ -62,25 +63,63 @@ export function AppShell({
   trailing,
   account,
   wide = false,
+  minimizedBackground,
+  allowMinimize = false,
 }: {
   children: React.ReactNode;
   trailing?: React.ReactNode;
   /** Signed-in user shown at the bottom of the sidebar. */
   account?: React.ReactNode;
   wide?: boolean;
+  /** Host-rendered public Home, revealed without unmounting the signed-in app. */
+  minimizedBackground?: React.ReactNode;
+  /** Web host opt-in; native shells use their operating system window controls. */
+  allowMinimize?: boolean;
 }) {
   const t = useTranslations();
   const { pathname } = useAppNavigation();
+  const [minimizedState, setMinimized] = React.useState(false);
+  const minimized = allowMinimize && minimizedState;
+  const [maximizedState, setMaximized] = React.useState(false);
+  const maximized = allowMinimize && maximizedState;
+  const showBackground = allowMinimize && minimizedBackground && (!maximized || minimized);
+  const reduceMotion = useReducedMotion();
+  const restoreRef = React.useRef<HTMLButtonElement>(null);
+  const previousFocus = React.useRef<HTMLElement | null>(null);
+  const wasMinimized = React.useRef(false);
+  React.useEffect(() => {
+    if (minimized) restoreRef.current?.focus();
+    else if (wasMinimized.current) previousFocus.current?.focus();
+    wasMinimized.current = minimized;
+  }, [minimized]);
 
   return (
-    <main className="flex min-h-dvh justify-center sm:items-center sm:p-6 lg:p-10">
+    <>
+      {showBackground && <div data-slot="app-background" inert={!minimized} aria-hidden={!minimized} className="fixed inset-0 overflow-y-auto pb-24" onClickCapture={(event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const link = event.target instanceof Element ? event.target.closest("a") : null;
+        if (!link || link.hash || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+        if (new URL(link.href, window.location.href).pathname !== APP_ROUTES[0].path) return;
+        event.preventDefault(); event.stopPropagation(); setMinimized(false);
+      }}>{minimizedBackground}</div>}
+      {showBackground && <motion.div aria-hidden initial={false} className="pointer-events-none fixed inset-0 z-[5] bg-black/20 backdrop-blur-sm" animate={{ opacity: minimized ? 0 : 1 }} transition={{ duration: reduceMotion === false ? 0.25 : 0.12 }} />}
+    <main className={cn("relative z-10 flex min-h-dvh overflow-clip justify-center sm:items-center", !maximized && "sm:p-6 lg:p-10", minimized && "pointer-events-none")}>
+      <motion.div
+        layout={reduceMotion === false && !minimized}
+        inert={minimized} aria-hidden={minimized} initial={false}
+        className={cn("w-full", maximized ? "max-w-none" : wide ? "max-w-[100vw]" : "max-w-6xl")}
+        style={{ pointerEvents: minimized ? "none" : "auto", transformOrigin: "bottom center" }}
+        animate={{ opacity: minimized ? 0 : 1, y: minimized && reduceMotion === false ? "40vh" : 0, scale: minimized && reduceMotion === false ? 0.15 : 1 }}
+        transition={{ duration: reduceMotion === false ? 0.35 : 0.12, ease: "easeInOut", layout: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
+      >
       <MacWindow
         className={cn(
-          "min-h-dvh w-full transition-[max-width] duration-300 ease-out motion-reduce:transition-none sm:h-[calc(100dvh-3rem)] sm:min-h-[560px] lg:h-[calc(100dvh-5rem)]",
-          wide ? "max-w-[100vw]" : "max-w-6xl",
+          "min-h-dvh w-full",
+          maximized ? "h-dvh rounded-none border-0 shadow-none sm:rounded-none sm:border-0 sm:shadow-none dark:sm:shadow-none" : "sm:h-[calc(100dvh-3rem)] sm:min-h-[560px] lg:h-[calc(100dvh-5rem)]",
+          maximized ? "max-w-none" : wide ? "max-w-[100vw]" : "max-w-6xl",
         )}
       >
-        <MacTitlebar icon={<AppIcon />} title={t("common.appName")} trailing={trailing} />
+        <MacTitlebar icon={<AppIcon />} title={t("common.appName")} trailing={trailing} trafficLights={allowMinimize ? { zoomed: maximized, onMinimize: () => { previousFocus.current = document.activeElement as HTMLElement; setMinimized(true); }, onZoom: () => setMaximized(value => !value), labels: { minimize: t("common.window.minimize"), zoom: maximized ? t("common.window.restoreSize") : t("common.window.maximize") } } : undefined} />
         <div className="flex min-h-0 flex-1 pt-12 max-md:flex-col">
           <aside className="flex w-60 shrink-0 flex-col gap-4 border-r border-border/60 bg-sidebar p-3 max-md:hidden">
             <WalletSwitcher />
@@ -98,7 +137,15 @@ export function AppShell({
         </div>
         <BottomNav />
       </MacWindow>
+      </motion.div>
+      {minimized && <div className="pointer-events-auto fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+        <div className="flex items-center gap-4 rounded-xl border border-border bg-window px-4 py-3 shadow-lg backdrop-blur-2xl">
+          <AppIcon /><span className="text-[13px] font-medium">{t("common.appName")}</span>
+          <button ref={restoreRef} type="button" onClick={() => setMinimized(false)} aria-label={t("common.window.restore")} title={t("common.window.restore")} className="flex size-6 items-center justify-center rounded-full bg-[#28c840] text-black focus-visible:outline-2 focus-visible:outline-ring">+</button>
+        </div>
+      </div>}
     </main>
+    </>
   );
 }
 
@@ -134,7 +181,7 @@ function BottomNav() {
   return (
     <nav
       aria-label={t("label")}
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border/60 bg-titlebar pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl backdrop-saturate-150 md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-border/60 bg-titlebar pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl backdrop-saturate-150 md:hidden"
     >
       {APP_ROUTES.map(({ key, path, icon: Icon }) => {
         const active = isActiveRoute(pathname, path);

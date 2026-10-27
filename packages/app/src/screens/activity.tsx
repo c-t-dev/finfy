@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronLeftIcon, ShieldCheckIcon } from "lucide-react";
 import { Button } from "@packages/ui/components/button";
 import { Spinner } from "@packages/ui/components/spinner";
+import { LoadingList } from "../loading";
 import { cn } from "@packages/ui/lib/utils";
 import type { ActivityEntry, ActivityPage, ChainCheck } from "@packages/shared/activity";
 import { can } from "@packages/shared/roles";
@@ -109,7 +110,7 @@ function WalletActivity({ wallet }: { wallet: Wallet }) {
           </ul>
         </div>
       ))}
-      {state === "loading" && <Spinner label={t("title")} />}
+      {state === "loading" && <LoadingList rows={3} />}
       {state === "error" && (
         <div className="flex items-center gap-3 text-[13px] text-destructive">
           {t("loadError")}

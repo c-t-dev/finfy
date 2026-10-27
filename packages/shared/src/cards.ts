@@ -122,10 +122,17 @@ export const cardSchema = z.object({
   closingDay: z.number().int(),
   dueDay: z.number().int(),
   color: z.enum(ACCOUNT_COLORS),
-  /** Purchases in unpaid invoices: what the limit has used. */
-  usedMinor: z.number().int(),
+  /** Outstanding purchases dated through today, plus future installments of purchases already made; excludes future forecasts. */
+  usedMinor: z.number().int().describe("Outstanding purchases already made, including future installments of an original purchase dated through today; excludes future scheduled or recurring purchases."),
   /** The invoice today's purchases go to. */
   currentInvoice: invoiceSchema.nullable(),
+  /** Next unpaid due date with actual purchases, excluding forecast-only amounts. */
+  nextInvoice: invoiceSchema.nullable(),
+  overdueMinor: z.number().int(),
+  overdueCount: z.number().int(),
+  overdueInvoice: invoiceSchema.nullable(),
+  /** Next forecast-only amount, shown separately from payable debt. */
+  nextForecast: z.object({ dueDate: isoDate, amountMinor: z.number().int() }).nullable(),
   archived: z.boolean(),
   version: z.number().int(),
 });
@@ -135,3 +142,7 @@ export const cardListSchema = z.object({ cards: z.array(cardSchema) });
 export const invoiceListSchema = z.object({ invoices: z.array(invoiceSchema) });
 export const invoiceDetailSchema = z.object({ invoice: invoiceSchema, purchases: z.array(entrySchema) });
 export type InvoiceDetail = z.infer<typeof invoiceDetailSchema>;
+export const invoiceHeaderSchema = invoiceDetailSchema.pick({ invoice: true });
+export type InvoiceHeader = z.infer<typeof invoiceHeaderSchema>;
+export const invoicePurchasesSchema = invoiceDetailSchema.pick({ purchases: true });
+export type InvoicePurchases = z.infer<typeof invoicePurchasesSchema>;

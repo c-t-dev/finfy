@@ -22,6 +22,7 @@ import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@packages/ui/components/select";
 import { Spinner } from "@packages/ui/components/spinner";
+import { ResourceFeedback } from "./loading";
 import { newId } from "@packages/shared/ids";
 import { INVITE_ROLES, type InviteLink, type Member, type Members } from "@packages/shared/members";
 import { canChangeRole, canInvite, canRemoveMember, type WalletRole } from "@packages/shared/roles";
@@ -70,7 +71,7 @@ export function MembersCard({ wallet }: { wallet: Wallet }) {
         <CardDescription>{t("body")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {data.state.status === "loading" && <Spinner label={t("title")} />}
+        <ResourceFeedback state={data.state} reload={data.reload} />
         <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border">
           {members.map((member) => {
             const otherRoles = INVITE_ROLES.filter(

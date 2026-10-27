@@ -30,6 +30,7 @@ import { Input } from "@packages/ui/components/input";
 import { Label } from "@packages/ui/components/label";
 import { SegmentedControl } from "@packages/ui/components/segmented-control";
 import { Spinner } from "@packages/ui/components/spinner";
+import { LoadingList } from "../loading";
 import { cn } from "@packages/ui/lib/utils";
 import {
   CATEGORY_COLORS,
@@ -133,7 +134,7 @@ function WalletCategories({ wallet }: { wallet: Wallet }) {
         <>
           {!canEdit && <p className="text-[12px] text-muted-foreground">{t("readOnly")}</p>}
 
-          {state.status === "loading" && <Spinner label={t("title")} />}
+          {state.status === "loading" && <LoadingList />}
           {state.status === "error" && (
             <div className="flex items-center gap-3 text-[13px] text-destructive">
               {t("loadError")}

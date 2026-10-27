@@ -1,6 +1,6 @@
 # Decisões do finfy
 
-> Última atualização: 2026-10-26
+> Última atualização: 2026-10-27
 
 Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, numerado, para que qualquer agente saiba o que já foi decidido e por quê.
 
@@ -18,6 +18,7 @@ Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, nume
 | [0010](0010-nextjs-na-vercel.md) | Web primeiro, em Next.js na Vercel, com páginas públicas e a API dentro | Aceita (ORM: Drizzle; API REST + zod + OpenAPI; banco: Neon) |
 | [0011](0011-traducoes.md) | Traduções em pt-BR e en (pt-PT depois), mensagens ICU, API devolve códigos | Aceita (padrão: en; biblioteca em aberto) |
 | [0014](0014-prestacoes-por-recorrencia.md) | Valor da prestação, primeiro vencimento e término por data ou quantidade usando recorrências | Aceita |
+| [0015](0015-tags-de-producao.md) | Tags anotadas para marcar versões publicadas e orientar reversões | Aceita |
 | [0016](0016-competencia-das-faturas.md) | Faturas e compras no extrato pelo mês de vencimento | Aceita |
 | [0017](0017-bens-e-financiamentos.md) | Associação entre bens e dívidas, sem duplicação no patrimônio | Aceita |
 | [0019](0019-inicio-personalizavel.md) | Início personalizável por pessoa e wallet, com gráficos de saldo e de receitas x despesas | Aceita (sync nos apps nativos em aberto) |
@@ -41,3 +42,16 @@ A [0012 — Motion para animações React](0012-motion.md) está aceita. Entrada
 5. Perguntas em aberto.
 
 A [0018 — Resultado acumulado do extrato](0018-resultado-acumulado-do-extrato.md) está aceita: saldo previsto com saldo inicial, movimentos pagos e pendências até o mês selecionado; apenas o filtro de conta restringe o saldo.
+
+A [0025 — Desenvolvimento local e notas de versão](0025-desenvolvimento-local-e-release-notes.md) está aceita: consolidar mudanças na branch, testar localmente e manter notas não publicadas até uma release autorizada.
+
+A [0020 — Carregamento progressivo do extrato](0020-carregamento-progressivo-do-extrato.md) está aceita: resumo e lista independentes, na branch local, com skeleton e retry por bloco.
+
+A [0021 — Carregamento progressivo em todas as páginas](0021-carregamento-progressivo-em-todas-as-paginas.md) está aceita: recursos independentes, skeletons e erros locais, sem publicação nesta etapa.
+
+A [0022 — Dívida realizada e previsões dos cartões](0022-divida-realizada-e-previsoes-dos-cartoes.md) está aceita: limite usado e patrimônio excluem previsões futuras, mantendo parcelas de compras já realizadas.
+
+- [0023 — Contas e próximas faturas](0023-contas-e-proximas-faturas.md): aceita para avaliação local.
+- [0024 — Organização das informações nas telas](0024-organizacao-das-telas.md): aceita para avaliação local.
+
+- [0026 — Período personalizado do Extrato](0026-periodo-personalizado-do-extrato.md): aceita.

@@ -79,8 +79,8 @@ export const netWorthSchema = z.object({
   accountsMinor: z.number().int(),
   assetsMinor: z.number().int(),
   liabilitiesMinor: z.number().int(),
-  /** Purchases on card invoices not paid yet. */
-  cardDebtMinor: z.number().int(),
+  /** Actual outstanding card debt, including committed installments but no future forecasts. */
+  cardDebtMinor: z.number().int().describe("Purchases already made on unpaid non-archived invoices, including future installments of completed purchases; future forecasts are excluded."),
   netWorthMinor: z.number().int(),
 });
 export type NetWorth = z.infer<typeof netWorthSchema>;
