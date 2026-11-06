@@ -4,7 +4,7 @@
 
 Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publicação, consolidar versão e data conforme a decisão 0015.
 
-## Não publicado
+## v0.3.0 — 2026-11-06
 
 ### Funcionalidades
 
@@ -34,6 +34,12 @@ Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publi
 - Limite usado e patrimônio excluem gastos futuros previstos, mantendo parcelas futuras de compras já realizadas como dívida.
 - Desenvolvimento no Windows usa Webpack para evitar o ciclo de recompilações observado com Turbopack. Traduções usam caminhos explícitos compatíveis com Webpack.
 - Desenvolvimento reutiliza o pool do banco entre atualizações do código, evitando esgotar conexões.
+
+### Validação
+
+- 50 testes aprovados; sete cenários de autenticação também validados em PostgreSQL 17 local.
+- Typecheck, traduções, OpenAPI e build de produção aprovados.
+- Sem alteração de esquema ou migração de banco.
 
 ## Versões anteriores
 

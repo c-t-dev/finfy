@@ -65,3 +65,7 @@ All seven new concurrency/rollback regressions passed on migrated PGlite. Typech
 Docker became available. All seven authentication concurrency/rollback scenarios passed again against disposable PostgreSQL 17 databases using the postgres-js adapter, with the same controlled crypto/cookie substitutions. Each database was removed after its test. The previous external-database limitation is resolved for those scenarios.
 
 The statement-period regression assumed the selected month was different from the current month. In November it counted both the initial November load and the reset to November. The assertion now measures the two additional reset requests relative to the baseline; no product logic was changed. Full suite: 16 shared + 34 web tests passed, including their reported parent tests. Typecheck, messages and OpenAPI passed. Production build and deployment confirmation are recorded separately at release completion.
+
+## Release
+
+Production publication was explicitly authorized after validation. Vercel confirmed the security commit READY on 2026-11-06. Release notes are consolidated for v0.3.0; the tag is created only after verifying the final documentation commit deployment. No production database migration or credential reset is part of this release.

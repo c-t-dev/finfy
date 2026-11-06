@@ -226,3 +226,7 @@ Docker disponível após abertura pelo usuário. Os sete cenários de concorrên
 ### Resultado final da validação local
 
 Build de produção aprovado. Total de 50 testes reportados aprovados (16 shared e 34 web); sete cenários também aprovados em PostgreSQL 17 externo local. Acesso à equipe Vercel confirmado após autorização do usuário. Revisão automática bloqueou push para main por exigir autorização específica de publicação em produção. Commit local preparado; nenhum push/deploy/tag de produção nesta etapa.
+
+## 2026-11-06 — publicação autorizada da nova versão
+
+Usuário autorizou explicitamente push para main, publicação em produção e criação da nova versão após confirmar o deploy. Commit de segurança enviado; Vercel confirmou deploy de produção READY com SHA correspondente. Notas consolidadas em v0.3.0 por incluir funcionalidades acumuladas desde a tag v0.2.3. Commit final de notas segue para confirmação do deploy antes de marcar a tag. Nenhuma conexão direta ao banco de produção, migração ou alteração de credenciais reais.
