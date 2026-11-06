@@ -234,3 +234,7 @@ Usuário autorizou explicitamente push para main, publicação em produção e c
 ## 2026-11-06 — hotfix de edição de compras no cartão
 
 Teste isolado em PGlite com migrações reais e dados sintéticos: edição pela segunda parcela, redistribuição de centavos, meses curtos, preservação de IDs e faturas em alteração só de valor, versões desatualizadas, total insuficiente, repetição idempotente, rejeição atômica de fatura paga e edição textual permitida. Nenhum dado de produção alterado. `pnpm typecheck`, `pnpm test` (16 testes compartilhados e 35 web), `pnpm check:messages` e `pnpm check:openapi` passaram. Validação visual ainda não realizada.
+
+## 2026-11-06 — publicação do hotfix v0.3.1
+
+Push autorizado para main. Vercel confirmou READY em produção para o commit `0b4d900`, com a edição financeira de compras no cartão. Notas consolidadas em v0.3.1; o commit final de documentação será verificado antes da tag anotada. Nenhuma migração ou alteração de dados de produção.

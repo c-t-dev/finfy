@@ -79,4 +79,4 @@ Causa da falha registrada na instalação: o teste esperava duas requisições d
 
 ## finfy — edição financeira de compra no cartão (2026-11-06)
 
-O diálogo orientava apagar a compra para alterar valor/data. Hotfix local adiciona valor total e data original da compra inteira, com verificação de versões e proteção de faturas pagas. Ver decisão 0028. Ainda não publicado.
+O diálogo orientava apagar a compra para alterar valor/data. Hotfix local adiciona valor total e data original da compra inteira, com verificação de versões e proteção de faturas pagas. Ver decisão 0028. Publicado em produção na versão v0.3.1.
