@@ -841,7 +841,12 @@ function cardPaths() {
       post: cardWrite("Create a purchase", "OWNER, ADMIN, EDITOR. With `installments` > 1 the total is split in minor units (leftover on the first); installment k is dated k−1 months later and goes to that date's invoice. Answers every installment.", [walletIdParam, cardIdParam], createPurchaseInput, { 201: response("The installments.", { type: "array", items: ref("Entry") }) }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}": {
-      patch: cardWrite("Edit a purchase", "Description, category and notes of every installment; the last write wins. To change amount or date, delete and add again.", purchase, updatePurchaseInput, { 204: response("Saved.") }, ["invalidInput", "forbidden", "notFound"]),
+      get: {
+        tags: ["Cards"], summary: "Get every installment of a purchase", description: "Any active wallet member. Returns the whole purchase in installment order, with current row versions, exact total amounts and the original first date. Paid installments are included.",
+        security: [{ session: [] }], parameters: purchase,
+        responses: { 200: response("The purchase installments.", ref("InvoicePurchases")), ...walletErrors("notFound") },
+      },
+      patch: cardWrite("Edit a purchase", "Text fields apply to every installment, last-write-wins. amountMinor is the total purchase value; transactionDate is its original date. Financial changes require baseVersions for every installment, redistribute integer cents, and move installments to the corresponding unpaid invoices. Any paid source or destination invoice refuses financial changes; reopen it first. Installment count is unchanged.", purchase, updatePurchaseInput, { 204: response("Saved.") }, ["invalidInput", "forbidden", "notFound", "versionConflict", "invoicePaid"]),
     },
     "/api/wallets/{id}/cards/{cardId}/purchases/{entryId}/archive": {
       post: cardWrite("Delete a purchase", "Deletes every installment; refused when one is on a paid invoice.", purchase, purchaseStateInput, { 204: response("Deleted.") }, ["invalidInput", "forbidden", "notFound", "invoicePaid"]),

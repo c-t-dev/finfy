@@ -113,3 +113,5 @@ Extrato com [período personalizado](decisoes/0026-periodo-personalizado-do-extr
 Autorização compartilhada com CASL: [0027](decisoes/0027-casl-na-autorizacao.md), preservando a matriz de papéis.
 
 Revisão de segurança: [relatório técnico](finfy/security-review.md), achados confirmados, correções locais e limites da verificação.
+
+Hotfix em desenvolvimento (2026-11-06): [edição de valor total e data original de compras no cartão](decisoes/0028-edicao-de-compras-no-cartao.md).

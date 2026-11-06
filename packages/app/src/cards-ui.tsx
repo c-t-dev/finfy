@@ -24,7 +24,7 @@ import { Spinner } from "@packages/ui/components/spinner";
 import { ResourceFeedback } from "./loading";
 import { cn } from "@packages/ui/lib/utils";
 import { ACCOUNT_COLORS, type Account, type AccountColor } from "@packages/shared/accounts";
-import { CARD_NAME_MAX, INSTALLMENTS_MAX, splitInstallments, type Card, type InvoiceState } from "@packages/shared/cards";
+import { CARD_NAME_MAX, INSTALLMENTS_MAX, splitInstallments, type Card, type InvoiceState, type InvoicePurchases } from "@packages/shared/cards";
 import { CARD_BRANDS, type CardBrand } from "@packages/shared/finance";
 import { newId } from "@packages/shared/ids";
 import { can } from "@packages/shared/roles";
@@ -465,7 +465,7 @@ function CardForm({
 
 export type PurchaseEditing = { mode: "create" } | { mode: "edit"; entry: Entry } | null;
 
-/** New purchase (with installments) or edit of an existing one (text fields of every installment). */
+/** New purchase or edit of the whole purchase, even when opened from a later installment. */
 export function PurchaseDialog({
   wallet,
   card,
@@ -488,7 +488,7 @@ export function PurchaseDialog({
     <Dialog open={editing !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent closeLabel={common("close")} className="max-w-md">
         {editing && (
-          <PurchaseForm
+          <PurchaseFormLoader
             key={editing.mode === "edit" ? editing.entry.id : "new"}
             wallet={wallet}
             card={card}
@@ -504,12 +504,29 @@ export function PurchaseDialog({
   );
 }
 
+function PurchaseFormLoader(props: React.ComponentProps<typeof PurchaseForm>) {
+  const t = useTranslations("app.cards.purchase");
+  const resource = useResource<InvoicePurchases>(props.entry ? `/api/wallets/${props.wallet.id}/cards/${props.card.id}/purchases/${props.entry.id}` : null);
+  if (!props.entry) return <PurchaseForm {...props} />;
+  if (resource.state.status !== "ready") return <>
+    <DialogHeader><DialogTitle>{t("editTitle")}</DialogTitle><DialogDescription>{t("editHint")}</DialogDescription></DialogHeader>
+    <ResourceFeedback state={resource.state} reload={resource.reload} layout="panel" />
+  </>;
+  const selected = resource.state.value.purchases.find((entry) => entry.id === props.entry!.id);
+  if (!selected) return <>
+    <DialogHeader><DialogTitle>{t("editTitle")}</DialogTitle><DialogDescription>{t("editHint")}</DialogDescription></DialogHeader>
+    <ResourceFeedback state={{ status: "error" }} reload={resource.reload} />
+  </>;
+  return <PurchaseForm {...props} entry={selected} purchaseEntries={resource.state.value.purchases} />;
+}
+
 function PurchaseForm({
   wallet,
   card,
   tree,
   tags,
   entry,
+  purchaseEntries,
   onCancel,
   onSaved,
 }: {
@@ -518,6 +535,7 @@ function PurchaseForm({
   tree: CategoryTree | null;
   tags: { tags: Tag[]; add: (tag: Tag) => void };
   entry: Entry | null;
+  purchaseEntries?: Entry[];
   onCancel: () => void;
   onSaved: () => void;
 }) {
@@ -526,9 +544,12 @@ function PurchaseForm({
   const common = useTranslations("common");
   const request = useApi();
   const money = useMoney(wallet.currencyCode);
+  const originalAmount = purchaseEntries?.reduce((sum, row) => sum + row.amountMinor, 0) ?? entry?.amountMinor ?? 0;
+  const originalDate = purchaseEntries?.[0]?.transactionDate ?? entry?.transactionDate;
+  const financialLocked = purchaseEntries?.some((row) => row.status === "PAID") ?? false;
   const [description, setDescription] = React.useState(entry?.description ?? "");
-  const [amount, setAmount] = React.useState("");
-  const [date, setDate] = React.useState(todayIso());
+  const [amount, setAmount] = React.useState(entry ? money.toInput(originalAmount) : "");
+  const [date, setDate] = React.useState(originalDate ?? todayIso());
   const [installments, setInstallments] = React.useState(1);
   const [categoryId, setCategoryId] = React.useState<string | null>(entry?.categoryId ?? null);
   const [notes, setNotes] = React.useState(entry?.notes ?? "");
@@ -571,17 +592,21 @@ function PurchaseForm({
       onSubmit={async (event) => {
         event.preventDefault();
         const trimmedNotes = notes.trim() || null;
+        if (parsed === null || parsed <= 0 || parsed < (purchaseEntries?.length ?? installments)) return setAmountInvalid(true);
+        setAmountInvalid(false);
         if (entry) {
           const patch = Object.fromEntries(
             Object.entries({
               description: description.trim() !== entry.description ? description.trim() : undefined,
               categoryId: categoryId && categoryId !== entry.categoryId ? categoryId : undefined,
               notes: trimmedNotes !== entry.notes ? trimmedNotes : undefined,
+              amountMinor: parsed !== originalAmount ? parsed : undefined,
+              transactionDate: date !== originalDate ? date : undefined,
             }).filter(([, value]) => value !== undefined),
           );
           const ok = await run(async () => {
             if (Object.keys(patch).length) {
-              const response = await request("PATCH", `${base}/${entry.id}`, { mutationId: newId(), ...patch });
+              const response = await request("PATCH", `${base}/${entry.id}`, { mutationId: newId(), baseVersions: purchaseEntries?.map((row) => ({ id: row.id, version: row.version })), ...patch });
               if (!response.ok) return response;
             }
             return saveEntryTags(request, wallet.id, entry.id, entry.tagIds, tagIds);
@@ -589,8 +614,6 @@ function PurchaseForm({
           if (ok) onSaved();
           return;
         }
-        if (parsed === null || parsed <= 0) return setAmountInvalid(true);
-        setAmountInvalid(false);
         const ok = await run(() =>
           request("POST", base, {
             id: newId(),
@@ -612,27 +635,26 @@ function PurchaseForm({
         <DialogDescription className={entry ? "" : "sr-only"}>{t("editHint")}</DialogDescription>
       </DialogHeader>
       <WalletErrorMessage failure={failure} />
-      {!entry && (
-        <>
+      <>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="purchase-amount">
-                {entries("form.amount")} ({wallet.currencyCode})
+                {t("totalAmount")} ({wallet.currencyCode})
               </Label>
-              <Input id="purchase-amount" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} required autoFocus placeholder={money.toInput(0)} aria-invalid={amountInvalid || undefined} className="text-[15px] font-medium tabular-nums" />
+              <Input id="purchase-amount" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} required autoFocus disabled={financialLocked} placeholder={money.toInput(0)} aria-invalid={amountInvalid || undefined} className="text-[15px] font-medium tabular-nums" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="purchase-date">{entries("form.date")}</Label>
-              <Input id="purchase-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+              <Label htmlFor="purchase-date">{t("originalDate")}</Label>
+              <Input id="purchase-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required disabled={financialLocked} />
             </div>
           </div>
-          {amountInvalid && <p className="-mt-2 text-[11px] text-destructive">{entries("form.amountInvalid", { example: money.toInput(1990) })}</p>}
-          <InstallmentsSelect value={installments} onChange={setInstallments} totalMinor={parsed && parsed > 0 ? parsed : null} format={money.format} />
-        </>
-      )}
+          {amountInvalid && <p className="-mt-2 text-[11px] text-destructive">{t("amountInvalid", { minimum: money.format(purchaseEntries?.length ?? installments) })}</p>}
+          {financialLocked && <p className="text-[12px] text-muted-foreground">{t("paidHint")}</p>}
+          {!entry && <InstallmentsSelect value={installments} onChange={setInstallments} totalMinor={parsed && parsed > 0 ? parsed : null} format={money.format} />}
+      </>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="purchase-description">{entries("form.description")}</Label>
-        <Input id="purchase-description" value={description} onChange={(event) => setDescription(event.target.value)} required autoFocus={entry !== null} maxLength={DESCRIPTION_MAX} placeholder={entries("form.descriptionPlaceholder")} />
+        <Input id="purchase-description" value={description} onChange={(event) => setDescription(event.target.value)} required autoFocus={financialLocked} maxLength={DESCRIPTION_MAX} placeholder={entries("form.descriptionPlaceholder")} />
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="purchase-category">{entries("form.category")}</Label>

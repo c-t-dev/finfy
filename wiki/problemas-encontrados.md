@@ -76,3 +76,7 @@ Segunda rodada confirmou em banco descartável: login iniciado com credencial an
 ## finfy — teste do período dependia do mês atual (2026-11-06)
 
 Causa da falha registrada na instalação: o teste esperava duas requisições de novembro em todo o histórico, mas em novembro já existiam duas do carregamento inicial. A asserção do retorno ao mês passou a medir o acréscimo em relação à contagem anterior. Mantém a exigência de duas novas consultas e os cenários de período inválido e entre meses. Código do produto preservado. Suíte completa passou após o ajuste.
+
+## finfy — edição financeira de compra no cartão (2026-11-06)
+
+O diálogo orientava apagar a compra para alterar valor/data. Hotfix local adiciona valor total e data original da compra inteira, com verificação de versões e proteção de faturas pagas. Ver decisão 0028. Ainda não publicado.

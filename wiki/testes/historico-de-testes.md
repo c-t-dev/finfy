@@ -230,3 +230,7 @@ Build de produção aprovado. Total de 50 testes reportados aprovados (16 shared
 ## 2026-11-06 — publicação autorizada da nova versão
 
 Usuário autorizou explicitamente push para main, publicação em produção e criação da nova versão após confirmar o deploy. Commit de segurança enviado; Vercel confirmou deploy de produção READY com SHA correspondente. Notas consolidadas em v0.3.0 por incluir funcionalidades acumuladas desde a tag v0.2.3. Commit final de notas segue para confirmação do deploy antes de marcar a tag. Nenhuma conexão direta ao banco de produção, migração ou alteração de credenciais reais.
+
+## 2026-11-06 — hotfix de edição de compras no cartão
+
+Teste isolado em PGlite com migrações reais e dados sintéticos: edição pela segunda parcela, redistribuição de centavos, meses curtos, preservação de IDs e faturas em alteração só de valor, versões desatualizadas, total insuficiente, repetição idempotente, rejeição atômica de fatura paga e edição textual permitida. Nenhum dado de produção alterado. `pnpm typecheck`, `pnpm test` (16 testes compartilhados e 35 web), `pnpm check:messages` e `pnpm check:openapi` passaram. Validação visual ainda não realizada.

@@ -68,16 +68,22 @@ export const createPurchaseInput = z.object({
 });
 export type CreatePurchaseInput = z.infer<typeof createPurchaseInput>;
 
-/** Text fields apply to every installment of the purchase; amount and date need a new purchase. */
+/** Amount is the purchase total; date is the original date. Financial edits require all row versions. */
 export const updatePurchaseInput = z
   .object({
     mutationId: z.uuid(),
+    baseVersions: z.array(z.object({ id: z.uuid(), version: z.number().int().positive() })).min(1).max(INSTALLMENTS_MAX).optional(),
+    amountMinor: z.number().int().positive().max(AMOUNT_MAX).optional(),
+    transactionDate: isoDate.optional(),
     categoryId: z.uuid().optional(),
     description: z.string().trim().min(1).max(DESCRIPTION_MAX).optional(),
     notes: z.string().trim().max(NOTES_MAX).nullable().optional(),
   })
-  .refine((input) => input.categoryId !== undefined || input.description !== undefined || input.notes !== undefined, {
+  .refine((input) => input.categoryId !== undefined || input.description !== undefined || input.notes !== undefined || input.amountMinor !== undefined || input.transactionDate !== undefined, {
     message: "nothing to change",
+  })
+  .refine((input) => (input.amountMinor === undefined && input.transactionDate === undefined) || Boolean(input.baseVersions?.length), {
+    message: "financial changes require versions",
   });
 export type UpdatePurchaseInput = z.infer<typeof updatePurchaseInput>;
 

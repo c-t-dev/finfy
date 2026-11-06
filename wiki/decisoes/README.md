@@ -57,3 +57,5 @@ A [0022 — Dívida realizada e previsões dos cartões](0022-divida-realizada-e
 - [0026 — Período personalizado do Extrato](0026-periodo-personalizado-do-extrato.md): aceita.
 
 - [0027 — CASL na autorização compartilhada](0027-casl-na-autorizacao.md): aceita; preserva a matriz de papéis.
+
+- [0028 — Edição de compras no cartão](0028-edicao-de-compras-no-cartao.md): valor total e data original para toda a compra. Aprovada em 2026-11-06.

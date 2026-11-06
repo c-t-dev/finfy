@@ -500,7 +500,11 @@
         "installments": "Parcelas",
         "installmentsHint": "{count}× {amount}",
         "single": "À vista",
-        "editHint": "As mudanças valem para todas as parcelas. Para mudar o valor ou a data, apague e lance de novo.",
+        "editHint": "As mudanças valem para toda a compra. O valor total é redistribuído nas mesmas parcelas, a partir da data original.",
+        "totalAmount": "Valor total da compra",
+        "originalDate": "Data original da compra",
+        "amountInvalid": "Digite um valor total válido de pelo menos {minimum}.",
+        "paidHint": "Reabra as faturas pagas desta compra antes de alterar o valor ou a data.",
         "delete": "Apagar compra",
         "deleteTitle": "Apagar esta compra?",
         "deleteBody": "Todas as parcelas são apagadas."

@@ -1,6 +1,6 @@
 # finfy — Data model
 
-> Last updated: 2026-10-27
+> Last updated: 2026-11-06
 
 This is the data model of **finfy** itself. It consolidates the decisions in [`../decisoes/`](../decisoes/README.md) and proposes the financial core. For the reverse-engineered model of the Minhas Economias app, see [`../api/modelo-de-dados.md`](../api/modelo-de-dados.md) instead.
 
@@ -386,7 +386,7 @@ Rules:
 - Actual account balances use paid movements. Statement projections explicitly include pending components; card expenses use invoice-due competence, while actual card debt excludes future forecasts under [0022](../decisoes/0022-divida-realizada-e-previsoes-dos-cartoes.md). These scopes must be labeled distinctly.
 - A transfer is two rows linked by `transaction_links`; archiving one leg archives both. Transfers are only between accounts of the same wallet (cross-currency transfers are out of scope for v1).
 - Invoice reference year/month identify the closing cycle and remain stable. Display titles and payment labels use the saved invoice due month. Card purchases and each installment count in the statement, Home and budgets on the linked invoice due date; their stored transaction date is preserved. Payments affect cash on the payment date and are excluded from expense totals. This is derived on read, with no schema migration. See [0016](../decisoes/0016-competencia-das-faturas.md).
-- Installments share `installment_group_id`; the total is split in minor units with leftover cents on the first installment; card installments go to the invoice of their own date.
+- Installments share `installment_group_id`; the total is split in minor units with leftover cents on the first installment; card installments go to the invoice of their own date. Editing the whole purchase total redistributes cents over the same installments; changing the original date recalculates all installment dates and invoice links. IDs, count and tags are preserved. All installment versions are checked atomically and paid source/destination invoices reject financial edits until reopened. Amount-only edits preserve existing invoice links. See [0028](../decisoes/0028-edicao-de-compras-no-cartao.md).
 - A recurrence occurrence has `recurrence_id` + `occurrence_date`, and its `id` is UUIDv5 of both. Creating a recurrence from an existing transaction links that transaction instead of creating a duplicate.
 - Tags chosen in the create form are saved in the same write (fixes the Minhas Economias bug where tags were dropped).
 

@@ -500,7 +500,11 @@
         "installments": "Installments",
         "installmentsHint": "{count}× {amount}",
         "single": "Single payment",
-        "editHint": "Changes apply to every installment. To change the amount or date, delete it and add it again.",
+        "editHint": "Changes apply to the whole purchase. The total is redistributed across the same installments, starting on the original date.",
+        "totalAmount": "Total purchase amount",
+        "originalDate": "Original purchase date",
+        "amountInvalid": "Enter a valid total of at least {minimum}.",
+        "paidHint": "Reopen all paid invoices for this purchase before changing its amount or date.",
         "delete": "Delete purchase",
         "deleteTitle": "Delete this purchase?",
         "deleteBody": "All installments are deleted."

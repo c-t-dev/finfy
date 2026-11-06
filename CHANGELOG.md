@@ -4,6 +4,12 @@
 
 Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publicação, consolidar versão e data conforme a decisão 0015.
 
+## Não publicado
+
+### Correções
+
+- Edição de compras no cartão permite alterar valor total e data original, redistribuindo todas as parcelas sem apagar a compra. Faturas pagas precisam ser reabertas antes da alteração financeira.
+
 ## v0.3.0 — 2026-11-06
 
 ### Funcionalidades

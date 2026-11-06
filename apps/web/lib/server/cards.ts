@@ -534,7 +534,7 @@ async function purchasesByIds(tx: Tx, walletId: string, ids: string[]): Promise<
 }
 
 /** Every active row of the purchase (all installments), locked. */
-async function purchaseGroup(tx: Tx, walletId: string, cardId: string, entryId: string) {
+async function purchaseGroup(tx: Tx, walletId: string, cardId: string, entryId: string, lock = true) {
   const [row] = await tx
     .select()
     .from(transactions)
@@ -550,19 +550,33 @@ async function purchaseGroup(tx: Tx, walletId: string, cardId: string, entryId: 
     .limit(1);
   if (!row) throw new CommandError("notFound");
   const groupId = row.installmentGroupId;
-  return tx
+  const query = tx
     .select()
     .from(transactions)
     .where(
       and(
+        eq(transactions.walletId, walletId),
+        eq(transactions.creditCardId, cardId),
+        eq(transactions.type, "CREDIT_CARD_PURCHASE"),
         isNull(transactions.archivedAt),
         groupId ? eq(transactions.installmentGroupId, groupId) : eq(transactions.id, row.id),
       ),
     )
-    .for("update");
+    .orderBy(asc(transactions.installmentNumber), asc(transactions.id));
+  return lock ? query.for("update") : query;
 }
 
-/** Description, category and notes of every installment; the last write wins. */
+/** Read all installments so editing any one shows the exact total and original date. */
+export async function getPurchase(userId: string, walletId: string, cardId: string, entryId: string): Promise<CommandResult<InvoicePurchases>> {
+  return runCommand(async (tx) => {
+    await tx.execute(sql`set transaction isolation level repeatable read`);
+    await requireRole(tx, walletId, userId, "view");
+    const rows = await purchaseGroup(tx, walletId, cardId, entryId, false);
+    return { purchases: await purchasesByIds(tx, walletId, rows.map((row) => row.id)) };
+  });
+}
+
+/** Text changes use last-write-wins; total/date edits version-check and reschedule the whole purchase. */
 export async function updatePurchase(
   actor: Actor,
   walletId: string,
@@ -571,18 +585,49 @@ export async function updatePurchase(
   input: UpdatePurchaseInput,
 ): Promise<CommandResult<null>> {
   return runCommand(async (tx) => {
-    if (await applied(tx, actor, input.mutationId)) return null;
     await requireRole(tx, walletId, actor.userId, "editEntries");
+    if (await applied(tx, actor, input.mutationId)) return null;
+    const financial = input.amountMinor !== undefined || input.transactionDate !== undefined;
+    const extra: Change[] = [];
+    let card: CardRow | undefined;
+    if (financial) {
+      card = await loadCard(tx, walletId, cardId);
+      const initial = await purchaseGroup(tx, walletId, cardId, entryId, false);
+      // Match the invoice -> transaction lock order used by payment/reopen.
+      const invoiceIds = new Set(initial.flatMap((row) => row.invoiceId ? [row.invoiceId] : []));
+      for (const row of input.transactionDate === undefined ? [] : initial) {
+        const date = input.transactionDate === undefined ? row.transactionDate : addMonthsToDate(input.transactionDate, (row.installmentNumber ?? 1) - 1);
+        invoiceIds.add(invoiceId(cardId, invoiceForDate(date, card.closingDay, card.dueDay)));
+      }
+      if (invoiceIds.size) {
+        const invoices = await tx.select().from(creditCardInvoices)
+          .where(and(eq(creditCardInvoices.walletId, walletId), eq(creditCardInvoices.creditCardId, cardId), inArray(creditCardInvoices.id, [...invoiceIds])))
+          .orderBy(asc(creditCardInvoices.id)).for("update");
+        if (invoices.some((invoice) => invoice.status === "PAID")) throw new CommandError("invoicePaid");
+      }
+    }
     const rows = await purchaseGroup(tx, walletId, cardId, entryId);
+    if (financial) {
+      const versions = new Map(input.baseVersions?.map((row) => [row.id, row.version]));
+      if (versions.size !== rows.length || input.baseVersions?.length !== rows.length || rows.some((row) => versions.get(row.id) !== row.version)) {
+        throw new CommandError("versionConflict");
+      }
+      if (rows.some((row) => row.status === "PAID")) throw new CommandError("invoicePaid");
+      if (rows.length !== (rows[0].installmentTotal ?? 1)) throw new CommandError("invalidInput");
+      if (input.amountMinor !== undefined && input.amountMinor < rows.length) throw new CommandError("invalidInput");
+    }
     if (input.categoryId) {
       const category = await usableCategory(tx, walletId, input.categoryId);
       if (category.kind === "INCOME") throw new CommandError("invalidInput");
     }
     const changes: Change[] = [];
-    for (const row of rows) {
+    const amounts = input.amountMinor === undefined ? null : splitInstallments(input.amountMinor, rows.length);
+    for (const [index, row] of rows.entries()) {
+      const date = input.transactionDate === undefined ? row.transactionDate : addMonthsToDate(input.transactionDate, (row.installmentNumber ?? 1) - 1);
+      const invoice = input.transactionDate !== undefined ? await ensureInvoice(tx, actor, card!, invoiceForDate(date, card!.closingDay, card!.dueDay), extra) : null;
       const fieldChanges = diff(
-        { description: row.description, category_id: row.categoryId, notes: row.notes },
-        { description: input.description, category_id: input.categoryId, notes: input.notes },
+        { description: row.description, category_id: row.categoryId, notes: row.notes, amount_minor: row.amountMinor, transaction_date: row.transactionDate, invoice_id: row.invoiceId },
+        { description: input.description, category_id: input.categoryId, notes: input.notes, amount_minor: amounts?.[index], transaction_date: input.transactionDate === undefined ? undefined : date, invoice_id: invoice?.id },
       );
       if (!Object.keys(fieldChanges).length) continue;
       await tx
@@ -591,6 +636,9 @@ export async function updatePurchase(
           description: input.description ?? row.description,
           categoryId: input.categoryId ?? row.categoryId,
           notes: input.notes === undefined ? row.notes : input.notes,
+          amountMinor: amounts?.[index] ?? row.amountMinor,
+          transactionDate: date,
+          invoiceId: invoice?.id ?? row.invoiceId,
           version: bump(transactions.version),
           updatedAt: now,
           updatedBy: actor.userId,
@@ -600,7 +648,7 @@ export async function updatePurchase(
     }
     if (!changes.length) return null;
     const [first, ...rest] = changes;
-    await recordMutation(tx, actor, { mutationId: input.mutationId }, first, rest);
+    await recordMutation(tx, actor, { mutationId: input.mutationId, baseVersion: input.baseVersions?.find((row) => row.id === first.entityId)?.version }, first, [...rest, ...extra]);
     return null;
   });
 }
