@@ -4,7 +4,7 @@
 
 Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publicação, consolidar versão e data conforme a decisão 0015.
 
-## Não publicado
+## v0.3.2 — 2026-11-06
 
 ### Correções
 
