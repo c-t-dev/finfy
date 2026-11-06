@@ -1,6 +1,6 @@
 # Problemas encontrados
 
-> Última atualização: 2026-10-27
+> Última atualização: 2026-11-06
 
 Bugs, inconsistências e riscos observados nos testes. Úteis como lista do que **não** repetir no finfy.
 
@@ -60,3 +60,19 @@ O total da fatura exibida e o limite usado têm escopos diferentes: o primeiro �
 ### 2026-10-27 — conexões no desenvolvimento
 
 Recompilações locais recriavam o pool do banco porque o cache era apenas do módulo. Após várias atualizações, o banco recusava novas conexões. Cache global apenas em desenvolvimento mantém o pool entre hot reloads; reinício libera os pools antigos. Produção mantém pool por instância.
+
+## finfy — teste de período no novo Windows (2026-11-05)
+
+Após clone da main e instalação com lockfile congelado, `pnpm.cmd test` falhou no subteste de período do extrato (`apps/web/test/statement-progressive.test.ts:83`): esperado 2, recebido 4. Reproduzido dentro e fora do sandbox. Tipos, mensagens e OpenAPI passaram. Causa não investigada neste trabalho de instalação; nenhuma correção aplicada.
+
+## finfy — autorização em replays e concorrência de login (2026-11-06)
+
+Reproduzidos com dados sintéticos: vazamento de membros de outra wallet em changeMemberRole/removeMember/revokeInvite, metadados de fatura em reopenInvoice e metadados de wallet após remoção. Correções locais exigem associação ativa antes das respostas. Dez falhas simultâneas de login eram contadas como uma; incremento e bloqueio passaram a ser atômicos. Detalhes, limites e comportamento permitido de convites no [relatório](finfy/security-review.md). Sem publicação.
+
+## finfy — corridas na troca de senha e OTP (2026-11-06)
+
+Segunda rodada confirmou em banco descartável: login iniciado com credencial antiga cria sessão válida após troca de senha e revogação; se precisa rehash, sobrescreve a nova credencial. Também confirmado orçamento de tentativas OTP excedido por concorrência, em fluxo atualmente desativado. Correções locais implementadas: bloqueio comum e revalidação da credencial, transações para senha/sessões/auditoria, cookie após commit e consumo OTP atômico com orçamento limitado. Requisitos, impactos e limites no [relatório técnico](finfy/security-review.md#second-round-session-and-password-races-2026-11-06). Nenhuma conta real acessada ou alterada.
+
+## finfy — teste do período dependia do mês atual (2026-11-06)
+
+Causa da falha registrada na instalação: o teste esperava duas requisições de novembro em todo o histórico, mas em novembro já existiam duas do carregamento inicial. A asserção do retorno ao mês passou a medir o acréscimo em relação à contagem anterior. Mantém a exigência de duas novas consultas e os cenários de período inválido e entre meses. Código do produto preservado. Suíte completa passou após o ajuste.

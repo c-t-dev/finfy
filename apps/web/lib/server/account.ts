@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword } from "@/lib/server/auth/password";
 import { hitRateLimit } from "@/lib/server/auth/rate-limit";
 import { revokeOtherSessions } from "@/lib/server/auth/session";
 import { getDb } from "@/lib/server/db";
+import { lockCredentials, sameCredentials } from "@/lib/server/auth/credentials";
 
 /** The signed-in user's own account: name and password (wiki/decisoes/0004). */
 
@@ -41,13 +42,16 @@ export async function changePassword(userId: string, email: string, input: Chang
   if (await isBreachedPassword(input.newPassword)) return { ok: false, error: "passwordBreached" };
 
   const fresh = await hashPassword(input.newPassword);
-  await db
-    .update(userCredentials)
-    .set({ passwordHash: fresh.hash, pepperVersion: fresh.pepperVersion, passwordChangedAt: sql`now()` })
-    .where(eq(userCredentials.userId, userId));
-  const ended = await revokeOtherSessions(userId);
-  await db
-    .insert(securityEvents)
-    .values({ userId, type: "PASSWORD_CHANGED", ip: meta.ip, userAgent: meta.userAgent, metadata: { otherSessionsEnded: ended } });
-  return { ok: true };
+  return db.transaction(async (tx): Promise<AccountResult> => {
+    const current = await lockCredentials(tx, userId);
+    if (!current || current.user.deletedAt || !credentials || !sameCredentials(current.credentials, credentials)) {
+      return { ok: false, error: "invalidCredentials" };
+    }
+    await tx.update(userCredentials)
+      .set({ passwordHash: fresh.hash, pepperVersion: fresh.pepperVersion, passwordChangedAt: sql`now()` })
+      .where(eq(userCredentials.userId, userId));
+    const ended = await revokeOtherSessions(userId, tx);
+    await tx.insert(securityEvents).values({ userId, type: "PASSWORD_CHANGED", ip: meta.ip, userAgent: meta.userAgent, metadata: { otherSessionsEnded: ended } });
+    return { ok: true };
+  });
 }

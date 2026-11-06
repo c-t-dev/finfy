@@ -1,3 +1,5 @@
+import { Ability } from "@casl/ability";
+
 /**
  * Wallet roles and the permission matrix from wiki/decisoes/0002. The server
  * checks these on every request against `wallet_members`; the client uses the
@@ -17,23 +19,30 @@ export type WalletAction =
   | "archiveWallet"
   | "leave";
 
-const MATRIX: Record<WalletAction, readonly WalletRole[]> = {
-  view: ["OWNER", "ADMIN", "EDITOR", "VIEWER"],
-  editEntries: ["OWNER", "ADMIN", "EDITOR"],
-  deleteEntries: ["OWNER", "ADMIN", "EDITOR"],
-  editWallet: ["OWNER", "ADMIN"],
-  // Invite, remove and change the role of EDITOR and VIEWER members.
-  manageMembers: ["OWNER", "ADMIN"],
-  // Invite, remove and change the role of ADMIN members.
-  manageAdmins: ["OWNER"],
-  transferOwnership: ["OWNER"],
-  archiveWallet: ["OWNER"],
-  // The owner has to transfer ownership before leaving.
-  leave: ["ADMIN", "EDITOR", "VIEWER"],
+/** Explicit grants: actions added later are denied until granted to a role. */
+const GRANTS: Record<WalletRole, readonly WalletAction[]> = {
+  OWNER: ["view", "editEntries", "deleteEntries", "editWallet", "manageMembers", "manageAdmins", "transferOwnership", "archiveWallet"],
+  ADMIN: ["view", "editEntries", "deleteEntries", "editWallet", "manageMembers", "leave"],
+  EDITOR: ["view", "editEntries", "deleteEntries", "leave"],
+  VIEWER: ["view", "leave"],
 };
 
+export type WalletAbility = Ability<[WalletAction, "Wallet"]>;
+
+/** A fresh ability for one wallet role; membership must still be checked by the server. */
+export function createWalletAbility(role: WalletRole): WalletAbility {
+  return new Ability<[WalletAction, "Wallet"]>([
+    { action: [...GRANTS[role]], subject: "Wallet" },
+  ]);
+}
+
+// Keep the internal instances private so callers cannot mutate shared permissions.
+const ABILITIES = Object.fromEntries(
+  WALLET_ROLES.map((role) => [role, createWalletAbility(role)]),
+) as Record<WalletRole, WalletAbility>;
+
 export function can(role: WalletRole, action: WalletAction): boolean {
-  return MATRIX[action].includes(role);
+  return ABILITIES[role].can(action, "Wallet");
 }
 
 const RANK: Record<WalletRole, number> = { OWNER: 3, ADMIN: 2, EDITOR: 1, VIEWER: 0 };

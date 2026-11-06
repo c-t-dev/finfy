@@ -187,6 +187,8 @@ export async function renewInvite(actor: Actor, walletId: string, inviteId: stri
 
 export async function revokeInvite(actor: Actor, walletId: string, inviteId: string, input: InviteActionInput): Promise<CommandResult<Members>> {
   return runCommand(async (tx) => {
+    // Replays return current data, so current wallet access is always required.
+    await requireRole(tx, walletId, actor.userId, "view");
     if (!(await applied(tx, actor, input.mutationId))) {
       const role = await requireRole(tx, walletId, actor.userId, "manageMembers");
       const existing = await loadPendingInvite(tx, walletId, inviteId);
@@ -220,6 +222,8 @@ async function loadMember(tx: Tx, walletId: string, memberId: string): Promise<M
 
 export async function changeMemberRole(actor: Actor, walletId: string, memberId: string, input: ChangeRoleInput): Promise<CommandResult<Members>> {
   return runCommand(async (tx) => {
+    // Replays return current data, so current wallet access is always required.
+    await requireRole(tx, walletId, actor.userId, "view");
     if (!(await applied(tx, actor, input.mutationId))) {
       const role = await requireRole(tx, walletId, actor.userId, "view");
       const member = await loadMember(tx, walletId, memberId);
@@ -260,6 +264,8 @@ async function removeMembership(tx: Tx, actor: Actor, walletId: string, member: 
 /** Removes someone from the wallet; they lose access at once (roles are read on every request). */
 export async function removeMember(actor: Actor, walletId: string, memberId: string, input: MemberActionInput): Promise<CommandResult<Members>> {
   return runCommand(async (tx) => {
+    // Replays return current data, so current wallet access is always required.
+    await requireRole(tx, walletId, actor.userId, "view");
     if (!(await applied(tx, actor, input.mutationId))) {
       const role = await requireRole(tx, walletId, actor.userId, "view");
       const member = await loadMember(tx, walletId, memberId);

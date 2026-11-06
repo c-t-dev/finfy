@@ -1,6 +1,6 @@
 # finfy — Codebase
 
-> Last updated: 2026-10-27
+> Last updated: 2026-11-06
 
 How the code is organized and how to run it. The reasons behind each choice are in the decisions: [0008](../decisoes/0008-linguagem-visual.md) (UI), [0009](../decisoes/0009-react-tauri-capacitor.md) (clients), [0010](../decisoes/0010-nextjs-na-vercel.md) (Next.js on Vercel, Drizzle), [0011](../decisoes/0011-traducoes.md) (translations).
 
@@ -495,3 +495,11 @@ Web green traffic light toggles viewport maximization: no outer margins, rounded
 Green control uses outward/inward diagonal icons according to zoomed state. Window layout transitions use Motion with 350 ms ease-out and no competing CSS width animation; reduced motion disables geometry interpolation.
 
 The green window glyph uses two filled diagonal macOS-style triangles, pointing outward to maximize and inward to restore, rather than generic Lucide arrows.
+
+## Shared authorization with CASL (2026-11-06)
+
+`@packages/shared/roles` uses `@casl/ability` to evaluate explicit wallet action grants. Existing `can` and membership-management helpers preserve their public API and role hierarchy. `createWalletAbility` returns a fresh typed ability; cached internal abilities are private. Server commands must still check active wallet membership and the current database role on every request, including replay paths. See decision [0027](../decisoes/0027-casl-na-autorizacao.md).
+
+## Authentication concurrency (2026-11-06)
+
+`auth/credentials.ts` supplies a shared user-then-credential row-lock order and verified-credential freshness comparison. Login completion and password replacement use it in transactions. Session insertion is separated from cookie publication: `createSession` runs inside the login transaction; `setSessionCookie` runs after commit. Password replacement calls `revokeOtherSessions` with its transaction. Session-only starts also lock the user row. OTP attempts and successful consumption share one update guarded by expiry, unused state and remaining budget. Concurrency and rollback regressions use migrated, synthetic PGlite fixtures in `auth-concurrency.test.ts`.

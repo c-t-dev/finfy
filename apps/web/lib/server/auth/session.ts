@@ -7,6 +7,7 @@ import type { CurrentUser } from "@packages/shared/auth";
 import { devices, userSessions, users } from "@packages/shared/db/schema";
 import { env } from "@packages/env/server";
 import { getDb } from "@/lib/server/db";
+import type { Tx } from "@/lib/server/write";
 
 /**
  * Sessions (wiki/decisoes/0004): an opaque 32-byte token in an HttpOnly cookie;
@@ -48,25 +49,27 @@ function deviceName(userAgent: string | null): string {
   return os ? `${browser} · ${os}` : browser;
 }
 
-/** Creates a session (and its web device row) and sets the cookie. Call only from route handlers. */
-export async function startSession(userId: string, meta: { ip: string | null; userAgent: string | null }) {
-  const db = getDb();
+/** Inserts a session in the caller's credential-locked transaction. */
+export async function createSession(tx: Tx, userId: string, meta: { ip: string | null; userAgent: string | null }): Promise<string> {
   const token = randomBytes(32).toString("base64url");
-  await db.transaction(async (tx) => {
-    const [device] = await tx
-      .insert(devices)
-      .values({ userId, name: deviceName(meta.userAgent), platform: "WEB" })
-      .returning({ id: devices.id });
-    await tx.insert(userSessions).values({
-      userId,
-      deviceId: device.id,
-      tokenHash: tokenHash(token),
-      ip: meta.ip,
-      userAgent: meta.userAgent,
-      idleExpiresAt: sql`now() + interval '${sql.raw(String(IDLE_DAYS))} days'`,
-      absoluteExpiresAt: sql`now() + interval '${sql.raw(String(ABSOLUTE_DAYS))} days'`,
-    });
+  const [device] = await tx
+    .insert(devices)
+    .values({ userId, name: deviceName(meta.userAgent), platform: "WEB" })
+    .returning({ id: devices.id });
+  await tx.insert(userSessions).values({
+    userId,
+    deviceId: device.id,
+    tokenHash: tokenHash(token),
+    ip: meta.ip,
+    userAgent: meta.userAgent,
+    idleExpiresAt: sql`now() + interval '${sql.raw(String(IDLE_DAYS))} days'`,
+    absoluteExpiresAt: sql`now() + interval '${sql.raw(String(ABSOLUTE_DAYS))} days'`,
   });
+  return token;
+}
+
+/** Publish the cookie only after the session transaction commits. */
+export async function setSessionCookie(token: string): Promise<void> {
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
@@ -74,6 +77,18 @@ export async function startSession(userId: string, meta: { ip: string | null; us
     path: "/",
     maxAge: ABSOLUTE_DAYS * 24 * 60 * 60,
   });
+}
+
+/** Creates a session after sign-up or email verification. */
+export async function startSession(userId: string, meta: { ip: string | null; userAgent: string | null }) {
+  const token = await getDb().transaction(async (tx) => {
+    // Use the same user lock as password changes even outside password login.
+    const [user] = await tx.select({ id: users.id }).from(users)
+      .where(and(eq(users.id, userId), isNull(users.deletedAt))).for("update").limit(1);
+    if (!user) throw new Error("Session user unavailable");
+    return createSession(tx, userId, meta);
+  });
+  await setSessionCookie(token);
 }
 
 /** Revokes the current session, if any, and clears the cookie. */
@@ -156,9 +171,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 }
 
 /** Ends every session of the user except the current one (after a password change). */
-export async function revokeOtherSessions(userId: string): Promise<number> {
+export async function revokeOtherSessions(userId: string, tx: Tx): Promise<number> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  const revoked = await getDb()
+  const revoked = await tx
     .update(userSessions)
     .set({ revokedAt: sql`now()` })
     .where(

@@ -17,7 +17,8 @@ import { isBreachedPassword } from "./breached";
 import { consumeOtp, issueOtp } from "./otp";
 import { hashPassword, verifyDummyPassword, verifyPassword } from "./password";
 import { hitRateLimit } from "./rate-limit";
-import { startSession } from "./session";
+import { createSession, setSessionCookie, startSession } from "./session";
+import { lockCredentials, sameCredentials } from "./credentials";
 
 /**
  * Sign-up, sign-in and e-mail verification (wiki/decisoes/0004). An unknown
@@ -42,10 +43,6 @@ class CodeTaken extends Error {}
 /** 5 failures lock the account for 1, 2, 4, 8, then 15 minutes. */
 const LOCK_AFTER_FAILURES = 5;
 const MAX_LOCK_MINUTES = 15;
-
-function lockMinutes(failures: number): number {
-  return Math.min(MAX_LOCK_MINUTES, 2 ** (failures - LOCK_AFTER_FAILURES));
-}
 
 async function logEvent(userId: string | null, type: string, meta: RequestMeta, metadata?: Record<string, unknown>) {
   await getDb().insert(securityEvents).values({ userId, type, ip: meta.ip, userAgent: meta.userAgent, metadata });
@@ -159,43 +156,50 @@ export async function signIn(input: SignInInput, meta: RequestMeta): Promise<Aut
 
   const check = await verifyPassword({ hash: credentials.passwordHash, pepperVersion: credentials.pepperVersion }, input.password);
   if (!check.ok) {
-    const failures = user.failedLoginCount + 1;
-    await db
+    const [updated] = await db
       .update(users)
       .set({
-        failedLoginCount: failures,
-        lockedUntil:
-          failures >= LOCK_AFTER_FAILURES
-            ? sql`now() + interval '${sql.raw(String(lockMinutes(failures)))} minutes'`
-            : user.lockedUntil,
+        failedLoginCount: sql`${users.failedLoginCount} + 1`,
+        // Count and lock atomically: concurrent failures must not overwrite each other.
+        lockedUntil: sql`case when ${users.failedLoginCount} + 1 >= ${LOCK_AFTER_FAILURES}
+          then now() + least(${MAX_LOCK_MINUTES}::double precision,
+            power(2::double precision, least(${users.failedLoginCount} + 1 - ${LOCK_AFTER_FAILURES}, 4))) * interval '1 minute'
+          else ${users.lockedUntil} end`,
         updatedAt: sql`now()`,
       })
-      .where(eq(users.id, user.id));
-    await logEvent(user.id, "LOGIN_FAILED", meta, { failures });
+      .where(eq(users.id, user.id))
+      .returning({ failures: users.failedLoginCount });
+    await logEvent(user.id, "LOGIN_FAILED", meta, { failures: updated.failures });
     return { ok: false, error: "invalidCredentials" };
   }
 
-  await db
-    .update(users)
-    .set({ failedLoginCount: 0, lockedUntil: null, updatedAt: sql`now()` })
-    .where(eq(users.id, user.id));
-  if (check.needsRehash) {
-    const fresh = await hashPassword(input.password);
-    await db
-      .update(userCredentials)
-      .set({ passwordHash: fresh.hash, pepperVersion: fresh.pepperVersion })
-      .where(eq(userCredentials.userId, user.id));
-  }
-
-  if (EMAIL_DELIVERY_ENABLED && !user.emailVerifiedAt) {
-    const code = await issueOtp(db, { email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
-    await queueEmail(db, { to: user.email, template: "verify-email", locale: user.language, payload: { code } });
-    return { ok: true, value: { next: "verifyEmail", email: user.email } };
-  }
-
-  await startSession(user.id, meta);
-  await logEvent(user.id, "LOGIN", meta);
-  return { ok: true, value: { next: "app" } };
+  // Expensive hashing stays outside the lock. Freshness is checked again under it.
+  const fresh = check.needsRehash ? await hashPassword(input.password) : null;
+  let token: string | undefined;
+  const result = await db.transaction(async (tx): Promise<AuthResult> => {
+    const current = await lockCredentials(tx, user.id);
+    if (!current || current.user.deletedAt || !sameCredentials(current.credentials, credentials)) {
+      return { ok: false, error: "invalidCredentials" };
+    }
+    if (current.user.lockedUntil && current.user.lockedUntil > new Date()) {
+      return { ok: false, error: "rateLimited", retryAfterSeconds: Math.ceil((current.user.lockedUntil.getTime() - Date.now()) / 1000) };
+    }
+    await tx.update(users).set({ failedLoginCount: 0, lockedUntil: null, updatedAt: sql`now()` }).where(eq(users.id, user.id));
+    if (fresh) {
+      await tx.update(userCredentials).set({ passwordHash: fresh.hash, pepperVersion: fresh.pepperVersion })
+        .where(eq(userCredentials.userId, user.id));
+    }
+    if (EMAIL_DELIVERY_ENABLED && !current.user.emailVerifiedAt) {
+      const code = await issueOtp(tx, { email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+      await queueEmail(tx, { to: user.email, template: "verify-email", locale: user.language, payload: { code } });
+      return { ok: true, value: { next: "verifyEmail", email: user.email } };
+    }
+    token = await createSession(tx, user.id, meta);
+    await tx.insert(securityEvents).values({ userId: user.id, type: "LOGIN", ip: meta.ip, userAgent: meta.userAgent });
+    return { ok: true, value: { next: "app" } };
+  });
+  if (token) await setSessionCookie(token);
+  return result;
 }
 
 export async function verifyEmail(input: VerifyEmailInput, meta: RequestMeta): Promise<AuthResult> {

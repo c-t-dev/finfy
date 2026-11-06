@@ -1,6 +1,6 @@
 # 0004 — Segurança da conta
 
-> Status: Proposta · Última atualização: 2026-10-26
+> Status: Proposta · Última atualização: 2026-11-06
 
 ## Contexto
 
@@ -117,3 +117,9 @@ Com o finfy no ar para uso pessoal, o cadastro pode ser **fechado**: `SIGN_UP_MO
 - [ ] Aceitar passkeys (WebAuthn) já na v1?
 - [ ] Onde ficam os segredos em produção (variáveis do provedor de hospedagem, Vault, KMS)?
 - [ ] Haverá app móvel offline? Isso define se usamos tokens rotativos além da sessão por cookie.
+
+## Implementação — concorrência (2026-11-06)
+
+Conclusão de login e troca de senha bloqueiam primeiro a linha do usuário e depois sua credencial, na mesma ordem. Revalidam hash, versão do pepper e data da troca antes de gravar. A troca de senha, revogação das outras sessões e evento de segurança são uma transação; rehash, criação da sessão e evento de login também. Cookie só é publicado após commit. Hashing e consulta de senhas vazadas ficam fora dos bloqueios.
+
+O consumo OTP reserva uma tentativa e marca uso correto na mesma atualização condicional, respeitando expiração, estado não utilizado e limite de cinco. O fluxo de e-mail permanece desativado. Sem alteração do modelo de dados ou das regras de produto.

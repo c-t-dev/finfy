@@ -1,6 +1,6 @@
 # Histórico de testes
 
-> Última atualização: 2026-10-27
+> Última atualização: 2026-11-06
 
 Registro cronológico de testes locais e no app real. Mais recente primeiro.
 
@@ -182,3 +182,47 @@ Substituídas setas genéricas por dois triângulos diagonais preenchidos, inver
 ## 2026-10-27 — validação para integração na main
 
 Usuário autorizou commit, push e merge na main. Base remota atualizada antes da integração, preservando os três commits existentes da Home. Revisão final: 40 testes, typecheck, check:messages, check:openapi e build de produção aprovados. Código, testes, decisões, índices, modelo, codebase, problemas e notas preparados; arquivos locais de ferramentas e configuração privada excluídos do commit. Sem migração nova neste conjunto.
+
+## 2026-11-05 — instalação em novo Windows
+
+Clone da main e instalação com pnpm 11.25.0 e lockfile congelado concluídos. Configuração local ignorada pelo Git, com pepper aleatório. Typecheck, mensagens (968 chaves por idioma) e OpenAPI aprovados fora do sandbox. Testes: 14 shared aprovados; web com 24 aprovados e uma asserção de subteste falhando, também contabilizada no teste pai (ver problemas encontrados). Sem alteração no código da aplicação.
+
+Servidor Webpack iniciado: `/pt-br` respondeu HTTP 200. `/api/health` respondeu HTTP 503, `database: unreachable`: PostgreSQL ainda não disponível. Docker Desktop baixado; instalador aguardando confirmação UAC do usuário. WSL não instalado. Migrações locais ainda não executadas. Nenhum banco remoto acessado.
+
+## 2026-11-05 — instalação do Docker Desktop
+
+Docker Desktop 4.98.0 instalado com sucesso via winget, com autorização administrativa. CLI confirmou Docker 29.9.2. Requisitos opcionais VirtualMachinePlatform e Microsoft-Windows-Subsystem-Linux habilitados pelo instalador. WSL ainda ausente na verificação após a instalação; instalação do pacote Microsoft.WSL solicitada em processo elevado, aguardando confirmação UAC. Mecanismo e banco local ainda não validados.
+
+## 2026-11-05 — requisito para iniciar PostgreSQL
+
+Instalação do Microsoft.WSL 2.7.14 concluída com sucesso. O WSL informa que WSL2 ainda não pode iniciar. Virtualização no firmware confirmada como habilitada. Registro do instalador do Docker confirma que ativar VirtualMachinePlatform exige reiniciar o computador; Windows tem RebootPending. Banco e migrações locais aguardam reinicialização. Nenhum dado de produção copiado.
+
+## 2026-11-05 — banco local funcionando após reinicialização
+
+Após reiniciar o Windows, Docker Engine 29.9.2 respondeu. PostgreSQL 17 iniciado com Docker Compose, volume local persistente e porta localhost:5432. Oito migrações aplicadas com sucesso por `pnpm.cmd db:migrate`, com DATABASE_URL explicitamente local. `pg_isready` confirmou conexões; consulta confirmou oito registros de migração e zero usuários. Servidor Webpack iniciado em localhost:3000; `/api/health` respondeu `status: ok`, `database: ok`. Banco novo, sem cópia ou acesso a produção. Pendências anteriores de WSL, reinicialização e migrações resolvidas.
+
+## 2026-11-06 — CASL e primeira revisão de segurança
+
+CASL 7.1.1 integrado ao módulo de papéis, preservando a API e as permissões. Dezesseis testes shared aprovados, incluindo todas as combinações de papel/ação e isolamento das abilities retornadas.
+
+Reproduzidos em PGlite migrado os vazamentos por replay de operações de membros/faturas e de metadados de wallet após remoção. Não houve escrita indevida nesses replays; consultas de extrato sem associação ativa foram recusadas nos cenários exercitados. Correções locais e teste de regressão aprovados. Teste de concorrência usa rejeição de senha sincronizada, com comandos e consultas reais: antes dez falhas resultavam em contador um; após o ajuste, dez e bloqueio ativo. O cenário de substituição de convite por ADMIN foi testado com gravador de auditoria substituído, e classificado pelo usuário como comportamento permitido.
+
+Verificação final: typecheck, check:messages e check:openapi aprovados. Shared: 16 aprovados. Web: 25 aprovados; a asserção preexistente do período do extrato continua falhando, também contabilizada no teste pai (2 falhas no relatório). pnpm audit --prod não retornou avisos publicados. Sem acesso a produção, publicação ou mudança de esquema. Ver [relatório](../finfy/security-review.md) e [decisão CASL](../decisoes/0027-casl-na-autorizacao.md).
+
+## 2026-11-06 — segunda rodada de segurança
+
+Três reproduções controladas aprovadas em PGlite migrado: sessão criada por login antigo após troca de senha/revogação; rehash de login antigo substituindo credencial nova; dez verificações OTP concorrentes com só uma tentativa disponível, levando contador de quatro a quatorze. Comandos, criação/revogação/consulta de sessão e SQL reais; verificação/hash de senha, cookies, cache React e consulta de senhas vazadas substituídos para controlar agendamento. OTP com leituras sincronizadas por proxy de consultas e HMAC substituído. Scripts temporários removidos; resultados e método registrados no relatório. Sem mudança no código de produto nesta rodada, sem correção desses novos achados e sem contato com produção.
+
+## 2026-11-06 — correções de concorrência de autenticação
+
+Sete regressões novas aprovadas em PGlite migrado: login antigo com e sem rehash recusado após troca de senha; login concluído antes da troca revogado, preservando a sessão do próprio navegador; duas trocas concorrentes não sobrescrevem credencial nova; orçamento/uso único/expiração OTP; rollback conjunto de senha/revogação/auditoria; falha no commit de login não publica cookie nem deixa sessão. Hashing/verificação de senha, consulta de vazamentos, cookies e cache React substituídos para agendamento controlado; queries e comandos reais.
+
+Verificação completa: 16 shared aprovados; web com 32 aprovados e as duas falhas de relatório da asserção preexistente do período do extrato (subteste e pai). Typecheck, mensagens e OpenAPI aprovados. Tentativa complementar em PostgreSQL externo não executou os cenários: Docker Engine indisponível e conexão local recusada, mesmo após solicitar início do Desktop. Isso não é teste aprovado nem novo defeito da aplicação. Não houve conexão com banco real de produção. Sem migração, publicação ou push. Patch local preparado para revisão.
+
+## 2026-11-06 — validação para nova versão
+
+Docker disponível após abertura pelo usuário. Os sete cenários de concorrência/rollback de autenticação passaram em PostgreSQL 17 externo local, usando bancos descartáveis separados, removidos ao final. Credenciais, consultas, bloqueios e transações reais; crypto de senha, verificação de vazamentos e contexto de cookies controlados como nos testes PGlite. Corrigida a asserção do extrato que dependia de o mês atual não ser novembro, sem alterar produto. Suíte completa: 16 shared e 34 web aprovados; typecheck, mensagens e OpenAPI aprovados. Build/deploy em confirmação. Nenhum banco de produção acessado.
+
+### Resultado final da validação local
+
+Build de produção aprovado. Total de 50 testes reportados aprovados (16 shared e 34 web); sete cenários também aprovados em PostgreSQL 17 externo local. Acesso à equipe Vercel confirmado após autorização do usuário. Revisão automática bloqueou push para main por exigir autorização específica de publicação em produção. Commit local preparado; nenhum push/deploy/tag de produção nesta etapa.

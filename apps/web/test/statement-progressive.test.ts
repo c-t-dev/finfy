@@ -79,8 +79,9 @@ test("data pages render independent responses and isolate loading and failures",
       await act(async () => screen.container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
       assert.equal(urls.filter(url => url.includes("from=2026-11-15&to=2026-11-15")).length, 2);
       await act(async () => button(messages.app.entries.period.custom).click());
+      const monthlyRequestsBeforeReset = urls.filter(url => url.includes("from=2026-11-01&to=2026-11-30")).length;
       await act(async () => button(messages.app.entries.period.month).click());
-      assert.equal(urls.filter(url => url.includes("from=2026-11-01&to=2026-11-30")).length, 2);
+      assert.equal(urls.filter(url => url.includes("from=2026-11-01&to=2026-11-30")).length - monthlyRequestsBeforeReset, 2);
     } finally { await screen.close(); }
   });
   await t.test("Date picker selects a leap day and returns focus to its trigger", async () => {

@@ -79,7 +79,7 @@ async function current(tx: Tx, walletId: string, userId: string): Promise<Wallet
     .select(walletColumns)
     .from(wallets)
     .innerJoin(walletMembers, and(eq(walletMembers.walletId, wallets.id), eq(walletMembers.userId, userId)))
-    .where(eq(wallets.id, walletId))
+    .where(and(eq(wallets.id, walletId), isNull(walletMembers.removedAt), isNull(wallets.archivedAt)))
     .limit(1);
   return row ? toWallet(row) : null;
 }

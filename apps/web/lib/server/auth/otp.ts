@@ -1,6 +1,6 @@
 import "server-only";
 import { randomInt } from "node:crypto";
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import { OTP_LENGTH } from "@packages/shared/auth";
 import { otpCodes, type OTP_PURPOSES } from "@packages/shared/db/schema";
 import type { getDb } from "@/lib/server/db";
@@ -52,19 +52,15 @@ export async function consumeOtp(db: Db, input: { email: string; purpose: Purpos
     )
     .orderBy(desc(otpCodes.createdAt))
     .limit(1);
-  if (!otp || otp.attempts >= MAX_ATTEMPTS) return false;
-
-  if (otp.codeHash !== codeHash(input.purpose, input.email, input.code)) {
-    await db
-      .update(otpCodes)
-      .set({ attempts: sql`${otpCodes.attempts} + 1` })
-      .where(eq(otpCodes.id, otp.id));
-    return false;
-  }
-  const used = await db
-    .update(otpCodes)
-    .set({ usedAt: sql`now()` })
-    .where(and(eq(otpCodes.id, otp.id), isNull(otpCodes.usedAt)))
-    .returning({ id: otpCodes.id });
-  return used.length === 1;
+  if (!otp) return false;
+  const hash = codeHash(input.purpose, input.email, input.code);
+  // Reserve one attempt and consume a matching code in the same atomic update.
+  const [attempt] = await db.update(otpCodes)
+    .set({
+      attempts: sql`${otpCodes.attempts} + 1`,
+      usedAt: sql`case when ${otpCodes.codeHash} = ${hash} then now() else ${otpCodes.usedAt} end`,
+    })
+    .where(and(eq(otpCodes.id, otp.id), isNull(otpCodes.usedAt), gt(otpCodes.expiresAt, sql`now()`), lt(otpCodes.attempts, MAX_ATTEMPTS)))
+    .returning({ matched: sql<boolean>`${otpCodes.codeHash} = ${hash}` });
+  return attempt?.matched === true;
 }

@@ -740,6 +740,8 @@ export async function reopenInvoice(
   input: ReopenInvoiceInput,
 ): Promise<CommandResult<Invoice>> {
   return runCommand(async (tx) => {
+    // Never expose invoice data through a replay after access was revoked.
+    await requireRole(tx, walletId, actor.userId, "view");
     if (!(await applied(tx, actor, input.mutationId))) {
       await requireRole(tx, walletId, actor.userId, "deleteEntries");
       const row = await loadInvoice(tx, walletId, cardId, id);
