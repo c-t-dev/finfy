@@ -80,3 +80,7 @@ Causa da falha registrada na instalação: o teste esperava duas requisições d
 ## finfy — edição financeira de compra no cartão (2026-11-06)
 
 O diálogo orientava apagar a compra para alterar valor/data. Hotfix local adiciona valor total e data original da compra inteira, com verificação de versões e proteção de faturas pagas. Ver decisão 0028. Publicado em produção na versão v0.3.1.
+
+## finfy — resumo de cartão excluía lançamentos futuros (2026-11-06)
+
+O resumo mostrava apenas 48,45 numa fatura aberta de 1.548,45 e separava 1.500 como “Apenas previsão”. Corrigido localmente: resumo e detalhes usam o mesmo total em aberto, incluindo lançamentos futuros já cadastrados. Nenhum registro financeiro alterado.

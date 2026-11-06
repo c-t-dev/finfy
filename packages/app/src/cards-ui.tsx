@@ -176,9 +176,7 @@ export function CardsSection({ wallet, accounts, accountsReady = true }: { walle
                     <span className="text-[11px] text-muted-foreground">{t("actualInvoiceHint")}</span>
                   </> : <p className="text-[13px] text-muted-foreground">{t("noNextInvoice")}</p>}
                 </div>
-                {card.nextForecast && <p className="text-[12px] text-muted-foreground">
-                  {t("forecastSummary", { amount: money.format(card.nextForecast.amountMinor), date: shortDate(card.nextForecast.dueDate) })}
-                </p>}
+
                 <Link href={href} className="relative z-10 self-start text-[12px] text-primary hover:underline">{t("viewInvoice")}</Link>
               </li>
             );

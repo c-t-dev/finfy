@@ -470,4 +470,8 @@ Actual card debt and used credit share one read rule: non-archived, non-canceled
 
 ### Card overview read fields (2026-10-27)
 
-Card reads derive nextInvoice (first unpaid actual debt due today or later), overdueMinor/count and oldest overdueInvoice, and nextForecast (first upcoming cycle with projected amount above committed debt). Paid and archived invoices are excluded. These are read fields, not stored columns. Detail totals retain forecasts. See [0023](../decisoes/0023-contas-e-proximas-faturas.md).
+Card reads derive nextInvoice (first positive outstanding invoice due today or later), overdueMinor/count and oldest overdueInvoice using full posted invoice totals. nextForecast is retained as null for compatibility. Paid and archived invoices are excluded. These are read fields, not stored columns. Summary totals match detail totals. See [0023](../decisoes/0023-contas-e-proximas-faturas.md).
+
+### Outstanding invoice payment summary (2026-11-06)
+
+Next payable and overdue invoice summaries use full outstanding invoice totals, including posted future-dated purchases. This does not change the committed-debt rule for used credit/net worth. `nextForecast` is retained as null for compatibility; no schema migration. See decision 0023.

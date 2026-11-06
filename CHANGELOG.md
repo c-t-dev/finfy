@@ -4,6 +4,12 @@
 
 Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publicação, consolidar versão e data conforme a decisão 0015.
 
+## Não publicado
+
+### Correções
+
+- Cartões mostram o total em aberto da próxima fatura, incluindo lançamentos com data futura. Removida a linha “Apenas previsão”; valores de faturas vencidas seguem a mesma regra.
+
 ## v0.3.1 — 2026-11-06
 
 ### Correções

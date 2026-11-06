@@ -120,7 +120,7 @@ async function selectCards(db: Db, where: SQL | undefined): Promise<Card[]> {
     const currentRow = current.find((invoice) => invoice.id === invoiceId(row.id, period));
     return {
       ...cardPaymentOverview(unpaid.filter(invoice => invoice.creditCardId === row.id)
-        .map(invoice => toInvoice(invoice, totals.get(invoice.id) ?? 0)), committedTotals, today()),
+        .map(invoice => toInvoice(invoice, totals.get(invoice.id) ?? 0)), today()),
       id: row.id,
       name: row.name,
       paymentAccountId: row.paymentAccountId,

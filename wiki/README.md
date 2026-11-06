@@ -115,3 +115,5 @@ Autorização compartilhada com CASL: [0027](decisoes/0027-casl-na-autorizacao.m
 Revisão de segurança: [relatório técnico](finfy/security-review.md), achados confirmados, correções locais e limites da verificação.
 
 Hotfix v0.3.1 publicado (2026-11-06): [edição de valor total e data original de compras no cartão](decisoes/0028-edicao-de-compras-no-cartao.md).
+
+Novo hotfix local (2026-11-06): [total em aberto das faturas](decisoes/0023-contas-e-proximas-faturas.md), incluindo lançamentos futuros no valor a pagar.

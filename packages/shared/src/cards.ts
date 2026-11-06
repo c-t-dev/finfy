@@ -132,12 +132,12 @@ export const cardSchema = z.object({
   usedMinor: z.number().int().describe("Outstanding purchases already made, including future installments of an original purchase dated through today; excludes future scheduled or recurring purchases."),
   /** The invoice today's purchases go to. */
   currentInvoice: invoiceSchema.nullable(),
-  /** Next unpaid due date with actual purchases, excluding forecast-only amounts. */
+  /** Next unpaid due date with the full outstanding invoice total, including future-dated entries. */
   nextInvoice: invoiceSchema.nullable(),
   overdueMinor: z.number().int(),
   overdueCount: z.number().int(),
   overdueInvoice: invoiceSchema.nullable(),
-  /** Next forecast-only amount, shown separately from payable debt. */
+  /** Legacy field; null because posted future-dated entries are included in invoice totals. */
   nextForecast: z.object({ dueDate: isoDate, amountMinor: z.number().int() }).nullable(),
   archived: z.boolean(),
   version: z.number().int(),

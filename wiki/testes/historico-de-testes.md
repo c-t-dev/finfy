@@ -238,3 +238,7 @@ Teste isolado em PGlite com migrações reais e dados sintéticos: edição pela
 ## 2026-11-06 — publicação do hotfix v0.3.1
 
 Push autorizado para main. Vercel confirmou READY em produção para o commit `0b4d900`, com a edição financeira de compras no cartão. Notas consolidadas em v0.3.1; o commit final de documentação será verificado antes da tag anotada. Nenhuma migração ou alteração de dados de produção.
+
+## 2026-11-06 — hotfix do total em aberto das faturas
+
+Teste sintético confirma 154.845 centavos no resumo da fatura mista de 4.845 + 150.000 centavos. Testes cobrem vencimento hoje, lançamentos futuros, fatura vazia, paga e vencida; dívida realizada para limite permanece separada. `pnpm typecheck`, `pnpm test` (16 compartilhados, 36 web), `pnpm check:messages` e `pnpm check:openapi` passaram. Sem alterações em dados reais ou validação visual. Notas em Não publicado.

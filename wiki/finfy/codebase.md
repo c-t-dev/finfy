@@ -171,7 +171,7 @@ Rules:
 
 ## Credit cards
 
-Invoice titles and payment labels use the saved due month, including existing payment labels on read. Internal reference months, IDs and API routes still identify closing months. Statement filtering, ordering, grouping and totals use derived optional `statementDate`; card purchases use the linked invoice due date and other entries their transaction date. Original purchase dates remain visible. Home categories, budget spending and budget alerts share this competence. Payments debit accounts on their actual date and never duplicate expenses. The card list highlights the next actual invoice, separates overdue debt and forecasts, and links to the matching internal reference month. Credit commitments are in card details; patrimony has its own accounts subpage. See [0023](../decisoes/0023-contas-e-proximas-faturas.md). See [0016](../decisoes/0016-competencia-das-faturas.md).
+Invoice titles and payment labels use the saved due month, including existing payment labels on read. Internal reference months, IDs and API routes still identify closing months. Statement filtering, ordering, grouping and totals use derived optional `statementDate`; card purchases use the linked invoice due date and other entries their transaction date. Original purchase dates remain visible. Home categories, budget spending and budget alerts share this competence. Payments debit accounts on their actual date and never duplicate expenses. The card list highlights the next outstanding invoice using its full posted total, including future-dated entries, separates overdue invoices and links to the matching internal reference month. It no longer displays a separate forecast-only subtotal. Credit commitments are in card details; patrimony has its own accounts subpage. See [0023](../decisoes/0023-contas-e-proximas-faturas.md). See [0016](../decisoes/0016-competencia-das-faturas.md).
 
 Regression SQL is executed against isolated in-memory SQLite tables by `apps/web/test/statement-dates.test.ts`; no account or external database is used.
 
@@ -503,3 +503,7 @@ The green window glyph uses two filled diagonal macOS-style triangles, pointing 
 ## Authentication concurrency (2026-11-06)
 
 `auth/credentials.ts` supplies a shared user-then-credential row-lock order and verified-credential freshness comparison. Login completion and password replacement use it in transactions. Session insertion is separated from cookie publication: `createSession` runs inside the login transaction; `setSessionCookie` runs after commit. Password replacement calls `revokeOtherSessions` with its transaction. Session-only starts also lock the user row. OTP attempts and successful consumption share one update guarded by expiry, unused state and remaining budget. Concurrency and rollback regressions use migrated, synthetic PGlite fixtures in `auth-concurrency.test.ts`.
+
+## Outstanding invoice overview (2026-11-06)
+
+Card payment summaries use full non-paid invoice totals. Future-dated posted purchases remain part of the amount payable; empty and paid invoices are skipped. Overdue totals use the same rule. `nextForecast` remains null for API compatibility. Used credit and net worth still use committed debt (0022). No data migration.
