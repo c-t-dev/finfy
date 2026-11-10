@@ -1,6 +1,6 @@
 # 0004 — Segurança da conta
 
-> Status: Proposta · Última atualização: 2026-11-06
+> Status: Proposta · Última atualização: 2026-11-10
 
 ## Contexto
 
@@ -123,3 +123,11 @@ Com o finfy no ar para uso pessoal, o cadastro pode ser **fechado**: `SIGN_UP_MO
 Conclusão de login e troca de senha bloqueiam primeiro a linha do usuário e depois sua credencial, na mesma ordem. Revalidam hash, versão do pepper e data da troca antes de gravar. A troca de senha, revogação das outras sessões e evento de segurança são uma transação; rehash, criação da sessão e evento de login também. Cookie só é publicado após commit. Hashing e consulta de senhas vazadas ficam fora dos bloqueios.
 
 O consumo OTP reserva uma tentativa e marca uso correto na mesma atualização condicional, respeitando expiração, estado não utilizado e limite de cinco. O fluxo de e-mail permanece desativado. Sem alteração do modelo de dados ou das regras de produto.
+
+## Prioridade do OTP por e-mail (2026-11-06)
+
+O usuário definiu e-mail como caminho principal para a próxima etapa de OTP. Hoje não consegue configurar o envio de e-mail. Por isso, geração/validação e interface existentes ficam preservadas, mas o envio e a exigência de verificação permanecem desativados até configurar um provedor e um remetente válidos. Não ativar a verificação sem entrega funcional. O fluxo por aplicativo autenticador fica para outra etapa. Provedor, domínio remetente e credenciais continuam pendentes; não foram escolhidos nesta conversa.
+
+### Integração local de entrega
+
+Modelos bilíngues e fila de entrega preparados, sem ativação do fluxo OTP em produção. Antes de despachar, o processador valida se o código ainda tem OTP correspondente vigente, não utilizado e com tentativas disponíveis. Reenvios mantêm chave de idempotência; payload é removido após envio ou descarte definitivo. O código expira conforme a mesma constante compartilhada da geração. Sem alteração do esquema.

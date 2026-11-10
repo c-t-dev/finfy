@@ -1,6 +1,6 @@
 # finfy — Codebase
 
-> Last updated: 2026-11-06
+> Last updated: 2026-11-10
 
 How the code is organized and how to run it. The reasons behind each choice are in the decisions: [0008](../decisoes/0008-linguagem-visual.md) (UI), [0009](../decisoes/0009-react-tauri-capacitor.md) (clients), [0010](../decisoes/0010-nextjs-na-vercel.md) (Next.js on Vercel, Drizzle), [0011](../decisoes/0011-traducoes.md) (translations).
 
@@ -507,3 +507,19 @@ The green window glyph uses two filled diagonal macOS-style triangles, pointing 
 ## Outstanding invoice overview (2026-11-06)
 
 Card payment summaries use full non-paid invoice totals. Future-dated posted purchases remain part of the amount payable; empty and paid invoices are skipped. Overdue totals use the same rule. `nextForecast` remains null for API compatibility. Used credit and net worth still use committed debt (0022). No data migration.
+
+## Email OTP implementation priority (2026-11-06)
+
+The owner selected email as the primary OTP path for the next iteration and confirmed email delivery cannot be configured yet. Keep EMAIL_DELIVERY_ENABLED=false and preserve the current sign-in/sign-up behavior until a provider and sender are configured and delivery is validated. Do not turn on verification requirements without working delivery. Provider/sender selection remains open; authenticator-app work is deferred.
+
+## Local email delivery preparation (2026-11-06)
+
+Production email delivery and mandatory verification remain disabled (EMAIL_DELIVERY_ENABLED=false). No provider, credentials, sender domain, scheduler or new API route was added. The existing auth flow is unchanged.
+
+- mail-templates.ts renders verification and existing-account notices from en/pt-BR messages, validates six-digit codes and escapes HTML. OTP validity comes from the shared OTP_TTL_MINUTES constant.
+- MailTransport defines the provider boundary, including cancellation and a stable per-outbox idempotency key. A future real adapter must honor that key. createDevelopmentMailTransport captures messages only in memory and refuses production construction. No external email is sent by this transport.
+- deliverEmailOutbox is an explicit, unscheduled worker entry point. It uses row locks with SKIP LOCKED, bounded batches, one attempt per row per batch, a five-second send deadline, and at most three delivery attempts. Expired, replaced, consumed or attempt-exhausted OTPs are discarded before dispatch.
+- SENT and terminal FAILED rows clear their code payload. Retryable failures retain payload temporarily and store only a generic error, never provider exception details. A commit failure after provider acceptance requires idempotent retry; exactly-once delivery cannot be promised for a provider that ignores the key.
+- mail-outbox.test.ts exercises the real migrated database and worker with a local transport and synthetic OTP HMAC. It covers bilingual rendering, verification, expiry/replacement, retry limits, ambiguous delivery, concurrent workers, rollback, timeout and production guards. No actual provider delivery is validated.
+
+Run local tests from the root with pnpm.cmd --filter web exec tsx --test test/mail-outbox.test.ts. No sender configuration is needed.

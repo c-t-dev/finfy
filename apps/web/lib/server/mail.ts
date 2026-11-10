@@ -13,7 +13,8 @@ type Db = Pick<ReturnType<typeof getDb>, "insert">;
  */
 export const EMAIL_DELIVERY_ENABLED = false;
 
-export type EmailTemplate = "verify-email" | "sign-up-existing-account";
+import type { EmailTemplate } from "./mail-templates";
+export type { EmailTemplate } from "./mail-templates";
 
 /**
  * Queues an e-mail in `email_outbox`; a cron job sends it once a provider is

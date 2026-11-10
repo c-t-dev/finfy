@@ -1,6 +1,6 @@
 # Histórico de testes
 
-> Última atualização: 2026-11-06
+> Última atualização: 2026-11-10
 
 Registro cronológico de testes locais e no app real. Mais recente primeiro.
 
@@ -242,3 +242,19 @@ Push autorizado para main. Vercel confirmou READY em produção para o commit `0
 ## 2026-11-06 — hotfix do total em aberto das faturas
 
 Teste sintético confirma 154.845 centavos no resumo da fatura mista de 4.845 + 150.000 centavos. Testes cobrem vencimento hoje, lançamentos futuros, fatura vazia, paga e vencida; dívida realizada para limite permanece separada. `pnpm typecheck`, `pnpm test` (16 compartilhados, 36 web), `pnpm check:messages` e `pnpm check:openapi` passaram. Sem alterações em dados reais ou validação visual. Notas em Não publicado.
+
+## 2026-11-06 — preparação local da entrega OTP por e-mail
+
+Implementados modelos en/pt-BR, contrato de transporte, captura em memória bloqueada em produção e processador explícito de outbox. Sem provedor, domínio, credenciais, cron ou nova rota; EMAIL_DELIVERY_ENABLED permanece false. Nenhum e-mail real enviado.
+
+Falha inicial da suíte da fila era a interoperabilidade de imports JSON no carregador de testes CommonJS; corrigida a configuração esModuleInterop do carregador. Não foi necessário alterar o comportamento de renderização do produto para resolver essa falha.
+
+Oito cenários mais o teste pai passaram em PGlite migrado e também em PostgreSQL 17 local, com banco descartável removido ao final: fila/modelos bilíngues/captura/consumo OTP; código substituído/vencido e payload inválido; limites de reenvio e erros genéricos; idempotência após resultado ambíguo; trabalhadores concorrentes; rollback após aceite do transporte; timeout com cancelamento; bloqueio de produção. HMAC e contexto de ambiente controlados, sem contas reais. Entrega por provedor real não foi testada.
+
+Validação geral: 16 testes shared + 43 web aprovados (59 reportados, incluindo pais). Typecheck, mensagens (972 chaves por idioma), OpenAPI e build aprovados. Sem alteração de esquema. Mudanças permanecem locais, sem commit, push, deploy ou nova release nesta etapa.
+
+## 2026-11-10 — revalidação local da fila de e-mails
+
+A suíte geral passou com 43 testes web, incluindo os cenários da fila em PGlite com dados sintéticos. Typecheck aprovado. As traduções têm 972 chaves por idioma e o OpenAPI está atualizado. O processador da fila é invocado apenas pelos testes. Nenhum e-mail real foi enviado.
+
+Após reaplicar a mudança sobre d2ed256, as quatro checagens passaram novamente. A suíte web passou com 45 testes e os dois idiomas têm 976 chaves cada.

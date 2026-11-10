@@ -4,6 +4,12 @@
 
 Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publicação, consolidar versão e data conforme a decisão 0015.
 
+## Não publicado
+
+### Melhorias
+
+- Preparação local do OTP por e-mail com modelos em português e inglês, transporte de teste em memória e processamento de fila com reenvio limitado, expiração e limpeza dos códigos. O envio real e a exigência de verificação continuam desativados.
+
 ## v0.3.2 — 2026-11-06
 
 ### Correções

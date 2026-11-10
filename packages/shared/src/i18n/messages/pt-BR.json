@@ -1224,5 +1224,15 @@
     "gifts_received": "Presentes recebidos",
     "cashback": "Cashback",
     "other_income": "Outras receitas"
+  },
+  "emails": {
+    "verify": {
+      "subject": "Confirme seu e-mail no finfy",
+      "body": "Use este código para confirmar seu endereço de e-mail:\n\n{code}\n\nO código expira em {minutes} minutos e só pode ser usado uma vez. Se você não o solicitou, ignore este e-mail."
+    },
+    "existing": {
+      "subject": "Sua conta no finfy já existe",
+      "body": "Alguém tentou criar uma conta no finfy com este endereço de e-mail. Sua conta já existe. Entre usando sua senha habitual. Se não foi você, ignore este e-mail."
+    }
   }
 }

@@ -1,6 +1,6 @@
 # 0003 — Convites para wallets por e-mail
 
-> Status: Proposta · Última atualização: 2026-10-26
+> Status: Proposta · Última atualização: 2026-11-10
 
 ## Contexto
 
@@ -75,3 +75,11 @@ Quando houver provedor de e-mail, o mesmo convite passa a ser enviado por e-mail
 - [ ] Qual provedor de e-mail (Resend, Amazon SES, SMTP próprio)? E qual domínio remetente? Até isso ser decidido, o finfy não envia e-mail nenhum (2026-10-25): convites por e-mail esperam, e a conta funciona sem verificação do e-mail ([0004](0004-seguranca-da-conta.md#o-que-já-está-implementado-2026-10-25)).
 - [ ] Validade de 7 dias está boa?
 - [x] O convite para o app (sem wallet), que o Wallefy tem em `user_invites`, continua existindo no finfy? **Sim**, como código de convite para criar conta quando o cadastro está fechado (2026-10-26, [0004 → Cadastro por convite](0004-seguranca-da-conta.md#cadastro-por-convite-decidido-em-2026-10-26)). Tabela `signup_invites`.
+
+## Bloqueio atual do envio (2026-11-06)
+
+O usuário confirmou que ainda não consegue configurar o envio de e-mail. OTP por e-mail é a prioridade da próxima etapa, mas entrega e exigência de verificação continuam desativadas enquanto não houver provedor/remetente configurados e validados. Nenhum serviço foi contratado ou integrado nesta definição.
+
+## Preparação local do OTP por e-mail (2026-11-06)
+
+Adicionados renderização pt-BR/en, contrato de transporte e captura apenas em memória para desenvolvimento/testes. A fila agora possui processador explícito com trava por mensagem, chave estável para envio idempotente, timeout, reenvio limitado e remoção de códigos após envio ou descarte definitivo. Códigos sem OTP vigente não são enviados. Não há cron, rota pública, provedor real ou domínio remetente configurado. A entrega e a exigência de verificação continuam desligadas. Adaptador real deve respeitar a chave de idempotência e cancelamento; validação real de entrega fica pendente até escolher/configurar o serviço.

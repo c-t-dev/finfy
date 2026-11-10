@@ -10,6 +10,7 @@ import { LOCALES } from "./i18n/locales";
 export const PASSWORD_MIN = 12;
 export const PASSWORD_MAX = 128;
 export const OTP_LENGTH = 6;
+export const OTP_TTL_MINUTES = 10;
 
 /** Stable codes the API returns; the client translates them (errors.auth.*). */
 export const AUTH_ERRORS = [

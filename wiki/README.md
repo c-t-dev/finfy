@@ -3,7 +3,7 @@
 Esta wiki documenta como o app de finanças pessoais **Minhas Economias** (portal web, versão 7.18.1) funciona: telas, fluxos, regras de negócio, API e problemas encontrados. Ela é a base de contexto do projeto **finfy** e é lida por agentes diferentes (Claude Code, Codex, IA local), então precisa ficar completa e atualizada.
 
 - **Fonte:** inspeção manual do portal `portal.minhaseconomias.com.br` com uma conta de teste, interceptando as chamadas de rede no navegador.
-- **Última atualização:** 2026-11-06.
+- **Última atualização:** 2026-11-10.
 - **Regras para editar esta wiki:** veja [MANUTENCAO.md](MANUTENCAO.md).
 
 ## Índice
@@ -117,3 +117,7 @@ Revisão de segurança: [relatório técnico](finfy/security-review.md), achados
 Hotfix v0.3.1 publicado (2026-11-06): [edição de valor total e data original de compras no cartão](decisoes/0028-edicao-de-compras-no-cartao.md).
 
 Novo hotfix local (2026-11-06): [total em aberto das faturas](decisoes/0023-contas-e-proximas-faturas.md), incluindo lançamentos futuros no valor a pagar.
+
+Próxima etapa: OTP por e-mail como fluxo principal; envio e verificação exigida continuam desativados enquanto não houver entrega configurada ([0004](decisoes/0004-seguranca-da-conta.md#prioridade-do-otp-por-e-mail-2026-11-06)).
+
+Preparação local do envio OTP: modelos bilíngues, transporte em memória e processador de fila; provedor real e ativação seguem pendentes ([codebase](finfy/codebase.md#local-email-delivery-preparation-2026-11-06)).

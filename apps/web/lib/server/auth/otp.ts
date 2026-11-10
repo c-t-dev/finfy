@@ -1,7 +1,7 @@
 import "server-only";
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
-import { OTP_LENGTH } from "@packages/shared/auth";
+import { OTP_LENGTH, OTP_TTL_MINUTES } from "@packages/shared/auth";
 import { otpCodes, type OTP_PURPOSES } from "@packages/shared/db/schema";
 import type { getDb } from "@/lib/server/db";
 import { hmacSecret } from "./password";
@@ -11,7 +11,7 @@ type Db = Pick<ReturnType<typeof getDb>, "select" | "insert" | "update">;
 type Purpose = (typeof OTP_PURPOSES)[number];
 
 /** E-mailed codes: 6 digits, 10 minutes, 5 attempts (wiki/decisoes/0004). */
-const TTL_MINUTES = 10;
+
 const MAX_ATTEMPTS = 5;
 
 function codeHash(purpose: Purpose, email: string, code: string): string {
@@ -32,7 +32,7 @@ export async function issueOtp(db: Db, input: { email: string; userId: string | 
     userId: input.userId,
     purpose: input.purpose,
     codeHash: codeHash(input.purpose, input.email, code),
-    expiresAt: sql`now() + interval '${sql.raw(String(TTL_MINUTES))} minutes'`,
+    expiresAt: sql`now() + interval '${sql.raw(String(OTP_TTL_MINUTES))} minutes'`,
   });
   return code;
 }
@@ -63,4 +63,13 @@ export async function consumeOtp(db: Db, input: { email: string; purpose: Purpos
     .where(and(eq(otpCodes.id, otp.id), isNull(otpCodes.usedAt), gt(otpCodes.expiresAt, sql`now()`), lt(otpCodes.attempts, MAX_ATTEMPTS)))
     .returning({ matched: sql<boolean>`${otpCodes.codeHash} = ${hash}` });
   return attempt?.matched === true;
+}
+
+/** Checks whether a queued verification code is still the current usable code. */
+export async function hasLiveEmailOtp(db: Db, email: string, code: string): Promise<boolean> {
+  const [row] = await db.select({ id: otpCodes.id }).from(otpCodes)
+    .where(and(eq(otpCodes.email, email), eq(otpCodes.purpose, "EMAIL_VERIFY"),
+      eq(otpCodes.codeHash, codeHash("EMAIL_VERIFY", email, code)), isNull(otpCodes.usedAt),
+      gt(otpCodes.expiresAt, sql`now()`), lt(otpCodes.attempts, MAX_ATTEMPTS))).limit(1);
+  return Boolean(row);
 }
