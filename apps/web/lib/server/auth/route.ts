@@ -1,4 +1,9 @@
 import "server-only";
+import { after } from "next/server";
+import { getDb } from "@/lib/server/db";
+import { EMAIL_DELIVERY_ENABLED } from "@/lib/server/mail";
+import { deliverEmailOutbox } from "@/lib/server/mail-outbox";
+import { createSmtpMailTransport } from "@/lib/server/mail-transport";
 import type { z } from "zod";
 import { env } from "@packages/env/server";
 import { apiError, clientIp, isSameOrigin, userAgent } from "@/lib/server/request";
@@ -20,7 +25,19 @@ export async function handleAuth<T extends z.ZodType>(
   if (!parsed.success) return apiError("invalidInput", 400);
 
   const result = await action(parsed.data, { ip: clientIp(request), userAgent: userAgent(request) });
-  if (result.ok) return Response.json(result.value);
+  if (result.ok) {
+    if (EMAIL_DELIVERY_ENABLED && result.value.next === "verifyEmail") {
+      const { email } = result.value;
+      after(async () => {
+        try {
+          await deliverEmailOutbox(getDb(), createSmtpMailTransport(), 3, email);
+        } catch {
+          console.error("email_outbox_processing_failed");
+        }
+      });
+    }
+    return Response.json(result.value);
+  }
   if (result.error === "rateLimited") {
     const retryAfter = result.retryAfterSeconds ?? 60;
     return apiError("rateLimited", 429, { retryAfterSeconds: retryAfter }, { "Retry-After": String(retryAfter) });

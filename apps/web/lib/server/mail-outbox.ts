@@ -9,15 +9,15 @@ import type { MailTransport } from "./mail-transport";
 const MAX_ATTEMPTS = 3;
 const SEND_TIMEOUT_MS = 5000;
 
-/** Explicit worker entry point, with no route, scheduler or automatic activation. */
-export async function deliverEmailOutbox(db: ReturnType<typeof getDb>, transport: MailTransport, batchSize = 10) {
+/** Processes a bounded batch of pending messages. */
+export async function deliverEmailOutbox(db: ReturnType<typeof getDb>, transport: MailTransport, batchSize = 10, recipient?: string) {
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 50) throw new Error("invalid_email_batch_size");
   const processed: string[] = [];
   const result = { sent: 0, retry: 0, discarded: 0 };
   for (let index = 0; index < batchSize; index++) {
     const outcome = await db.transaction(async tx => {
       const [row] = await tx.select().from(emailOutbox)
-        .where(and(eq(emailOutbox.status, "PENDING"), processed.length ? notInArray(emailOutbox.id, processed) : undefined))
+        .where(and(eq(emailOutbox.status, "PENDING"), recipient ? eq(emailOutbox.toEmail, recipient) : undefined, processed.length ? notInArray(emailOutbox.id, processed) : undefined))
         .orderBy(asc(emailOutbox.createdAt), asc(emailOutbox.id)).for("update", { skipLocked: true }).limit(1);
       if (!row) return null;
       const attempts = Math.min(row.attempts + 1, MAX_ATTEMPTS);

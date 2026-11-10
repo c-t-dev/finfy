@@ -45,3 +45,11 @@ RETURNING id, plan;
 ```
 
 Set `plan = 'FREE'` using the same procedure to test downgrade. Previously issued secrets are blocked during the downgrade and can work again after promotion if they were never revoked. Revoke them from Settings if they should stay invalid. This procedure was tested with synthetic fixtures. There is no public endpoint to assign a plan.
+
+## Local Hermes smoke test
+
+Use a dedicated local test database with synthetic records and apply all migrations. Keep the app bound to loopback. Promote the identified test account, create a test wallet with a card and an upcoming invoice, and create a read-only connection in Settings.
+
+If Hermes runs on the same machine and shares the network namespace, set its Finfy base URL to the app's actual loopback URL, for example http://127.0.0.1:3000. Store the bearer secret in Hermes. Call GET /api/agent/v1/wallets first and GET /api/agent/v1/wallets/{id}/invoices next. For a separate read-and-create connection, submit a synthetic entry twice with the same requestId and confirm the receipt matches and the app shows one entry. Revoke the connection in Settings and verify the next authenticated request returns 401.
+
+If Hermes runs in a container, VM, or on another host, its loopback points to that environment. Keep Finfy private and use a privately reachable test endpoint if one has been set up. A plain HTTP loopback URL is only for local testing. Use HTTPS for any connection that crosses hosts.

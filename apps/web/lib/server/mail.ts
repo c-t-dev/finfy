@@ -6,22 +6,13 @@ import type { getDb } from "@/lib/server/db";
 
 type Db = Pick<ReturnType<typeof getDb>, "insert">;
 
-/**
- * Off while there is no e-mail provider (wiki/decisoes/0003). Then sign-up
- * signs in at once, sign-in does not ask for a code, the code routes answer
- * 404, and nothing is queued. Turn on once a provider sends `email_outbox`.
- */
-export const EMAIL_DELIVERY_ENABLED = false;
-
 import type { EmailTemplate } from "./mail-templates";
 export type { EmailTemplate } from "./mail-templates";
 
-/**
- * Queues an e-mail in `email_outbox`; a cron job sends it once a provider is
- * chosen (wiki/decisoes/0003). Until then, development prints it to the server
- * log so codes can be used locally. Payloads with codes are short-lived and
- * must be cleared after sending.
- */
+export const EMAIL_DELIVERY_ENABLED =
+  env.EMAIL_DELIVERY_ENABLED === "true" &&
+  Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD && env.SMTP_FROM);
+
 export async function queueEmail(
   db: Db,
   email: { to: string; template: EmailTemplate; locale: Locale; payload: Record<string, unknown> },
@@ -32,7 +23,4 @@ export async function queueEmail(
     locale: email.locale,
     payload: email.payload,
   });
-  if (env.NODE_ENV === "development") {
-    console.info(`[mail:dev] ${email.template} → ${email.to} (${email.locale})`, email.payload);
-  }
 }

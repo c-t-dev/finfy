@@ -123,3 +123,5 @@ Próxima etapa: OTP por e-mail como fluxo principal; envio e verificação exigi
 Preparação local do envio OTP: modelos bilíngues, transporte em memória e processador de fila; provedor real e ativação seguem pendentes ([codebase](finfy/codebase.md#local-email-delivery-preparation-2026-11-06)).
 
 Planos e agentes externos, com acesso de leitura ou de leitura e criação de lançamentos: [decisão 0029](decisoes/0029-planos-e-integracoes-de-agentes.md) e [guia da API](finfy/agent-integrations.md).
+
+Envio SMTP no próprio Finfy: [decisão 0031](decisoes/0031-smtp-no-finfy.md).

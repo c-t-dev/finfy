@@ -22,6 +22,12 @@ export const env = createEnv({
      * `open`: anyone can sign up. `invite`: a new account needs a code made by
      * an existing account (wiki/decisoes/0004); the very first account never does.
      */
+    EMAIL_DELIVERY_ENABLED: z.enum(["true", "false"]).default("false"),
+    SMTP_HOST: z.string().min(1).optional(),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+    SMTP_USER: z.string().min(1).optional(),
+    SMTP_PASSWORD: z.string().min(1).optional(),
+    SMTP_FROM: z.email().optional(),
     SIGN_UP_MODE: z.enum(["open", "invite"]).default("open"),
   },
   experimental__runtimeEnv: {},

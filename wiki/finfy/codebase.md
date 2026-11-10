@@ -527,3 +527,7 @@ Run local tests from the root with pnpm.cmd --filter web exec tsx --test test/ma
 ## Agent integrations (2026-11-10)
 
 Settings uses the session-authenticated integrations routes to manage connections. External clients call the bearer-authenticated API under /api/agent/v1. Entry creation calls the same transaction-level commands as the app for account income and expenses, transfers, card purchases and recurring schedules. A write grant requires the invoice read grant, including for old connections. The audit actor is the account, with the connection ID in source_ref_id and no device ID. Plan and credential checks run before wallet authorization and replay lookup. See the [agent integration guide](agent-integrations.md) for the contract and local plan assignment.
+
+## SMTP delivery from Finfy (2026-11-10)
+
+Nodemailer sends authentication mail from the existing outbox. A successful authentication response that requests verification schedules a bounded, recipient-scoped batch with Next.js after(). A subsequent verification request can pick up retryable rows. The SMTP adapter requires TLS and uses a stable Message-ID. SMTP acknowledgments can be ambiguous, so a retry can produce a duplicate. The adapter checks cancellation before starting and applies socket timeouts during delivery. Configure the server variables in apps/web/.env.example and validate delivery before enabling verification. See [0031](../decisoes/0031-smtp-no-finfy.md).

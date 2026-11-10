@@ -266,3 +266,10 @@ O teste das rotas usa migrações reais em PGlite, dados fictícios e uma sessã
 ## 2026-11-10 — modalidades de lançamento e modos de acesso
 
 A suíte de rotas com PGlite e dados fictícios cobriu receita paga, despesa pendente, transferência com duas pontas, compra à vista e parcelada, recorrências de receita e despesa em conta e despesa recorrente no cartão. Verificou o vínculo à fatura, a auditoria por conexão, o recibo de reenvio, a recusa de conta de outra carteira e a recusa de vínculo com lançamento existente. O modo somente leitura não cria lançamentos. A API recusa criar uma conexão só de escrita e bloqueia o acesso de uma conexão antiga nesse estado. Perda de papel, downgrade e revogação bloqueiam reenvios. A suíte web passou com 46 testes. Nenhum dado real foi usado.
+
+## 2026-11-10 — validação HTTP da integração no localhost
+
+O PostgreSQL 17 de desenvolvimento foi iniciado com porta restrita ao loopback. O banco tinha zero contas antes das migrações de agentes. O cadastro normal criou uma conta fictícia e a atribuição manual retornou Pago, também confirmado na API de integrações. A descoberta por token devolveu a carteira de teste. A consulta de próximas faturas respondeu 200, com lista vazia porque a carteira ainda não tinha cartões. Após revogação da credencial de validação, a mesma chamada de descoberta retornou 401. O Hermes não foi conectado neste teste. Nenhum banco real foi usado.
+## Finfy — fila de e-mail com adaptador SMTP (2026-11-10)
+
+Os 9 testes de mail-outbox.test.ts passaram com banco descartável e transporte em memória. O TypeScript do web passou com tsc --noEmit. A geração de tipos do Next encontrou uma falha de acesso ao cache nativo do SWC no sandbox. Entrega SMTP real ainda pendente.

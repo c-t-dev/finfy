@@ -61,3 +61,7 @@ A [0022 — Dívida realizada e previsões dos cartões](0022-divida-realizada-e
 - [0028 — Edição de compras no cartão](0028-edicao-de-compras-no-cartao.md): valor total e data original para toda a compra. Aprovada em 2026-11-06.
 
 - [0029 — Planos e integrações de agentes](0029-planos-e-integracoes-de-agentes.md): aceita para a primeira versão.
+
+Serviço de envio de e-mail separado: [0030](0030-servico-de-email.md).
+
+Envio SMTP no Finfy: [0031](0031-smtp-no-finfy.md), substitui a decisão 0030.
