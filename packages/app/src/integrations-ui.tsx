@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@packages/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@packages/ui/components/card";
 import { Input } from "@packages/ui/components/input";
-import { AGENT_SCOPES, type AgentScope, type Connections, type CreatedConnection } from "@packages/shared/integrations";
+import { type Connections, type CreatedConnection } from "@packages/shared/integrations";
 import { can } from "@packages/shared/roles";
 import { useApi, useResource } from "./api";
 import { useTranslations } from "./i18n";
@@ -20,9 +20,8 @@ export function IntegrationsCard() {
   const { state, reload } = useResource<Connections>(path);
   const { pending, failure, run } = useWalletRequest();
   const [token, setToken] = useState<string | null>(null);
-  const [scopes, setScopes] = useState<AgentScope[]>([]);
-  const eligibleWallets = wallets.filter(wallet => scopes.every(scope =>
-    can(wallet.role, scope === "invoices:read" ? "view" : "editEntries")));
+  const [canWrite, setCanWrite] = useState(false);
+  const eligibleWallets = wallets.filter(wallet => can(wallet.role, canWrite ? "editEntries" : "view"));
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,13 +29,14 @@ export function IntegrationsCard() {
     const data = new FormData(form);
     if (await run(async () => {
       const result = await api<CreatedConnection>("POST", path, {
-        name: data.get("name"), walletIds: data.getAll("wallet"), scopes,
+        name: data.get("name"), walletIds: data.getAll("wallet"),
+        scopes: canWrite ? ["invoices:read", "entries:create"] : ["invoices:read"],
       });
       if (result.ok) setToken(result.value.token);
       return result;
     })) {
       form.reset();
-      setScopes([]);
+      setCanWrite(false);
       reload();
     }
   }
@@ -67,6 +67,7 @@ export function IntegrationsCard() {
                 {connection.walletIds.map(id => wallets.find(wallet => wallet.id === id)?.name ?? t("unavailableWallet")).join(", ")}
               </p>
               <p className="text-sm text-muted-foreground">{connection.scopes.map(scope => t(scope)).join(", ")}</p>
+              {!connection.revoked && !connection.scopes.includes("invoices:read") && <p>{t("writeOnlyBlocked")}</p>}
               {connection.revoked ? <p>{t("revoked")}</p>
                 : <Button variant="secondary" disabled={pending} onClick={() => void revoke(connection.id)}>{t("revoke")}</Button>}
             </li>)}
@@ -78,12 +79,14 @@ export function IntegrationsCard() {
             <label className="block">{t("name")}<Input name="name" required maxLength={80} /></label>
             <fieldset className="space-y-1">
               <legend>{t("scopes")}</legend>
-              {AGENT_SCOPES.map(scope => <label key={scope} className="flex items-center gap-2">
-                <input type="checkbox" checked={scopes.includes(scope)} onChange={event => {
-                  setScopes(event.target.checked ? [...scopes, scope] : scopes.filter(value => value !== scope));
-                }} />
-                {t(scope)}
-              </label>)}
+              <label className="flex items-center gap-2">
+                <input type="radio" name="access" checked={!canWrite} onChange={() => setCanWrite(false)} />
+                {t("readOnly")}
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="access" checked={canWrite} onChange={() => setCanWrite(true)} />
+                {t("readWrite")}
+              </label>
             </fieldset>
             <fieldset className="space-y-1">
               <legend>{t("wallets")}</legend>
@@ -92,7 +95,7 @@ export function IntegrationsCard() {
               </label>)}
               {eligibleWallets.length === 0 && <p>{t("noWallets")}</p>}
             </fieldset>
-            <Button disabled={pending || !scopes.length || !eligibleWallets.length}>{t("create")}</Button>
+            <Button disabled={pending || !eligibleWallets.length}>{t("create")}</Button>
           </form>}
         </>}
       </CardContent>

@@ -160,137 +160,153 @@ async function ensureNewIds(tx: Tx, ids: string[]): Promise<void> {
 }
 
 export async function createEntry(actor: Actor, walletId: string, input: CreateEntryInput): Promise<CommandResult<Entry>> {
-  return runCommand(async (tx) => {
-    const replayed = await replay(tx, actor, input.mutationId, walletId, input.id);
-    if (replayed) return replayed;
-    await requireRole(tx, walletId, actor.userId, "editEntries");
-    await ensureNewIds(tx, [input.id]);
-    await usableAccount(tx, walletId, input.accountId);
-    await checkCategory(tx, walletId, input.categoryId, input.type);
-
-    await tx.insert(transactions).values({
-      id: input.id,
-      walletId,
-      accountId: input.accountId,
-      categoryId: input.categoryId,
-      type: input.type,
-      status: input.status,
-      description: input.description,
-      amountMinor: input.amountMinor,
-      transactionDate: input.transactionDate,
-      paidAt: paidAt(input.status),
-      notes: input.notes ?? null,
-      createdBy: actor.userId,
-      updatedBy: actor.userId,
-    });
-    const extra = [
-      ...(await applyTags(tx, actor, walletId, [input.id], input.tagIds ?? [])),
-      ...(await lockCurrency(tx, actor, walletId)),
-    ];
-    await recordMutation(
-      tx,
-      actor,
-      { mutationId: input.mutationId },
-      {
-        walletId,
-        entity: "transactions",
-        entityId: input.id,
-        op: "CREATE",
-        action: "CREATE",
-        changes: diff(
-          {},
-          {
-            type: input.type,
-            account_id: input.accountId,
-            category_id: input.categoryId,
-            description: input.description,
-            amount_minor: input.amountMinor,
-            transaction_date: input.transactionDate,
-            status: input.status,
-            notes: input.notes ?? undefined,
-          },
-        ),
-      },
-      extra,
-    );
-    return entryById(tx, walletId, input.id);
-  });
+  return runCommand((tx) => createEntryInTransaction(tx, actor, walletId, input));
 }
 
-/** Two legs and their link, in one write (the audit groups them by the mutation). */
-export async function createTransfer(actor: Actor, walletId: string, input: CreateTransferInput): Promise<CommandResult<Entry>> {
-  return runCommand(async (tx) => {
-    const replayed = await replay(tx, actor, input.mutationId, walletId, input.id);
-    if (replayed) return replayed;
-    await requireRole(tx, walletId, actor.userId, "editEntries");
-    await ensureNewIds(tx, [input.id, input.inId]);
-    await usableAccount(tx, walletId, input.fromAccountId);
-    await usableAccount(tx, walletId, input.toAccountId);
+export async function createEntryInTransaction(
+  tx: Tx,
+  actor: Actor,
+  walletId: string,
+  input: CreateEntryInput,
+  sourceRefId?: string,
+): Promise<Entry> {
+  const replayed = await replay(tx, actor, input.mutationId, walletId, input.id);
+  if (replayed) return replayed;
+  await requireRole(tx, walletId, actor.userId, "editEntries");
+  await ensureNewIds(tx, [input.id]);
+  await usableAccount(tx, walletId, input.accountId);
+  await checkCategory(tx, walletId, input.categoryId, input.type);
 
-    const common = {
-      walletId,
-      status: input.status,
-      description: input.description,
-      amountMinor: input.amountMinor,
-      transactionDate: input.transactionDate,
-      paidAt: paidAt(input.status),
-      notes: input.notes ?? null,
-      createdBy: actor.userId,
-      updatedBy: actor.userId,
-    };
-    await tx.insert(transactions).values([
-      { ...common, id: input.id, accountId: input.fromAccountId, type: "TRANSFER_OUT" },
-      { ...common, id: input.inId, accountId: input.toAccountId, type: "TRANSFER_IN" },
-    ]);
-    const linkId = deterministicId("transaction_link", input.id, input.inId, "TRANSFER");
-    await tx.insert(transactionLinks).values({
-      id: linkId,
-      walletId,
-      sourceTransactionId: input.id,
-      targetTransactionId: input.inId,
-      type: "TRANSFER",
-      createdBy: actor.userId,
-      updatedBy: actor.userId,
-    });
-
-    const leg = (id: string, type: string, accountId: string): Change => ({
+  await tx.insert(transactions).values({
+    id: input.id,
+    walletId,
+    accountId: input.accountId,
+    categoryId: input.categoryId,
+    type: input.type,
+    status: input.status,
+    description: input.description,
+    amountMinor: input.amountMinor,
+    transactionDate: input.transactionDate,
+    paidAt: paidAt(input.status),
+    notes: input.notes ?? null,
+    createdBy: actor.userId,
+    updatedBy: actor.userId,
+  });
+  const extra = [
+    ...(await applyTags(tx, actor, walletId, [input.id], input.tagIds ?? [])),
+    ...(await lockCurrency(tx, actor, walletId)),
+  ];
+  await recordMutation(
+    tx,
+    actor,
+    { mutationId: input.mutationId, sourceRefId },
+    {
       walletId,
       entity: "transactions",
-      entityId: id,
+      entityId: input.id,
       op: "CREATE",
       action: "CREATE",
       changes: diff(
         {},
         {
-          type,
-          account_id: accountId,
+          type: input.type,
+          account_id: input.accountId,
+          category_id: input.categoryId,
           description: input.description,
           amount_minor: input.amountMinor,
           transaction_date: input.transactionDate,
           status: input.status,
+          notes: input.notes ?? undefined,
         },
       ),
-    });
-    await recordMutation(
-      tx,
-      actor,
-      { mutationId: input.mutationId },
-      leg(input.id, "TRANSFER_OUT", input.fromAccountId),
-      [
-        leg(input.inId, "TRANSFER_IN", input.toAccountId),
-        {
-          walletId,
-          entity: "transaction_links",
-          entityId: linkId,
-          op: "CREATE",
-          action: "CREATE",
-          changes: diff({}, { type: "TRANSFER", source_transaction_id: input.id, target_transaction_id: input.inId }),
-        },
-        ...(await lockCurrency(tx, actor, walletId)),
-      ],
-    );
-    return entryById(tx, walletId, input.id);
+    },
+    extra,
+  );
+  return entryById(tx, walletId, input.id);
+}
+
+/** Two legs and their link, in one write (the audit groups them by the mutation). */
+export async function createTransfer(actor: Actor, walletId: string, input: CreateTransferInput): Promise<CommandResult<Entry>> {
+  return runCommand((tx) => createTransferInTransaction(tx, actor, walletId, input));
+}
+
+export async function createTransferInTransaction(
+  tx: Tx,
+  actor: Actor,
+  walletId: string,
+  input: CreateTransferInput,
+  sourceRefId?: string,
+): Promise<Entry> {
+  const replayed = await replay(tx, actor, input.mutationId, walletId, input.id);
+  if (replayed) return replayed;
+  await requireRole(tx, walletId, actor.userId, "editEntries");
+  await ensureNewIds(tx, [input.id, input.inId]);
+  await usableAccount(tx, walletId, input.fromAccountId);
+  await usableAccount(tx, walletId, input.toAccountId);
+
+  const common = {
+    walletId,
+    status: input.status,
+    description: input.description,
+    amountMinor: input.amountMinor,
+    transactionDate: input.transactionDate,
+    paidAt: paidAt(input.status),
+    notes: input.notes ?? null,
+    createdBy: actor.userId,
+    updatedBy: actor.userId,
+  };
+  await tx.insert(transactions).values([
+    { ...common, id: input.id, accountId: input.fromAccountId, type: "TRANSFER_OUT" },
+    { ...common, id: input.inId, accountId: input.toAccountId, type: "TRANSFER_IN" },
+  ]);
+  const linkId = deterministicId("transaction_link", input.id, input.inId, "TRANSFER");
+  await tx.insert(transactionLinks).values({
+    id: linkId,
+    walletId,
+    sourceTransactionId: input.id,
+    targetTransactionId: input.inId,
+    type: "TRANSFER",
+    createdBy: actor.userId,
+    updatedBy: actor.userId,
   });
+
+  const leg = (id: string, type: string, accountId: string): Change => ({
+    walletId,
+    entity: "transactions",
+    entityId: id,
+    op: "CREATE",
+    action: "CREATE",
+    changes: diff(
+      {},
+      {
+        type,
+        account_id: accountId,
+        description: input.description,
+        amount_minor: input.amountMinor,
+        transaction_date: input.transactionDate,
+        status: input.status,
+      },
+    ),
+  });
+  await recordMutation(
+    tx,
+    actor,
+    { mutationId: input.mutationId, sourceRefId },
+    leg(input.id, "TRANSFER_OUT", input.fromAccountId),
+    [
+      leg(input.inId, "TRANSFER_IN", input.toAccountId),
+      {
+        walletId,
+        entity: "transaction_links",
+        entityId: linkId,
+        op: "CREATE",
+        action: "CREATE",
+        changes: diff({}, { type: "TRANSFER", source_transaction_id: input.id, target_transaction_id: input.inId }),
+      },
+      ...(await lockCurrency(tx, actor, walletId)),
+    ],
+  );
+  return entryById(tx, walletId, input.id);
 }
 
 async function loadForWrite(tx: Tx, walletId: string, entryId: string): Promise<Row> {

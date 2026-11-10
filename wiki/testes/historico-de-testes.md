@@ -262,3 +262,7 @@ Após reaplicar a mudança sobre d2ed256, as quatro checagens passaram novamente
 ## 2026-11-10 — planos e integração de agentes
 
 O teste das rotas usa migrações reais em PGlite, dados fictícios e uma sessão controlada. Cobriu Grátis como padrão, promoção a Pago, criação com segredo exibido uma vez, CSRF, escopos separados, carteira fora da conexão, papel rebaixado, acesso removido, downgrade e revogação pelo titular. Duas solicitações simultâneas com o mesmo identificador devolveram o mesmo recibo e criaram uma única compra, vinculada à fatura e auditada com o ID da conexão. Moeda divergente, cartão inválido e reuso do identificador com outro valor foram recusados. A suíte web passou com 46 testes. Nenhuma conta ou banco real foi usado.
+
+## 2026-11-10 — modalidades de lançamento e modos de acesso
+
+A suíte de rotas com PGlite e dados fictícios cobriu receita paga, despesa pendente, transferência com duas pontas, compra à vista e parcelada, recorrências de receita e despesa em conta e despesa recorrente no cartão. Verificou o vínculo à fatura, a auditoria por conexão, o recibo de reenvio, a recusa de conta de outra carteira e a recusa de vínculo com lançamento existente. O modo somente leitura não cria lançamentos. A API recusa criar uma conexão só de escrita e bloqueia o acesso de uma conexão antiga nesse estado. Perda de papel, downgrade e revogação bloqueiam reenvios. A suíte web passou com 46 testes. Nenhum dado real foi usado.

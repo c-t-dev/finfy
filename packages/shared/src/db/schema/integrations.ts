@@ -1,5 +1,5 @@
-import { index, pgTable, primaryKey, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import type { AgentScope } from "../../integrations";
+import { index, jsonb, pgTable, primaryKey, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import type { AgentEntryReceipt, AgentScope } from "../../integrations";
 import { createdAt, idColumn, timestamptz } from "../columns";
 import { users } from "./identity";
 
@@ -23,4 +23,11 @@ export const agentPurchaseRequests = pgTable("agent_purchase_requests", {
   requestHash: text("request_hash").notNull(),
   purchaseId: uuid("purchase_id").notNull(),
   invoiceId: uuid("invoice_id").notNull(),
+}, (t) => [primaryKey({ columns: [t.connectionId, t.requestId] })]);
+
+export const agentEntryRequests = pgTable("agent_entry_requests", {
+  connectionId: uuid("connection_id").notNull().references(() => agentConnections.id),
+  requestId: uuid("request_id").notNull(),
+  requestHash: text("request_hash").notNull(),
+  receipt: jsonb("receipt").$type<AgentEntryReceipt>().notNull(),
 }, (t) => [primaryKey({ columns: [t.connectionId, t.requestId] })]);

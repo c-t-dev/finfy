@@ -2,7 +2,7 @@
 
 > Last updated: 2026-11-10
 
-In **Settings → Agent integrations**, a Paid account can create a named connection, select wallets and grant one or both scopes. Copy the secret from the creation response and store it in the agent's secret store. A connection can be revoked from Settings even after a downgrade. To change wallets or scopes, or replace a lost secret, revoke the connection and create another.
+In **Settings → Agent integrations**, a Paid account can create a named connection, select wallets and choose Read only or Read and create entries. Copy the secret from the creation response and store it in the agent's secret store. A connection can be revoked from Settings even after a downgrade. To change wallets or scopes, or replace a lost secret, revoke the connection and create another.
 
 Hermes or another HTTPS client uses the Finfy app's base URL with an `Authorization: Bearer <secret>` header. The client makes outbound requests only. Configure any default wallet or card in the client. The management endpoints use the existing browser session and same-origin checks.
 
@@ -10,10 +10,24 @@ Hermes or another HTTPS client uses the Finfy app's base URL with an `Authorizat
 | --- | --- | --- |
 | `GET /api/agent/v1/wallets` | At least one effective scope per result | Authorized wallet IDs, names, currency and effective scopes |
 | `GET /api/agent/v1/wallets/{id}/invoices` | `invoices:read` | Next payable invoice's due date and minor-unit total per active card, or null |
-| `GET /api/agent/v1/wallets/{id}/purchase-targets` | `purchases:create` | Card and active expense category IDs and labels, without invoice or account balances |
-| `POST /api/agent/v1/wallets/{id}/cards/{cardId}/purchases` | `purchases:create` | Purchase and invoice IDs |
+| `GET /api/agent/v1/wallets/{id}/entries` | `entries:create` | Active account, card, category and tag IDs and labels needed for creation. |
+| `POST /api/agent/v1/wallets/{id}/entries` | `entries:create` | Receipt with the kind and IDs created. |
 
-The purchase body contains a client-generated UUID `requestId`, `categoryId`, `description`, positive integer `amountMinor`, wallet `currencyCode` and ISO calendar `transactionDate`. Send JSON over HTTPS. For a timeout or lost response, keep the original request ID and body. The same authorized request returns the original receipt with HTTP 201. Reusing the ID on the same connection with a different target or purchase body returns `409 versionConflict`. Keep the receipt or reconcile with the app before switching connections after an ambiguous response, since a new connection has a separate request ID namespace.
+Create a read-only connection with `["invoices:read"]`. For read and create, use `["invoices:read", "entries:create"]`. The API rejects write-only grants. Older write-only connections stay visible in Settings for revocation and have no effective access. Older connections with both `invoices:read` and `purchases:create` retain the original single-installment purchase and purchase-targets endpoints. They need a new connection to create other entries.
+
+All creation requests use a client-generated UUID `requestId`, a positive integer `amountMinor` and the wallet's `currencyCode`. Choose a `kind` and supply the fields for that kind.
+
+| Kind | Required fields besides the shared fields | Options | Receipt IDs |
+| --- | --- | --- | --- |
+| `entry` | `type` (INCOME or EXPENSE), `accountId`, `categoryId`, `description`, `transactionDate`, `status` (PAID or PENDING) | `notes`, `tagIds` | Entry |
+| `transfer` | `fromAccountId`, `toAccountId`, `description`, `transactionDate`, `status` (PAID or PENDING) | `notes` | Outgoing and incoming legs, in that order |
+| `purchase` | `cardId`, `categoryId`, `description`, `transactionDate`, `installments` (1–48) | `notes`, `tagIds` | Installment IDs in order |
+| `recurrence` | `type` (INCOME or EXPENSE), `accountId` or `creditCardId` (card for expenses), `categoryId`, `description`, `frequency`, `startDate` | `endDate`, `firstPaid` for account entries, `tagIds` | Schedule ID |
+
+Use ISO calendar dates. For a schedule that ends after a fixed count, send the computed last occurrence date as `endDate`, as the app does. Omit it for an indefinite schedule. The API creates new schedules only. Invoice settlement remains a separate app operation.
+
+For a timeout or lost response, resend the same request ID and payload on the same connection. The authorized retry returns the original receipt with HTTP 201. A changed payload for the same ID returns `409 versionConflict`. Reconcile with the app before switching connections after an ambiguous response, since a new connection has a separate request ID namespace.
+
 
 The API returns stable error codes. Missing, unknown and revoked secrets return 401. A valid credential with a Free account, missing scope or insufficient role returns 403. An inaccessible or archived wallet can return 404. See [OpenAPI](../../apps/web/openapi.json) for request and response schemas.
 

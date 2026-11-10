@@ -482,6 +482,7 @@ Next payable and overdue invoice summaries use full outstanding invoice totals, 
 | --- | --- |
 | users | plan is required, defaults to FREE (including existing rows), and is constrained to FREE or PAID. |
 | agent_connections | id, user_id, name, unique token_hash, wallet_ids, scopes, created_at and nullable revoked_at. Wallet IDs are a grant list. Current membership and active wallet state are checked independently of that list. |
-| agent_purchase_requests | Composite primary key (connection_id, request_id), request_hash, purchase_id and invoice_id. The receipt records the originally created IDs and is committed atomically with the financial mutation. |
+| agent_entry_requests | Composite primary key (connection_id, request_id), request_hash and JSON receipt with operation kind and created entity IDs. The receipt commits with the shared financial mutation. |
+| agent_purchase_requests | Composite primary key (connection_id, request_id), request_hash, purchase_id and invoice_id. Kept for the legacy single-installment endpoint and its prior receipts. |
 
 These account and connection records stay server-side. The connection lock serializes replays while the original purchase and audit entries go through the shared wallet command and sync normally. An identical request returns the original receipt only after live authorization. See [0029](../decisoes/0029-planos-e-integracoes-de-agentes.md).

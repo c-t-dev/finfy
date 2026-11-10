@@ -1,4 +1,5 @@
 import {
+  agentEntryInput, agentEntryReceiptSchema, agentEntryTargetsSchema,
   agentInvoicesSchema, agentPurchaseInput, agentReceiptSchema, agentTargetsSchema, agentWalletSchema,
   connectionInput, connectionsSchema, createdConnectionSchema,
 } from "@packages/shared/integrations";
@@ -166,7 +167,7 @@ const integrationErrors = {
   401: err("Invalid or missing authentication.", "unauthenticated"),
   403: err("Plan, role, scope or origin denied.", "forbidden", "forbiddenOrigin"),
   404: err("Resource unavailable to this account.", "notFound"),
-  409: err("Request identifier reused with a different purchase, or invoice paid.", "versionConflict", "invoicePaid"),
+  409: err("Request identifier reused with a different payload, or invoice paid.", "versionConflict", "invoicePaid"),
   503: err("Database not configured.", "unavailable"),
 };
 
@@ -308,13 +309,22 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
           security: [{ agentBearer: [] }], parameters: [integrationId("id")],
           responses: { 200: response("Next payable invoices.", json(agentInvoicesSchema)), ...integrationErrors } },
       },
+      "/api/agent/v1/wallets/{id}/entries": {
+        get: { tags: ["integrations"], summary: "List available entry targets", description: "Requires entries:create. Returns IDs and labels only.",
+          security: [{ agentBearer: [] }], parameters: [integrationId("id")],
+          responses: { 200: response("Accounts, cards, categories and tags.", json(agentEntryTargetsSchema)), ...integrationErrors } },
+        post: { tags: ["integrations"], summary: "Create a wallet entry, transfer, card purchase or recurrence",
+          description: "Requires entries:create. Supports paid and pending account entries and transfers, card installments, and account or card schedules. Retry with the same requestId and payload to recover the original receipt.",
+          security: [{ agentBearer: [] }], parameters: [integrationId("id")], requestBody: body(agentEntryInput),
+          responses: { 201: response("Original entry receipt.", json(agentEntryReceiptSchema)), ...integrationErrors } },
+      },
       "/api/agent/v1/wallets/{id}/purchase-targets": {
-        get: { tags: ["integrations"], summary: "List cards and expense categories for purchase creation", description: "Requires purchases:create.",
+        get: { tags: ["integrations"], summary: "List cards and expense categories for purchase creation", deprecated: true, description: "Requires purchases:create.",
           security: [{ agentBearer: [] }], parameters: [integrationId("id")],
           responses: { 200: response("Purchase targets.", json(agentTargetsSchema)), ...integrationErrors } },
       },
       "/api/agent/v1/wallets/{id}/cards/{cardId}/purchases": {
-        post: { tags: ["integrations"], summary: "Record one single-installment credit purchase",
+        post: { tags: ["integrations"], summary: "Record one single-installment credit purchase", deprecated: true,
           description: "Requires purchases:create. Retry with the same requestId and body to recover the original receipt.",
           security: [{ agentBearer: [] }], parameters: [integrationId("id"), integrationId("cardId")], requestBody: body(agentPurchaseInput),
           responses: { 201: response("Original purchase receipt.", json(agentReceiptSchema)), ...integrationErrors } },

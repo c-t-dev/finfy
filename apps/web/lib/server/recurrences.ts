@@ -269,83 +269,91 @@ async function byId(tx: Tx, walletId: string, id: string): Promise<RecurrenceRow
 }
 
 export async function createRecurrence(actor: Actor, walletId: string, input: CreateRecurrenceInput): Promise<CommandResult<Recurrence>> {
-  return runCommand(async (tx) => {
-    if (await applied(tx, actor, input.mutationId)) {
-      await requireRole(tx, walletId, actor.userId, "view");
-      return toRecurrence(await byId(tx, walletId, input.id));
-    }
-    await requireRole(tx, walletId, actor.userId, "editEntries");
-    const [taken] = await tx.select({ id: recurrences.id }).from(recurrences).where(eq(recurrences.id, input.id)).limit(1);
-    if (taken) throw new CommandError("invalidInput");
-    await checkSource(tx, walletId, input);
+  return runCommand((tx) => createRecurrenceInTransaction(tx, actor, walletId, input));
+}
 
-    const [row] = await tx
-      .insert(recurrences)
-      .values({
-        id: input.id,
-        walletId,
-        type: input.type,
-        description: input.description,
-        amountMinor: input.amountMinor,
-        accountId: input.accountId ?? null,
-        creditCardId: input.creditCardId ?? null,
-        categoryId: input.categoryId,
-        frequency: input.frequency,
-        dayOfMonth: Number(input.startDate.slice(8, 10)),
-        startDate: input.startDate,
-        endDate: input.endDate ?? null,
-        createdBy: actor.userId,
-        updatedBy: actor.userId,
-      })
-      .returning();
+export async function createRecurrenceInTransaction(
+  tx: Tx,
+  actor: Actor,
+  walletId: string,
+  input: CreateRecurrenceInput,
+  sourceRefId?: string,
+): Promise<Recurrence> {
+  if (await applied(tx, actor, input.mutationId)) {
+    await requireRole(tx, walletId, actor.userId, "view");
+    return toRecurrence(await byId(tx, walletId, input.id));
+  }
+  await requireRole(tx, walletId, actor.userId, "editEntries");
+  const [taken] = await tx.select({ id: recurrences.id }).from(recurrences).where(eq(recurrences.id, input.id)).limit(1);
+  if (taken) throw new CommandError("invalidInput");
+  await checkSource(tx, walletId, input);
 
-    const extra: Change[] = [];
-    // An existing entry becomes the first occurrence, instead of a copy next to it (Minhas Economias bug 2).
-    if (input.fromEntryId) {
-      const linked = await tx
-        .update(transactions)
-        .set({ recurrenceId: row.id, occurrenceDate: input.startDate, version: sql`${transactions.version} + 1`, updatedAt: now, updatedBy: actor.userId })
-        .where(
-          and(
-            eq(transactions.walletId, walletId),
-            eq(transactions.id, input.fromEntryId),
-            isNull(transactions.recurrenceId),
-            isNull(transactions.archivedAt),
-            eq(transactions.transactionDate, input.startDate),
-          ),
-        )
-        .returning({ id: transactions.id });
-      if (!linked.length) throw new CommandError("invalidInput");
-      extra.push({
-        walletId,
-        entity: "transactions",
-        entityId: input.fromEntryId,
-        op: "UPDATE",
-        action: "UPDATE",
-        changes: diff({ recurrence_id: null }, { recurrence_id: row.id }),
-      });
-    }
-    extra.push(...(await generate(tx, actor, row, input.startDate, input.tagIds ?? [], input.firstPaid ?? false)));
-    extra.push(...(await lockCurrency(tx, actor, walletId)));
-    await recordMutation(
-      tx,
-      actor,
-      { mutationId: input.mutationId },
-      {
-        walletId,
-        entity: "recurrences",
-        entityId: row.id,
-        op: "CREATE",
-        action: "CREATE",
-        changes: diff(
-          {},
-          { type: input.type, description: input.description, amount_minor: input.amountMinor, frequency: input.frequency, start_date: input.startDate, end_date: input.endDate ?? undefined },
+  const [row] = await tx
+    .insert(recurrences)
+    .values({
+      id: input.id,
+      walletId,
+      type: input.type,
+      description: input.description,
+      amountMinor: input.amountMinor,
+      accountId: input.accountId ?? null,
+      creditCardId: input.creditCardId ?? null,
+      categoryId: input.categoryId,
+      frequency: input.frequency,
+      dayOfMonth: Number(input.startDate.slice(8, 10)),
+      startDate: input.startDate,
+      endDate: input.endDate ?? null,
+      createdBy: actor.userId,
+      updatedBy: actor.userId,
+    })
+    .returning();
+
+  const extra: Change[] = [];
+  // An existing entry becomes the first occurrence, instead of a copy next to it (Minhas Economias bug 2).
+  if (input.fromEntryId) {
+    const linked = await tx
+      .update(transactions)
+      .set({ recurrenceId: row.id, occurrenceDate: input.startDate, version: sql`${transactions.version} + 1`, updatedAt: now, updatedBy: actor.userId })
+      .where(
+        and(
+          eq(transactions.walletId, walletId),
+          eq(transactions.id, input.fromEntryId),
+          isNull(transactions.recurrenceId),
+          isNull(transactions.archivedAt),
+          eq(transactions.transactionDate, input.startDate),
         ),
-      },
-      extra,
-    );
-    return toRecurrence(row);
-  });
+      )
+      .returning({ id: transactions.id });
+    if (!linked.length) throw new CommandError("invalidInput");
+    extra.push({
+      walletId,
+      entity: "transactions",
+      entityId: input.fromEntryId,
+      op: "UPDATE",
+      action: "UPDATE",
+      changes: diff({ recurrence_id: null }, { recurrence_id: row.id }),
+    });
+  }
+  extra.push(...(await generate(tx, actor, row, input.startDate, input.tagIds ?? [], input.firstPaid ?? false)));
+  extra.push(...(await lockCurrency(tx, actor, walletId)));
+  await recordMutation(
+    tx,
+    actor,
+    { mutationId: input.mutationId, sourceRefId },
+    {
+      walletId,
+      entity: "recurrences",
+      entityId: row.id,
+      op: "CREATE",
+      action: "CREATE",
+      changes: diff(
+        {},
+        { type: input.type, description: input.description, amount_minor: input.amountMinor, frequency: input.frequency, start_date: input.startDate, end_date: input.endDate ?? undefined },
+      ),
+    },
+    extra,
+  );
+  return toRecurrence(row);
 }
 
 /**

@@ -8,7 +8,7 @@ Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publi
 
 ### Funcionalidades
 
-- Planos Grátis e Pago com atribuição manual. Contas no plano Pago podem autorizar agentes por carteira para consultar próximas faturas e registrar compras no cartão em uma parcela.
+- Planos Grátis e Pago com atribuição manual. Contas no plano Pago podem autorizar agentes por carteira para consultar próximas faturas ou também criar receitas, despesas, transferências, compras no crédito à vista ou parceladas e recorrências.
 
 ### Melhorias
 
