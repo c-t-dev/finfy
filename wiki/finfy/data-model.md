@@ -1,6 +1,6 @@
 # finfy — Data model
 
-> Last updated: 2026-11-06
+> Last updated: 2026-11-10
 
 This is the data model of **finfy** itself. It consolidates the decisions in [`../decisoes/`](../decisoes/README.md) and proposes the financial core. For the reverse-engineered model of the Minhas Economias app, see [`../api/modelo-de-dados.md`](../api/modelo-de-dados.md) instead.
 
@@ -475,3 +475,13 @@ Card reads derive nextInvoice (first positive outstanding invoice due today or l
 ### Outstanding invoice payment summary (2026-11-06)
 
 Next payable and overdue invoice summaries use full outstanding invoice totals, including posted future-dated purchases. This does not change the committed-debt rule for used credit/net worth. `nextForecast` is retained as null for compatibility; no schema migration. See decision 0023.
+
+## Plans and agent integrations (2026-11-10)
+
+| Table | Fields and constraints |
+| --- | --- |
+| users | plan is required, defaults to FREE (including existing rows), and is constrained to FREE or PAID. |
+| agent_connections | id, user_id, name, unique token_hash, wallet_ids, scopes, created_at and nullable revoked_at. Wallet IDs are a grant list. Current membership and active wallet state are checked independently of that list. |
+| agent_purchase_requests | Composite primary key (connection_id, request_id), request_hash, purchase_id and invoice_id. The receipt records the originally created IDs and is committed atomically with the financial mutation. |
+
+These account and connection records stay server-side. The connection lock serializes replays while the original purchase and audit entries go through the shared wallet command and sync normally. An identical request returns the original receipt only after live authorization. See [0029](../decisoes/0029-planos-e-integracoes-de-agentes.md).

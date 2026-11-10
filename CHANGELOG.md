@@ -1,10 +1,14 @@
 # Histórico de alterações
 
-> Última atualização: 2026-11-06
+> Última atualização: 2026-11-10
 
 Mudanças em desenvolvimento ficam em **Não publicado**. Ao confirmar uma publicação, consolidar versão e data conforme a decisão 0015.
 
 ## Não publicado
+
+### Funcionalidades
+
+- Planos Grátis e Pago com atribuição manual. Contas no plano Pago podem autorizar agentes por carteira para consultar próximas faturas e registrar compras no cartão em uma parcela.
 
 ### Melhorias
 

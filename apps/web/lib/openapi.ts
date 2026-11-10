@@ -1,3 +1,7 @@
+import {
+  agentInvoicesSchema, agentPurchaseInput, agentReceiptSchema, agentTargetsSchema, agentWalletSchema,
+  connectionInput, connectionsSchema, createdConnectionSchema,
+} from "@packages/shared/integrations";
 import { z } from "zod";
 import {
   AUTH_ERRORS,
@@ -156,6 +160,16 @@ const authResponses = (...codes: string[]) => ({
   503: err("Database or pepper not configured.", "unavailable"),
 });
 
+const integrationId = (name: string) => ({ name, in: "path", required: true, schema: json(z.uuid()) });
+const integrationErrors = {
+  400: err("Invalid input.", "invalidInput"),
+  401: err("Invalid or missing authentication.", "unauthenticated"),
+  403: err("Plan, role, scope or origin denied.", "forbidden", "forbiddenOrigin"),
+  404: err("Resource unavailable to this account.", "notFound"),
+  409: err("Request identifier reused with a different purchase, or invoice paid.", "versionConflict", "invoicePaid"),
+  503: err("Database not configured.", "unavailable"),
+};
+
 export function buildOpenApi(serverUrl = "http://localhost:3000") {
   return {
     openapi: "3.1.0",
@@ -163,11 +177,12 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       title: "finfy API",
       version: "0.1.0",
       description:
-        "API of the finfy web app (route handlers in apps/web/app/api). Errors are stable codes in `error`; the client translates them (wiki/decisoes/0011). Authentication is a session cookie set by sign-in or e-mail verification.",
+        "API of the finfy web app (route handlers in apps/web/app/api). Errors are stable codes in `error`; the client translates them (wiki/decisoes/0011). App routes use a session cookie. Agent v1 routes use a scoped bearer credential.",
     },
     servers: [{ url: serverUrl }],
     tags: [
       { name: "auth", description: "Sign-up, sign-in and sessions (wiki/decisoes/0004)" },
+      { name: "integrations", description: "Account connections and scoped agent access" },
       { name: "account", description: "The signed-in user's settings" },
       { name: "wallets", description: "Wallets and roles (wiki/decisoes/0002). Writes are idempotent by `mutationId` and audited" },
       { name: "accounts", description: "Accounts of a wallet; the balance is computed, never stored" },
@@ -199,6 +214,7 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
     ],
     components: {
       securitySchemes: {
+        agentBearer: { type: "http", scheme: "bearer" },
         session: {
           type: "apiKey",
           in: "cookie",
@@ -271,6 +287,38 @@ export function buildOpenApi(serverUrl = "http://localhost:3000") {
       },
     },
     paths: {
+      "/api/integrations": {
+        get: { tags: ["integrations"], summary: "Get account plan and owned connections", security: [{ session: [] }],
+          responses: { 200: response("Plan and connection summaries.", json(connectionsSchema)), ...integrationErrors } },
+        post: { tags: ["integrations"], summary: "Create a paid account connection", description: originNote,
+          security: [{ session: [] }], requestBody: body(connectionInput),
+          responses: { 201: response("Connection and its one-time secret.", json(createdConnectionSchema)), ...integrationErrors } },
+      },
+      "/api/integrations/{id}/revoke": {
+        post: { tags: ["integrations"], summary: "Revoke an owned connection", description: originNote,
+          security: [{ session: [] }], parameters: [integrationId("id")], requestBody: body(z.strictObject({})),
+          responses: { 204: response("Revocation acknowledged."), ...integrationErrors } },
+      },
+      "/api/agent/v1/wallets": {
+        get: { tags: ["integrations"], summary: "List allowed wallets and effective scopes", security: [{ agentBearer: [] }],
+          responses: { 200: response("Available wallets.", json(z.array(agentWalletSchema))), ...integrationErrors } },
+      },
+      "/api/agent/v1/wallets/{id}/invoices": {
+        get: { tags: ["integrations"], summary: "Read the next payable invoice per active card", description: "Requires invoices:read.",
+          security: [{ agentBearer: [] }], parameters: [integrationId("id")],
+          responses: { 200: response("Next payable invoices.", json(agentInvoicesSchema)), ...integrationErrors } },
+      },
+      "/api/agent/v1/wallets/{id}/purchase-targets": {
+        get: { tags: ["integrations"], summary: "List cards and expense categories for purchase creation", description: "Requires purchases:create.",
+          security: [{ agentBearer: [] }], parameters: [integrationId("id")],
+          responses: { 200: response("Purchase targets.", json(agentTargetsSchema)), ...integrationErrors } },
+      },
+      "/api/agent/v1/wallets/{id}/cards/{cardId}/purchases": {
+        post: { tags: ["integrations"], summary: "Record one single-installment credit purchase",
+          description: "Requires purchases:create. Retry with the same requestId and body to recover the original receipt.",
+          security: [{ agentBearer: [] }], parameters: [integrationId("id"), integrationId("cardId")], requestBody: body(agentPurchaseInput),
+          responses: { 201: response("Original purchase receipt.", json(agentReceiptSchema)), ...integrationErrors } },
+      },
       "/api/health": {
         get: {
           tags: ["system"],

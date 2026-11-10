@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { ACCOUNT_PLANS } from "../../integrations";
 import { LOCALES } from "../../i18n/locales";
 import { createdAt, enumCheck, idColumn, textEnum, timestamptz, updatedAt } from "../columns";
 
@@ -39,6 +40,7 @@ export const users = pgTable(
     /** Always stored lowercased. */
     email: text("email").notNull(),
     emailVerifiedAt: timestamptz("email_verified_at"),
+    plan: textEnum("plan", ACCOUNT_PLANS).notNull().default("FREE"),
     language: textEnum("language", LOCALES).notNull().default("en"),
     preferredCurrencyCode: char("preferred_currency_code", { length: 3 }).references(() => currencies.code),
     mfaEnabledAt: timestamptz("mfa_enabled_at"),
@@ -52,6 +54,7 @@ export const users = pgTable(
   (t) => [
     uniqueIndex("users_email_unique").on(t.email),
     check("users_email_lowercase_check", sql`${t.email} = lower(${t.email})`),
+    enumCheck("users_plan_check", t.plan, ACCOUNT_PLANS),
     enumCheck("users_language_check", t.language, LOCALES),
   ],
 );

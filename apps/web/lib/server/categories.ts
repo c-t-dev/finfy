@@ -66,6 +66,10 @@ export async function listCategories(userId: string, walletId: string, archived:
   });
 }
 
+export function activeCategories(tx: Tx, walletId: string) {
+  return selectCategories(tx, walletId, isNull(categories.archivedAt));
+}
+
 async function categoryById(tx: Tx, walletId: string, categoryId: string): Promise<Category> {
   const [category] = await selectCategories(tx, walletId, eq(categories.id, categoryId));
   if (!category) throw new CommandError("notFound");

@@ -101,7 +101,7 @@ function virtualInvoice(card: CardRow, period: InvoicePeriod): Invoice {
 export const invoiceId = (cardId: string, period: { referenceYear: number; referenceMonth: number }) =>
   deterministicId("invoice", cardId, String(period.referenceYear), String(period.referenceMonth));
 
-async function selectCards(db: Db, where: SQL | undefined): Promise<Card[]> {
+export async function selectCards(db: Db, where: SQL | undefined): Promise<Card[]> {
   const rows = await db.select().from(creditCards).where(where).orderBy(asc(creditCards.createdAt));
   if (!rows.length) return [];
   const cardIds = rows.map((row) => row.id);
@@ -454,73 +454,82 @@ export async function createPurchase(
   cardId: string,
   input: CreatePurchaseInput,
 ): Promise<CommandResult<Entry[]>> {
-  return runCommand(async (tx) => {
-    const ids = Array.from({ length: input.installments }, (_, index) =>
-      index === 0 ? input.id : deterministicId("installment", input.id, String(index + 1)),
-    );
-    if (await applied(tx, actor, input.mutationId)) {
-      await requireRole(tx, walletId, actor.userId, "view");
-      return purchasesByIds(tx, walletId, ids);
-    }
-    await requireRole(tx, walletId, actor.userId, "editEntries");
-    const card = await loadCard(tx, walletId, cardId);
-    const category = await usableCategory(tx, walletId, input.categoryId);
-    if (category.kind === "INCOME") throw new CommandError("invalidInput");
-    const taken = await tx.select({ id: transactions.id }).from(transactions).where(inArray(transactions.id, ids)).limit(1);
-    if (taken.length) throw new CommandError("invalidInput");
+  return runCommand((tx) => createPurchaseInTransaction(tx, actor, walletId, cardId, input));
+}
 
-    const amounts = splitInstallments(input.amountMinor, input.installments);
-    const multiple = input.installments > 1;
-    const extra: Change[] = [];
-    const created: Change[] = [];
-    for (const [index, id] of ids.entries()) {
-      const date = addMonthsToDate(input.transactionDate, index);
-      const invoice = await ensureInvoice(tx, actor, card, invoiceForDate(date, card.closingDay, card.dueDay), extra);
-      await tx.insert(transactions).values({
-        id,
-        walletId,
-        creditCardId: cardId,
-        invoiceId: invoice.id,
-        categoryId: input.categoryId,
-        type: "CREDIT_CARD_PURCHASE",
-        status: "PENDING",
-        description: input.description,
-        amountMinor: amounts[index],
-        transactionDate: date,
-        notes: input.notes ?? null,
-        installmentGroupId: multiple ? input.id : null,
-        installmentNumber: multiple ? index + 1 : null,
-        installmentTotal: multiple ? input.installments : null,
-        createdBy: actor.userId,
-        updatedBy: actor.userId,
-      });
-      created.push({
-        walletId,
-        entity: "transactions",
-        entityId: id,
-        op: "CREATE",
-        action: "CREATE",
-        changes: diff(
-          {},
-          {
-            type: "CREDIT_CARD_PURCHASE",
-            credit_card_id: cardId,
-            invoice_id: invoice.id,
-            category_id: input.categoryId,
-            description: input.description,
-            amount_minor: amounts[index],
-            transaction_date: date,
-            installment: multiple ? `${index + 1}/${input.installments}` : undefined,
-          },
-        ),
-      });
-    }
-    extra.push(...(await applyTags(tx, actor, walletId, ids, input.tagIds ?? [])));
-    extra.push(...(await lockCurrency(tx, actor, walletId)));
-    const [first, ...rest] = created;
-    await recordMutation(tx, actor, { mutationId: input.mutationId }, first, [...rest, ...extra]);
+export async function createPurchaseInTransaction(
+  tx: Tx,
+  actor: Actor,
+  walletId: string,
+  cardId: string,
+  input: CreatePurchaseInput,
+  sourceRefId?: string,
+): Promise<Entry[]> {
+  const ids = Array.from({ length: input.installments }, (_, index) =>
+    index === 0 ? input.id : deterministicId("installment", input.id, String(index + 1)),
+  );
+  if (await applied(tx, actor, input.mutationId)) {
+    await requireRole(tx, walletId, actor.userId, "view");
     return purchasesByIds(tx, walletId, ids);
-  });
+  }
+  await requireRole(tx, walletId, actor.userId, "editEntries");
+  const card = await loadCard(tx, walletId, cardId);
+  const category = await usableCategory(tx, walletId, input.categoryId);
+  if (category.kind === "INCOME") throw new CommandError("invalidInput");
+  const taken = await tx.select({ id: transactions.id }).from(transactions).where(inArray(transactions.id, ids)).limit(1);
+  if (taken.length) throw new CommandError("invalidInput");
+
+  const amounts = splitInstallments(input.amountMinor, input.installments);
+  const multiple = input.installments > 1;
+  const extra: Change[] = [];
+  const created: Change[] = [];
+  for (const [index, id] of ids.entries()) {
+    const date = addMonthsToDate(input.transactionDate, index);
+    const invoice = await ensureInvoice(tx, actor, card, invoiceForDate(date, card.closingDay, card.dueDay), extra);
+    await tx.insert(transactions).values({
+      id,
+      walletId,
+      creditCardId: cardId,
+      invoiceId: invoice.id,
+      categoryId: input.categoryId,
+      type: "CREDIT_CARD_PURCHASE",
+      status: "PENDING",
+      description: input.description,
+      amountMinor: amounts[index],
+      transactionDate: date,
+      notes: input.notes ?? null,
+      installmentGroupId: multiple ? input.id : null,
+      installmentNumber: multiple ? index + 1 : null,
+      installmentTotal: multiple ? input.installments : null,
+      createdBy: actor.userId,
+      updatedBy: actor.userId,
+    });
+    created.push({
+      walletId,
+      entity: "transactions",
+      entityId: id,
+      op: "CREATE",
+      action: "CREATE",
+      changes: diff(
+        {},
+        {
+          type: "CREDIT_CARD_PURCHASE",
+          credit_card_id: cardId,
+          invoice_id: invoice.id,
+          category_id: input.categoryId,
+          description: input.description,
+          amount_minor: amounts[index],
+          transaction_date: date,
+          installment: multiple ? `${index + 1}/${input.installments}` : undefined,
+        },
+      ),
+    });
+  }
+  extra.push(...(await applyTags(tx, actor, walletId, ids, input.tagIds ?? [])));
+  extra.push(...(await lockCurrency(tx, actor, walletId)));
+  const [first, ...rest] = created;
+  await recordMutation(tx, actor, { mutationId: input.mutationId, sourceRefId }, first, [...rest, ...extra]);
+  return purchasesByIds(tx, walletId, ids);
 }
 
 async function purchasesByIds(tx: Tx, walletId: string, ids: string[]): Promise<Entry[]> {

@@ -1,5 +1,6 @@
 /** Server schema (Postgres). The rules are in wiki/finfy/data-model.md. */
 export * from "./identity";
+export * from "./integrations";
 export * from "./wallets";
 export * from "./finance";
 export * from "./planning";

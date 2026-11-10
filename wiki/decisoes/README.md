@@ -1,6 +1,6 @@
 # Decisões do finfy
 
-> Última atualização: 2026-11-06
+> Última atualização: 2026-11-10
 
 Cada decisão de produto ou arquitetura do finfy fica num arquivo próprio, numerado, para que qualquer agente saiba o que já foi decidido e por quê.
 
@@ -59,3 +59,5 @@ A [0022 — Dívida realizada e previsões dos cartões](0022-divida-realizada-e
 - [0027 — CASL na autorização compartilhada](0027-casl-na-autorizacao.md): aceita; preserva a matriz de papéis.
 
 - [0028 — Edição de compras no cartão](0028-edicao-de-compras-no-cartao.md): valor total e data original para toda a compra. Aprovada em 2026-11-06.
+
+- [0029 — Planos e integrações de agentes](0029-planos-e-integracoes-de-agentes.md): aceita para a primeira versão.

@@ -69,6 +69,26 @@
     }
   },
   "app": {
+    "integrations": {
+      "title": "Agent integrations",
+      "body": "Allow an external agent to access selected wallets over HTTPS.",
+      "loading": "Loading integrations…",
+      "retry": "Retry loading integrations",
+      "paid": "Paid plan",
+      "free": "Free plan · Agent access requires the Paid plan.",
+      "unavailableWallet": "Unavailable wallet",
+      "invoices:read": "Read upcoming card bills",
+      "purchases:create": "Create credit card purchases",
+      "revoked": "Revoked",
+      "revoke": "Revoke connection",
+      "secret": "Copy this secret now. It appears only once.",
+      "dismiss": "Close secret",
+      "name": "Connection name",
+      "scopes": "Permissions",
+      "wallets": "Authorized wallets",
+      "noWallets": "No wallets available for these permissions.",
+      "create": "Create connection"
+    },
     "nav": {
       "label": "Main navigation",
       "home": "Home",

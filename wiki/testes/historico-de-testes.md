@@ -258,3 +258,7 @@ Validação geral: 16 testes shared + 43 web aprovados (59 reportados, incluindo
 A suíte geral passou com 43 testes web, incluindo os cenários da fila em PGlite com dados sintéticos. Typecheck aprovado. As traduções têm 972 chaves por idioma e o OpenAPI está atualizado. O processador da fila é invocado apenas pelos testes. Nenhum e-mail real foi enviado.
 
 Após reaplicar a mudança sobre d2ed256, as quatro checagens passaram novamente. A suíte web passou com 45 testes e os dois idiomas têm 976 chaves cada.
+
+## 2026-11-10 — planos e integração de agentes
+
+O teste das rotas usa migrações reais em PGlite, dados fictícios e uma sessão controlada. Cobriu Grátis como padrão, promoção a Pago, criação com segredo exibido uma vez, CSRF, escopos separados, carteira fora da conexão, papel rebaixado, acesso removido, downgrade e revogação pelo titular. Duas solicitações simultâneas com o mesmo identificador devolveram o mesmo recibo e criaram uma única compra, vinculada à fatura e auditada com o ID da conexão. Moeda divergente, cartão inválido e reuso do identificador com outro valor foram recusados. A suíte web passou com 46 testes. Nenhuma conta ou banco real foi usado.

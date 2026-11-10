@@ -121,3 +121,5 @@ Novo hotfix local (2026-11-06): [total em aberto das faturas](decisoes/0023-cont
 Próxima etapa: OTP por e-mail como fluxo principal; envio e verificação exigida continuam desativados enquanto não houver entrega configurada ([0004](decisoes/0004-seguranca-da-conta.md#prioridade-do-otp-por-e-mail-2026-11-06)).
 
 Preparação local do envio OTP: modelos bilíngues, transporte em memória e processador de fila; provedor real e ativação seguem pendentes ([codebase](finfy/codebase.md#local-email-delivery-preparation-2026-11-06)).
+
+Planos e agentes externos: [decisão 0029](decisoes/0029-planos-e-integracoes-de-agentes.md) e [guia da API](finfy/agent-integrations.md).

@@ -20,6 +20,7 @@ import { can } from "@packages/shared/roles";
 import type { Wallet } from "@packages/shared/wallets";
 import { WALLET_NAME_MAX } from "@packages/shared/wallets";
 import { useTranslations } from "../i18n";
+import { IntegrationsCard } from "../integrations-ui";
 import { AccountCard } from "../account-ui";
 import { MembersCard } from "../members-ui";
 import { SignupInvitesCard } from "../signup-invites-ui";
@@ -58,6 +59,7 @@ export function SettingsScreen() {
         <h2 id="settings-personal-heading" className="text-[15px] font-semibold">{orientation("personalGroup")}</h2>
         <AccountCard />
         <SignupInvitesCard />
+        <IntegrationsCard />
       </section>
       {current && can(current.role, "archiveWallet") && <section aria-labelledby="settings-admin-heading" className="flex flex-col gap-3">
         <h2 id="settings-admin-heading" className="text-[15px] font-semibold">{orientation("advancedGroup")}</h2>

@@ -523,3 +523,7 @@ Production email delivery and mandatory verification remain disabled (EMAIL_DELI
 - mail-outbox.test.ts exercises the real migrated database and worker with a local transport and synthetic OTP HMAC. It covers bilingual rendering, verification, expiry/replacement, retry limits, ambiguous delivery, concurrent workers, rollback, timeout and production guards. No actual provider delivery is validated.
 
 Run local tests from the root with pnpm.cmd --filter web exec tsx --test test/mail-outbox.test.ts. No sender configuration is needed.
+
+## Agent integrations (2026-11-10)
+
+Settings uses the session-authenticated integrations routes to manage connections. External clients call the bearer-authenticated API under /api/agent/v1. Purchase creation calls the same transaction-level purchase command as the app. The audit actor is the account, with the connection ID in source_ref_id and no device ID. Plan and credential checks run before wallet authorization and replay lookup. See the [agent integration guide](agent-integrations.md) for the contract and local plan assignment.
